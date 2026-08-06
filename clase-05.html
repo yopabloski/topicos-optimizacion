@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Set Covering, Packing y Partitioning · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+details.pauta{border-top:1px solid var(--line);background:var(--paper-2)}
+details.pauta summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker{display:none}
+details.pauta summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover{color:var(--ink)}
+details.pauta .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta{background:#f2efe8 !important}
+  details.pauta .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 05</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">05</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Cubrir todo<br>con lo <em style="font-style:italic;color:var(--amber)">mínimo</em></h1>
+  <p class="lead">¿Cuántas estaciones de bomberos necesita una ciudad? ¿Cuántas tripulaciones cubren todos los vuelos? Una sola estructura matemática responde ambas preguntas.</p>
+  <div class="meta">
+    <span class="chip on">Set Covering</span>
+    <span class="chip">Set Packing</span>
+    <span class="chip">Set Partitioning</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>De qué se trata esta clase</h2>
+  <p class="lead">Hay una familia de problemas que se repite con nombres distintos en industrias completamente distintas, y que siempre tiene la misma forma: un conjunto de <em>elementos</em> que hay que atender, y un conjunto de <em>candidatos</em>, cada uno de los cuales atiende a un subconjunto de elementos.</p>
+  <p>La pregunta cambia según el contexto. Si quiero que <strong>todos</strong> los elementos queden atendidos usando la menor cantidad de candidatos, tengo un <strong>set covering</strong> (cobertura). Si quiero seleccionar candidatos que <strong>no se traslapen</strong>, maximizando algo, tengo un <strong>set packing</strong> (empaquetamiento). Si exijo ambas cosas — cobertura total sin traslape — tengo un <strong>set partitioning</strong> (partición).</p>
+  <p>Las tres se escriben con una matriz de incidencia \(a_{ij}\in\{0,1\}\) y cambian solo en el sentido de la restricción: \(\ge 1\), \(\le 1\) o \(= 1\). Es probablemente la lección de modelamiento con mejor relación entre lo simple que es y lo lejos que llega.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Construir</strong> la matriz de cobertura \(a_{ij}\) a partir de un enunciado geográfico, temporal o de compatibilidad.</li>
+    <li><strong>Formular</strong> el set covering en su versión de mínimo número de instalaciones y en su versión de mínimo costo.</li>
+    <li><strong>Distinguir</strong> covering, packing y partitioning por el sentido de la restricción y por el tipo de pregunta que responden.</li>
+    <li><strong>Reconocer</strong> estas estructuras dentro de problemas que no las nombran: turnos, tripulaciones, ubicación de sensores, selección de test cases.</li>
+    <li><strong>Evaluar</strong> el desempeño de una heurística voraz de cobertura frente al óptimo exacto.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="El problema de cobertura">
+  <div class="eyebrow">Estructura</div>
+  <h2>Cobertura: que nadie quede sin atender</h2>
+  <p class="lead">En set covering el problema es determinar la cantidad mínima de elementos de un conjunto de referencia requeridos para cubrir todos los elementos de un conjunto de destino.</p>
+
+  <div class="modelo">
+    <span class="et">Modelo de cobertura mínima</span>
+    \[
+    \begin{aligned}
+    \min\;\; & z=\sum_{j=1}^{n} c_j x_j\\
+    \text{s.a.}\;\; & \sum_{j=1}^{n} a_{ij}x_j \ge 1 && \forall i=1,\dots,m\\
+    & x_j \in\{0,1\} && \forall j=1,\dots,n
+    \end{aligned}
+    \]
+    <p class="glosa">\(x_j=1\) si se selecciona el candidato \(j\). \(a_{ij}=1\) si el candidato \(j\) cubre al elemento \(i\). La restricción exige que cada elemento sea cubierto <strong>al menos una vez</strong>. Si \(c_j=1\) para todo \(j\), se minimiza la cantidad de candidatos.</p>
+  </div>
+
+  <div class="rejilla r3">
+    <div class="tarjeta"><span class="icono">EMERGENCIAS</span><h4>Estaciones de bomberos</h4><p>Cada estación cubre los vecindarios que alcanza en menos de 15 minutos. Se busca cubrir toda la ciudad con el mínimo de estaciones.</p></div>
+    <div class="tarjeta"><span class="icono">RRHH</span><h4>Diseño de turnos</h4><p>Cada patrón de turno cubre ciertas franjas horarias. Se busca cubrir toda la demanda horaria con el mínimo costo de personal.</p></div>
+    <div class="tarjeta"><span class="icono">AVIACIÓN</span><h4>Crew scheduling</h4><p>Cada <em>pairing</em> (secuencia de vuelos que sale de una base y vuelve a ella) cubre ciertos vuelos. Hay que cubrir todos los vuelos del itinerario.</p></div>
+    <div class="tarjeta"><span class="icono">TELECOM</span><h4>Ubicación de antenas</h4><p>Cada sitio candidato cubre un radio de cobertura. Se busca dar señal a todas las zonas pobladas con el mínimo de sitios.</p></div>
+    <div class="tarjeta"><span class="icono">SALUD</span><h4>Red de urgencias</h4><p>Ubicación de SAPU y ambulancias para que toda la población quede a menos de \(T\) minutos de un punto de atención.</p></div>
+    <div class="tarjeta"><span class="icono">SOFTWARE</span><h4>Selección de casos de prueba</h4><p>Cada test cubre ciertos requisitos o líneas de código. Se busca el conjunto mínimo de tests que cubra todo el sistema.</p></div>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Laboratorio: estaciones de bomberos">
+  <div class="eyebrow">Simulador</div>
+  <h2>Ubica las estaciones tú mismo</h2>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Cobertura de una ciudad de 11 vecindarios</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Una ciudad revisa la ubicación de sus estaciones de bomberos. Una estación instalada en un vecindario cubre <strong>ese vecindario y todos los adyacentes</strong>. Haz clic en un vecindario para instalar o quitar una estación.</p>
+      <svg id="g-cover" viewBox="0 0 420 300" style="width:100%;height:auto;max-width:600px;display:block;margin:0 auto"></svg>
+      <div class="leyenda" style="justify-content:center">
+        <span><i style="background:var(--amber)"></i>Estación instalada</span>
+        <span><i style="background:var(--teal-soft);border:1px solid var(--teal)"></i>Vecindario cubierto</span>
+        <span><i style="background:#fff;border:1px solid var(--amber)"></i>Sin cobertura</span>
+      </div>
+      <div class="marcador">
+        <div><span>Estaciones instaladas</span><b id="cv-n">0</b></div>
+        <div><span>Vecindarios cubiertos</span><b id="cv-c">0 / 11</b></div>
+        <div><span>Óptimo exacto</span><b class="ok" id="cv-opt">—</b></div>
+        <div><span>Heurística voraz</span><b id="cv-vor">—</b></div>
+      </div>
+      <div class="botonera" style="margin-top:14px">
+        <button class="btn ghost" id="cv-limpiar">Limpiar</button>
+        <button class="btn ghost" id="cv-voraz">Aplicar voraz</button>
+        <button class="btn" id="cv-opt-btn">Mostrar óptimo</button>
+      </div>
+      <p id="cv-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">La heurística voraz de cobertura</span>
+    <p>Elegir repetidamente el candidato que cubre más elementos aún no cubiertos es la heurística más natural, y tiene una garantía teórica notable: nunca usa más de \(\ln(m)+1\) veces el óptimo. Además se demostró que, salvo que P = NP, <strong>ninguna</strong> heurística en tiempo polinomial puede garantizar algo mejor. Es uno de los pocos casos donde sabemos que la solución obvia es también la mejor posible en términos de garantía.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Con costos de instalación">
+  <div class="eyebrow">Variante</div>
+  <h2>¿Y si instalar cuesta distinto en cada lugar?</h2>
+  <p class="lead">La versión anterior minimiza la <em>cantidad</em> de estaciones, que implícitamente supone que todas cuestan lo mismo. En la práctica el terreno, la conectividad y la disponibilidad cambian el costo por sitio — y a veces ni siquiera todos los sitios son candidatos.</p>
+
+  <div class="modelo">
+    <span class="et">Set covering con costos y candidatos restringidos</span>
+    \[
+    \begin{aligned}
+    \min\;\; & z=\sum_{j\in C} c_j x_j\\
+    \text{s.a.}\;\; & \sum_{j\in C} a_{ij}x_j \ge 1 && \forall i\\
+    & x_j\in\{0,1\} && \forall j \in C
+    \end{aligned}
+    \]
+    <p class="glosa">\(C\) es el conjunto de sitios donde efectivamente se puede instalar. Restringir \(C\) puede hacer el problema infactible: si un vecindario no es adyacente a ningún sitio candidato, ninguna solución lo cubre.</p>
+  </div>
+
+  <div class="nota">
+    <span class="et">Extensiones frecuentes en la práctica</span>
+    <p><strong>Cobertura múltiple:</strong> \(\sum_j a_{ij}x_j \ge k_i\), exigiendo que las zonas críticas queden cubiertas por al menos \(k_i\) estaciones (redundancia ante fallas).<br>
+    <strong>Cobertura máxima (MCLP):</strong> si el presupuesto solo alcanza para \(p\) estaciones, el objetivo cambia a maximizar la población cubierta: \(\max \sum_i w_iz_i\) con \(z_i \le \sum_j a_{ij}x_j\) y \(\sum_j x_j \le p\). Es el modelo que se usa realmente cuando cubrir todo es inviable.<br>
+    <strong>Cobertura con niveles de servicio:</strong> distintos radios de cobertura según tipo de emergencia, lo que genera varias matrices \(a_{ij}\) simultáneas.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Packing y partitioning">
+  <div class="eyebrow">La familia completa</div>
+  <h2>Tres primos que se distinguen por un signo</h2>
+
+  <div class="rejilla r3">
+    <div class="tarjeta" style="border-color:var(--teal)">
+      <span class="icono" style="color:var(--teal)">COVERING</span>
+      <h4>\(\sum_j a_{ij}x_j \ge 1\)</h4>
+      <p><strong>Cubrir todo, al menos una vez.</strong> Se permite el traslape. Objetivo típico: minimizar costo o cantidad.<br><em>Ejemplo:</em> estaciones de bomberos, turnos de personal.</p>
+    </div>
+    <div class="tarjeta" style="border-color:var(--gold)">
+      <span class="icono" style="color:var(--gold)">PACKING</span>
+      <h4>\(\sum_j a_{ij}x_j \le 1\)</h4>
+      <p><strong>Sin traslape, sin obligación de cubrir.</strong> Objetivo típico: maximizar valor de lo seleccionado.<br><em>Ejemplo:</em> reservar salas sin choques de horario, seleccionar avisos publicitarios compatibles.</p>
+    </div>
+    <div class="tarjeta" style="border-color:var(--amber)">
+      <span class="icono" style="color:var(--amber)">PARTITIONING</span>
+      <h4>\(\sum_j a_{ij}x_j = 1\)</h4>
+      <p><strong>Cubrir todo, exactamente una vez.</strong> Ni traslape ni omisión.<br><em>Ejemplo:</em> asignación (caso particular), ruteo de vehículos con visita única, crew pairing exacto.</p>
+    </div>
+  </div>
+
+  <div class="nota libro">
+    <span class="et">Conexión con lo que ya vimos</span>
+    <p>El <strong>problema de asignación</strong> de la Clase 01 es exactamente un set partitioning: cada trabajo cubierto una vez, cada máquina usada una vez. El <strong>problema de la mochila</strong> es un pariente del set packing con una restricción de capacidad en vez de incidencia. Y el <em>bin packing</em> — repartir ítems en la menor cantidad de contenedores — combina packing con covering. Reconocer la estructura permite aprovechar algoritmos y cortes especializados que existen desde hace décadas.</p>
+  </div>
+
+  <div class="quiz" data-correcta="1" data-retro='["El signo \\(\\ge\\) corresponde a covering, donde se permite que un elemento quede cubierto varias veces.","Correcto. La igualdad exige que cada vuelo sea cubierto por exactamente un pairing: ni sin tripulación ni con dos tripulaciones asignadas, lo que sería un desperdicio inaceptable.","El \\(\\le\\) permitiría dejar vuelos sin tripulación, lo que es operacionalmente imposible.","No es una restricción de capacidad: la estructura es de incidencia vuelo-pairing."]'>
+    <span class="et">Chequeo de comprensión</span>
+    <p class="preg">En el problema de asignación de tripulaciones a vuelos, cada vuelo debe ser cubierto por exactamente una tripulación. ¿Qué estructura es?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Set covering: \(\sum_j a_{ij}x_j \ge 1\)</span></button>
+      <button><span class="k">B</span><span>Set partitioning: \(\sum_j a_{ij}x_j = 1\)</span></button>
+      <button><span class="k">C</span><span>Set packing: \(\sum_j a_{ij}x_j \le 1\)</span></button>
+      <button><span class="k">D</span><span>Mochila: \(\sum_j w_jx_j \le W\)</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Desafío: las 8 reinas">
+  <div class="eyebrow">Desafío</div>
+  <h2>Las 8 reinas: un clásico de 1848</h2>
+  <div class="widget">
+    <header><span class="tag caso">Desafío</span><h4>Ocho reinas que no se amenacen</h4></header>
+    <div class="cuerpo">
+      <p>El problema de las 8 reinas consiste en poner ocho reinas en un tablero de ajedrez sin que se amenacen entre sí. Fue propuesto por el ajedrecista alemán Max Bezzel en 1848. La reina ataca en horizontal, vertical y diagonal, sin límite de distancia.</p>
+      <p>Haz clic para poner o quitar reinas. Las casillas amenazadas se marcan automáticamente.</p>
+      <svg id="g-reinas" viewBox="0 0 320 320" style="width:100%;height:auto;max-width:380px;display:block;margin:14px auto"></svg>
+      <div class="marcador">
+        <div><span>Reinas puestas</span><b id="q-n">0 / 8</b></div>
+        <div><span>Conflictos</span><b id="q-c">0</b></div>
+        <div><span>Soluciones existentes</span><b id="q-s">92</b></div>
+      </div>
+      <div class="botonera" style="margin-top:14px">
+        <button class="btn ghost" id="q-limpiar">Limpiar</button>
+        <button class="btn" id="q-resolver">Mostrar una solución</button>
+      </div>
+      <p id="q-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)">Pon 8 reinas sin que ninguna amenace a otra.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>La familia <strong>covering / packing / partitioning</strong> se construye sobre una matriz de incidencia \(a_{ij}\in\{0,1\}\) y se distingue solo por el signo: \(\ge\), \(\le\) o \(=\).</li>
+    <li><strong>Covering</strong> responde "¿cuál es el mínimo necesario para no dejar a nadie fuera?"; es el modelo de localización de servicios de emergencia.</li>
+    <li>La <strong>heurística voraz</strong> de cobertura tiene garantía \(\ln(m)+1\) y es, salvo P = NP, la mejor garantía posible.</li>
+    <li>La variante realista suele ser <strong>cobertura máxima con presupuesto</strong>, no cobertura total: cubrir todo casi nunca es financiable.</li>
+    <li>Muchos problemas que no se llaman así — asignación, turnos, tripulaciones, test cases — <strong>son</strong> esta estructura.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>Modelar bien no es inventar una formulación nueva para cada problema: es reconocer, bajo el vocabulario del cliente, cuál de las media docena de estructuras clásicas está ahí. Quien reconoce la estructura hereda cincuenta años de algoritmos; quien no la reconoce empieza de cero.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Cobertura de SAPU en el Gran Concepción</h4></div>
+    <div class="enunciado">
+      <p>Se evalúa instalar servicios de atención primaria de urgencia en 8 comunas. La tabla indica qué comunas quedarían cubiertas (a menos de 15 minutos) si se instala en cada una:</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Si se instala en…</th><th>Cubre a…</th><th class="num">Costo (MM$)</th></tr></thead>
+        <tbody>
+          <tr><td>1 · Concepción</td><td>1, 2, 3</td><td class="num">180</td></tr>
+          <tr><td>2 · Talcahuano</td><td>1, 2, 4</td><td class="num">150</td></tr>
+          <tr><td>3 · Chiguayante</td><td>1, 3, 5</td><td class="num">120</td></tr>
+          <tr><td>4 · Hualpén</td><td>2, 4, 6</td><td class="num">140</td></tr>
+          <tr><td>5 · San Pedro</td><td>3, 5, 7</td><td class="num">130</td></tr>
+          <tr><td>6 · Penco</td><td>4, 6, 8</td><td class="num">110</td></tr>
+          <tr><td>7 · Coronel</td><td>5, 7, 8</td><td class="num">160</td></tr>
+          <tr><td>8 · Tomé</td><td>6, 7, 8</td><td class="num">100</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Escriba la matriz de cobertura \(a_{ij}\) y formule el modelo de mínimo número de instalaciones.<br>
+      <strong>b)</strong> Resuelva: ¿cuál es el mínimo número de SAPU que cubre las 8 comunas?<br>
+      <strong>c)</strong> Formule y resuelva ahora la versión de mínimo costo. ¿Coincide con la de (b)?<br>
+      <strong>d)</strong> Si el presupuesto es de MM$ 250, ¿cuál es la máxima cantidad de comunas que se puede cubrir? Formule el modelo MCLP correspondiente.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Diseño de turnos en un call center</h4></div>
+    <div class="enunciado">
+      <p>Un call center opera de 8:00 a 20:00, dividido en 6 bloques de 2 horas. La demanda mínima de agentes por bloque es: B1 = 4, B2 = 8, B3 = 10, B4 = 7, B5 = 12, B6 = 5. Existen 4 patrones de turno disponibles:</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Turno</th><th>Bloques que cubre</th><th class="num">Costo por agente</th></tr></thead>
+        <tbody>
+          <tr><td>T1 · Mañana</td><td>B1, B2, B3</td><td class="num">45</td></tr>
+          <tr><td>T2 · Medio</td><td>B2, B3, B4</td><td class="num">48</td></tr>
+          <tr><td>T3 · Tarde</td><td>B3, B4, B5</td><td class="num">52</td></tr>
+          <tr><td>T4 · Cierre</td><td>B4, B5, B6</td><td class="num">55</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Note que aquí las variables <em>no</em> son binarias sino enteras (cuántos agentes en cada turno). Formule el modelo.<br>
+      <strong>b)</strong> Resuelva y determine la dotación óptima y su costo.<br>
+      <strong>c)</strong> ¿Cuántos agentes quedan "de más" en cada bloque? Interprete ese exceso.<br>
+      <strong>d)</strong> Explique por qué este problema, pese a llamarse de cobertura, no es un set covering binario puro. ¿Qué nombre recibe esta variante?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Cobertura máxima con equidad territorial</h4></div>
+    <div class="enunciado">
+      <p>Una municipalidad debe ubicar 4 puntos limpios de reciclaje entre 12 sitios candidatos, para atender 20 barrios. El barrio \(i\) tiene población \(w_i\) y queda cubierto si hay un punto limpio a menos de 800 metros. La matriz \(a_{ij}\) está dada.</p>
+      <p><strong>a)</strong> Formule el modelo de cobertura máxima de población (MCLP) con exactamente 4 instalaciones.<br>
+      <strong>b)</strong> El concejo objeta que el modelo concentra los puntos limpios en los barrios más poblados y deja sectores periféricos completos sin cobertura. Proponga <em>tres</em> formas distintas de incorporar equidad territorial, escribiendo las restricciones.<br>
+      <strong>c)</strong> Una de sus propuestas debería ser minimizar la distancia máxima de un barrio descubierto al punto limpio más cercano (criterio <em>minimax</em>). Formúlela linealmente.<br>
+      <strong>d)</strong> Discuta el conflicto entre eficiencia (cobertura total de población) y equidad (que ningún sector quede muy lejos). ¿Cómo presentaría el trade-off al concejo?<br>
+      <strong>e)</strong> Explique qué es la <em>frontera de Pareto</em> en este contexto y cómo la construiría resolviendo una secuencia de modelos.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Crew pairing y generación de columnas</h4></div>
+    <div class="enunciado">
+      <p>Una aerolínea regional opera 40 vuelos diarios. Un <em>pairing</em> es una secuencia legal de vuelos que empieza y termina en una base, respetando normativa de descanso, tiempos de conexión y máximo de horas. Cada pairing tiene un costo. El problema es cubrir los 40 vuelos con el conjunto de pairings de menor costo total.</p>
+      <p><strong>a)</strong> Formule el modelo como set partitioning y explique por qué se prefiere \(= 1\) sobre \(\ge 1\).<br>
+      <strong>b)</strong> Estime el orden de magnitud del número de pairings posibles y explique por qué el modelo no se puede escribir explícitamente.<br>
+      <strong>c)</strong> Investigue y describa la técnica de <strong>generación de columnas</strong>: qué es el problema maestro restringido, qué es el subproblema de <em>pricing</em>, y qué papel juegan las variables duales.<br>
+      <strong>d)</strong> Explique por qué en este caso el subproblema de pricing suele ser un problema de ruta más corta con restricciones de recursos, y conéctelo con lo que veremos en la Clase 16.<br>
+      <strong>e)</strong> Discuta: si la relajación lineal del maestro entrega una solución fraccionaria, ¿qué se hace? Nombre y describa brevemente el esquema resultante.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ============ Set covering: ciudad ============ */
+(function(){
+  var svg=document.getElementById('g-cover'); if(!svg)return;
+  var P=[[60,60],[145,45],[218,72],[300,50],[368,98],[105,140],[195,152],[288,138],[362,180],[148,238],[248,232]];
+  var ADJ=[[1,5],[0,2,5,6],[1,3,6,7],[2,4,7],[3,7,8],[0,1,6,9],[1,2,5,7,9,10],[2,3,4,6,8,10],[4,7,10],[5,6,10],[6,7,8,9]];
+  var N=11;
+  var est=new Array(N).fill(false);
+
+  function cubiertos(sel){
+    var c=new Array(N).fill(false);
+    sel.forEach(function(on,j){ if(on){ c[j]=true; ADJ[j].forEach(function(k){c[k]=true;}); } });
+    return c;
+  }
+  function optimo(){
+    var mejor=null;
+    for(var m=1;m<(1<<N);m++){
+      var sel=[];for(var j=0;j<N;j++)sel.push((m&(1<<j))>0);
+      var n=sel.filter(Boolean).length;
+      if(mejor&&n>=mejor.n)continue;
+      if(cubiertos(sel).every(Boolean))mejor={n:n,sel:sel};
+    }
+    return mejor;
+  }
+  function voraz(){
+    var sel=new Array(N).fill(false), cub=new Array(N).fill(false);
+    while(!cub.every(Boolean)){
+      var best=-1,bn=-1;
+      for(var j=0;j<N;j++){
+        if(sel[j])continue;
+        var g=([j].concat(ADJ[j])).filter(function(k){return !cub[k];}).length;
+        if(g>bn){bn=g;best=j;}
+      }
+      sel[best]=true; cub[best]=true; ADJ[best].forEach(function(k){cub[k]=true;});
+    }
+    return sel;
+  }
+  var OPT=optimo(), VOR=voraz();
+
+  function dib(){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var cub=cubiertos(est);
+    /* aristas */
+    ADJ.forEach(function(vs,i){vs.forEach(function(j){
+      if(j>i)svg.appendChild(svgEl('line',{x1:P[i][0],y1:P[i][1],x2:P[j][0],y2:P[j][1],stroke:'rgba(20,24,31,.16)','stroke-width':1.4}));
+    });});
+    P.forEach(function(p,i){
+      var g=svgEl('g',{style:'cursor:pointer'});
+      g.appendChild(svgEl('circle',{cx:p[0],cy:p[1],r:est[i]?21:17,
+        fill:est[i]?'#C8551E':(cub[i]?'#DCEAE6':'#fff'),
+        stroke:est[i]?'#C8551E':(cub[i]?'#0F6E63':'#C8551E'),'stroke-width':est[i]?3:2}));
+      var t=svgEl('text',{x:p[0],y:p[1]+4,'text-anchor':'middle','font-size':12,'font-weight':600,
+        fill:est[i]?'#fff':'#14181F'});
+      t.textContent=i+1; g.appendChild(t);
+      g.onclick=function(){est[i]=!est[i];dib();};
+      svg.appendChild(g);
+    });
+    var n=est.filter(Boolean).length, c=cub.filter(Boolean).length;
+    document.getElementById('cv-n').textContent=n;
+    document.getElementById('cv-c').textContent=c+' / '+N;
+    document.getElementById('cv-c').className=c===N?'ok':'mal';
+    document.getElementById('cv-opt').textContent=OPT.n+' estaciones';
+    document.getElementById('cv-vor').textContent=VOR.filter(Boolean).length+' estaciones';
+    var msg=document.getElementById('cv-msg');
+    if(c<N){
+      var falt=[];cub.forEach(function(v,i){if(!v)falt.push(i+1);});
+      msg.innerHTML='Quedan <b>'+(N-c)+'</b> vecindarios sin cobertura: '+falt.join(', ')+'. La restricción \\(\\sum_j a_{ij}x_j \\ge 1\\) no se cumple para ellos.';
+      msg.style.borderLeftColor='var(--amber)';
+    }else if(n===OPT.n){
+      msg.innerHTML='<b>Solución óptima.</b> Cubres los 11 vecindarios con '+n+' estaciones, y no existe cobertura con menos.';
+      msg.style.borderLeftColor='var(--teal)';
+    }else{
+      msg.innerHTML='Cobertura completa con '+n+' estaciones, pero el óptimo usa solo '+OPT.n+'. Te sobran '+(n-OPT.n)+'.';
+      msg.style.borderLeftColor='var(--gold)';
+    }
+    if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([msg]);
+  }
+  document.getElementById('cv-limpiar').onclick=function(){est=new Array(N).fill(false);dib();};
+  document.getElementById('cv-voraz').onclick=function(){est=VOR.slice();dib();};
+  document.getElementById('cv-opt-btn').onclick=function(){est=OPT.sel.slice();dib();};
+  dib();
+})();
+
+/* ============ 8 reinas ============ */
+(function(){
+  var svg=document.getElementById('g-reinas'); if(!svg)return;
+  var S=40, tab=[];
+  for(var i=0;i<8;i++)tab.push(new Array(8).fill(false));
+  function conflictos(){
+    var q=[];
+    for(var i=0;i<8;i++)for(var j=0;j<8;j++)if(tab[i][j])q.push([i,j]);
+    var c=0;
+    for(var a=0;a<q.length;a++)for(var b=a+1;b<q.length;b++){
+      if(q[a][0]===q[b][0]||q[a][1]===q[b][1]||Math.abs(q[a][0]-q[b][0])===Math.abs(q[a][1]-q[b][1]))c++;
+    }
+    return {n:q.length,c:c,q:q};
+  }
+  function amenazada(i,j){
+    for(var a=0;a<8;a++)for(var b=0;b<8;b++){
+      if(!tab[a][b])continue;
+      if(a===i&&b===j)continue;
+      if(a===i||b===j||Math.abs(a-i)===Math.abs(b-j))return true;
+    }
+    return false;
+  }
+  function dib(){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    for(var i=0;i<8;i++)for(var j=0;j<8;j++){
+      var claro=(i+j)%2===0;
+      var am=amenazada(i,j);
+      var g=svgEl('g',{style:'cursor:pointer'});
+      g.appendChild(svgEl('rect',{x:j*S,y:i*S,width:S,height:S,
+        fill: tab[i][j]?'#C8551E':(am?'rgba(200,85,30,.13)':(claro?'#F4F1EA':'#EAE5DA'))}));
+      if(tab[i][j]){
+        var t=svgEl('text',{x:j*S+S/2,y:i*S+S/2+7,'text-anchor':'middle','font-size':21,fill:'#fff'});
+        t.textContent='♛'; g.appendChild(t);
+      }
+      (function(i,j){g.onclick=function(){tab[i][j]=!tab[i][j];dib();};})(i,j);
+      svg.appendChild(g);
+    }
+    svg.appendChild(svgEl('rect',{x:0,y:0,width:8*S,height:8*S,fill:'none',stroke:'#14181F','stroke-width':2}));
+    var r=conflictos();
+    document.getElementById('q-n').textContent=r.n+' / 8';
+    document.getElementById('q-c').textContent=r.c;
+    document.getElementById('q-c').className=r.c>0?'mal':'ok';
+    var msg=document.getElementById('q-msg');
+    if(r.n===8&&r.c===0){msg.innerHTML='<b>¡Resuelto!</b> Ocho reinas, cero amenazas. Esta es una de las 92 soluciones posibles (12 salvo simetrías).';msg.style.borderLeftColor='var(--teal)';}
+    else if(r.c>0){msg.innerHTML='Hay <b>'+r.c+'</b> par(es) de reinas que se amenazan. Recuerda: fila, columna y ambas diagonales.';msg.style.borderLeftColor='var(--amber)';}
+    else {msg.innerHTML='Van '+r.n+' reinas sin conflictos. Faltan '+(8-r.n)+'.';msg.style.borderLeftColor='var(--gold)';}
+  }
+  document.getElementById('q-limpiar').onclick=function(){for(var i=0;i<8;i++)tab[i]=new Array(8).fill(false);dib();};
+  document.getElementById('q-resolver').onclick=function(){
+    var sol=[0,4,7,5,2,6,1,3];
+    for(var i=0;i<8;i++){tab[i]=new Array(8).fill(false);tab[i][sol[i]]=true;}
+    dib();
+  };
+  dib();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>

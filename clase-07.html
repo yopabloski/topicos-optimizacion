@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Taller MusicFest · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+details.pauta{border-top:1px solid var(--line);background:var(--paper-2)}
+details.pauta summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker{display:none}
+details.pauta summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover{color:var(--ink)}
+details.pauta .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta{background:#f2efe8 !important}
+  details.pauta .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 07</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">07</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A · Taller experiencial</div>
+  <h1>Arma el<br><em style="font-style:italic;color:var(--amber)">line-up</em></h1>
+  <p class="lead">Tres días de festival, un presupuesto, un horario que no se estira y un público que quiere ver de todo. Primero lo resuelves con intuición. Después lo modelas.</p>
+  <div class="meta">
+    <span class="chip on">Taller en equipos</span>
+    <span class="chip">Mochila multidimensional</span>
+    <span class="chip">Cobertura de géneros</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>De qué se trata este taller</h2>
+  <p class="lead">Todo lo que vimos en las seis clases anteriores aparece junto en un solo problema, y esta vez lo vas a vivir antes de escribirlo.</p>
+  <p>La dinámica es simple: en equipos de tres, cada grupo tiene un tiempo acotado para definir el line-up de cada día del festival buscando la mayor popularidad posible. Hay que respetar el número de artistas, el presupuesto, la duración total del día, una cuota de géneros musicales y una cuota de artistas chilenos. Y un detalle que lo cambia todo: <strong>un artista contratado un día no puede repetirse en otro</strong>.</p>
+  <p>Después de jugar, la pregunta cambia: <em>¿cómo se escribe esto?</em> Y ahí aparece que el line-up de un día es una mochila multidimensional con restricciones de cobertura, que los tres días juntos forman un problema de asignación con exclusión, y que la intuición de equipo — que suele ser buena — casi nunca llega al óptimo.</p>
+
+  <h3>Al terminar este taller deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Reconocer</strong> las estructuras conocidas (mochila, cobertura, exclusión, asignación) dentro de un problema real desordenado.</li>
+    <li><strong>Formular</strong> un modelo de PEB multi-período con variables de doble índice artista-día.</li>
+    <li><strong>Escribir</strong> restricciones de conteo, presupuesto, duración, cuota mínima por categoría y no repetición entre períodos.</li>
+    <li><strong>Comparar</strong> el desempeño de la intuición y de una heurística voraz frente al óptimo exacto.</li>
+    <li><strong>Explicar</strong> por qué optimizar día a día de forma secuencial no entrega el óptimo global.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Reglas del festival">
+  <div class="eyebrow">El taller</div>
+  <h2>Las reglas del juego</h2>
+
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <span class="icono">VIERNES · 10 MIN</span>
+      <h4>Apertura</h4>
+      <p>6 artistas · presupuesto 24 · duración máxima 10<br>al menos 3 géneros distintos · al menos 1 artista chileno</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">SÁBADO · 8 MIN</span>
+      <h4>Día grande</h4>
+      <p>7 artistas · presupuesto 28 · duración máxima 12<br>al menos 4 géneros y al menos 2 de rock · al menos 2 chilenos</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">DOMINGO · 6 MIN</span>
+      <h4>Cierre</h4>
+      <p>8 artistas · presupuesto 28 · duración máxima 12<br>al menos 2 artistas de cada género · al menos 3 chilenos</p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">La regla que amarra los tres días</span>
+    <p>Los artistas que un equipo seleccione un día <strong>no pueden volver a usarse en otro día</strong>. Eso significa que gastar a los artistas más populares el viernes puede dejarte sin cómo cumplir la cuota del domingo. Es la diferencia entre un problema de tres decisiones separadas y un problema de tres decisiones <em>acopladas</em> — y es exactamente lo que hace interesante al modelo.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Laboratorio: arma tu line-up">
+  <div class="eyebrow">Simulador</div>
+  <h2>Arma el line-up y compárate con el óptimo</h2>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Cartas de artistas y validación en vivo</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl">
+          <label style="display:block">Día del festival</label>
+          <select id="dia">
+            <option value="0">Viernes · 6 artistas · $24 · 10 h · 3 géneros · 1 chileno</option>
+            <option value="1">Sábado · 7 artistas · $28 · 12 h · 4 géneros (2 rock) · 2 chilenos</option>
+            <option value="2">Domingo · 8 artistas · $28 · 12 h · 2 de cada género · 3 chilenos</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label style="display:block">Acciones</label>
+          <div class="botonera">
+            <button class="btn ghost" id="mf-limpiar">Limpiar</button>
+            <button class="btn ghost" id="mf-voraz">Heurística voraz</button>
+            <button class="btn" id="mf-opt">Óptimo exacto</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="mf-estado" style="display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px"></div>
+
+      <div id="mf-cartas" style="display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(148px,1fr))"></div>
+
+      <div class="marcador" style="margin-top:18px">
+        <div><span>Popularidad de tu line-up</span><b id="mf-pop">0</b></div>
+        <div><span>Óptimo del día</span><b class="ok" id="mf-optv">—</b></div>
+        <div><span>Brecha</span><b id="mf-gap">—</b></div>
+      </div>
+      <p id="mf-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+      <p style="font-size:.85rem;color:var(--ink-3);margin-top:10px">El óptimo se calcula con una búsqueda en profundidad con poda por cota superior — es decir, con el mismo principio de <strong>ramificación y acotamiento</strong> que estudiaremos en la Clase 08.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Del juego al modelo">
+  <div class="eyebrow">Formulación</div>
+  <h2>Ahora escríbelo</h2>
+  <p class="lead">Defina un modelo de optimización lineal entero que permita definir el mejor line-up para los tres días simultáneamente.</p>
+
+  <div class="modelo">
+    <span class="et">Variables</span>
+    \[
+    x_{ad}=\begin{cases}1 & \text{si el artista } a \text{ se presenta el día } d\\ 0 & \text{en otro caso}\end{cases}
+    \qquad a=1,\dots,A;\quad d\in\{V,S,D\}
+    \]
+    <p class="glosa">El doble índice es lo que permite modelar los tres días a la vez. Con un solo índice sería imposible expresar la no repetición.</p>
+  </div>
+
+  <div class="modelo">
+    <span class="et">Modelo completo</span>
+    \[
+    \begin{aligned}
+    \max\;\; & z=\sum_{a}\sum_{d} p_a\,x_{ad} && \text{(popularidad total)}\\[3pt]
+    \text{s.a.}\;\; & \sum_{a} x_{ad} = N_d && \forall d && \text{(número de artistas por día)}\\
+    & \sum_{a} c_a x_{ad} \le B_d && \forall d && \text{(presupuesto diario)}\\
+    & \sum_{a} t_a x_{ad} \le H_d && \forall d && \text{(duración del festival por día)}\\
+    & \sum_{a \in G_g} x_{ad} \ge m_{gd} && \forall g,d && \text{(mínimo de artistas por género)}\\
+    & \sum_{a \in CL} x_{ad} \ge q_d && \forall d && \text{(mínimo de artistas chilenos)}\\
+    & \sum_{d} x_{ad} \le 1 && \forall a && \text{(un artista actúa a lo más una vez)}\\
+    & \sum_{a\in P_k}\sum_d x_{ad} \le u_k && \forall k && \text{(máximo de artistas por país)}\\
+    & x_{ad}\in\{0,1\} && \forall a,\ \forall d
+    \end{aligned}
+    \]
+    <p class="glosa">\(G_g\): conjunto de artistas del género \(g\). \(CL\): artistas chilenos. \(P_k\): artistas del país \(k\). Note que la penúltima restricción — la no repetición — es la única que conecta los tres días.</p>
+  </div>
+
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <span class="icono">ESTRUCTURAS RECONOCIDAS</span>
+      <h4>Todo lo del semestre, junto</h4>
+      <p>· Presupuesto y duración: <strong>mochila multidimensional</strong> (Clase 01).<br>
+      · Mínimo por género: <strong>cobertura</strong> (Clase 05).<br>
+      · No repetición entre días: <strong>exclusión mutua</strong> (Clase 02).<br>
+      · Número exacto de artistas por día: <strong>partitioning</strong> (Clase 05).<br>
+      · Cuota máxima por país: <strong>conteo</strong> (Clase 02).</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">DISCUSIÓN CLAVE</span>
+      <h4>¿Por qué no basta optimizar día a día?</h4>
+      <p>Resolver el viernes al máximo, luego el sábado con lo que queda, y luego el domingo, es una <strong>heurística voraz sobre los días</strong>. Suele fallar: los artistas de rock o los chilenos se agotan temprano y el domingo queda infactible o muy pobre. El óptimo global exige mirar los tres días a la vez.</p>
+    </div>
+  </div>
+
+  <div class="quiz" data-correcta="2" data-retro='["Con \\(=1\\) se obligaría a que <em>todos</em> los artistas del catálogo se presenten, lo que es imposible si hay más artistas que cupos.","El \\(\\ge 1\\) tendría el mismo problema: obligaría a contratar a todo el catálogo.","Correcto. \\(\\sum_d x_{ad} \\le 1\\) permite que un artista no se presente ningún día, pero impide que se presente en dos.","Esa forma solo limita el total de contrataciones, sin impedir que un mismo artista se repita."]'>
+    <span class="et">Chequeo de comprensión</span>
+    <p class="preg">¿Cuál restricción expresa correctamente que un artista no puede repetirse entre días?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>\(\sum_d x_{ad} = 1\ \forall a\)</span></button>
+      <button><span class="k">B</span><span>\(\sum_d x_{ad} \ge 1\ \forall a\)</span></button>
+      <button><span class="k">C</span><span>\(\sum_d x_{ad} \le 1\ \forall a\)</span></button>
+      <button><span class="k">D</span><span>\(\sum_a \sum_d x_{ad} \le A\)</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>Un problema real rara vez es "una" estructura: el line-up combina <strong>mochila, cobertura, exclusión y partitioning</strong> en un mismo modelo.</li>
+    <li>El <strong>doble índice</strong> artista-día es lo que permite acoplar decisiones que ocurren en momentos distintos.</li>
+    <li>La restricción de <strong>no repetición</strong> \(\sum_d x_{ad}\le1\) es la única que conecta los tres días — y por eso es la que hace difícil el problema.</li>
+    <li>Optimizar <strong>día a día</strong> es una heurística voraz razonable, pero no garantiza optimalidad y puede dejar días infactibles.</li>
+    <li>La intuición de un equipo con buena discusión suele llegar cerca del óptimo; el modelo llega <em>al</em> óptimo y además <strong>demuestra</strong> que lo es.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>La parte difícil de la optimización aplicada casi nunca es resolver el modelo: es darse cuenta de qué modelo hay que escribir. Cuando el enunciado viene desordenado, en el lenguaje del cliente y sin decir "esto es una mochila", quien reconoce las estructuras ya ganó la mitad del problema.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Extensiones del modelo base</h4></div>
+    <div class="enunciado">
+      <p>Sobre el modelo de tres días, incorpore cada una de las siguientes condiciones como restricción lineal:</p>
+      <p><strong>a)</strong> El artista headliner (artista \(h\)) debe presentarse obligatoriamente, y debe hacerlo el sábado.<br>
+      <strong>b)</strong> Los artistas 5 y 12 son de la misma agencia y tienen contrato conjunto: van los dos o no va ninguno.<br>
+      <strong>c)</strong> Los artistas 3 y 7 tienen un conflicto personal: no pueden presentarse el mismo día.<br>
+      <strong>d)</strong> A lo más 4 artistas de un mismo país en todo el festival.<br>
+      <strong>e)</strong> Si se contrata al artista 9, entonces debe contratarse también al artista 2, porque comparten banda de acompañamiento.<br>
+      <strong>f)</strong> El costo total de los tres días no puede exceder 75, además de los topes diarios.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Voraz por día versus óptimo global</h4></div>
+    <div class="enunciado">
+      <p>Use el simulador para hacer un experimento controlado.</p>
+      <p><strong>a)</strong> Resuelva el viernes al óptimo. Anote qué artistas usó y la popularidad obtenida.<br>
+      <strong>b)</strong> Con los artistas restantes, resuelva el sábado al óptimo. Anote el resultado.<br>
+      <strong>c)</strong> Con lo que queda, intente resolver el domingo. ¿Es factible? Si no lo es, identifique qué restricción se viola y por qué.<br>
+      <strong>d)</strong> Explique con precisión por qué esta estrategia secuencial es una heurística voraz y en qué condiciones fallaría siempre.<br>
+      <strong>e)</strong> Proponga una modificación simple de la heurística que reduzca el riesgo de infactibilidad en el último día.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Programación horaria dentro de cada día</h4></div>
+    <div class="enunciado">
+      <p>El modelo anterior decide <em>qué</em> artistas tocan cada día, pero no <em>a qué hora</em>. Ahora hay dos escenarios (Principal y Alternativo) y cada día tiene 6 bloques horarios de 1 hora. Un artista ocupa \(t_a\) bloques consecutivos.</p>
+      <p><strong>a)</strong> Extienda el modelo con variables \(y_{aebd}\in\{0,1\}\): el artista \(a\) toca en el escenario \(e\), empezando en el bloque \(b\), el día \(d\). Escriba la restricción que vincula \(y\) con \(x_{ad}\).<br>
+      <strong>b)</strong> Escriba la restricción de no solapamiento: un escenario no puede tener dos artistas tocando al mismo tiempo.<br>
+      <strong>c)</strong> La organización quiere que los artistas más populares toquen en los últimos bloques (horario estelar). Proponga <em>dos</em> formas de incorporarlo: como restricción dura y como término en la función objetivo. Discuta cuál prefiere.<br>
+      <strong>d)</strong> Agregue: dos artistas del mismo género no deben tocar simultáneamente en escenarios distintos (para no dividir al mismo público).<br>
+      <strong>e)</strong> Estime el número de variables binarias del modelo completo con 32 artistas, 2 escenarios, 6 bloques y 3 días. Comente la viabilidad computacional.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Incertidumbre, presupuesto y decisión bajo riesgo</h4></div>
+    <div class="enunciado">
+      <p>En la realidad, la popularidad \(p_a\) es una <em>estimación</em> de cuánta gente atraerá el artista, y el ingreso del festival depende de la asistencia efectiva. Suponga que \(p_a\) es una variable aleatoria con media \(\mu_a\) y desviación \(\sigma_a\), y que los artistas internacionales tienen mayor \(\mu\) pero también mayor \(\sigma\).</p>
+      <p><strong>a)</strong> Formule el modelo que maximiza la popularidad esperada. ¿En qué se diferencia del modelo determinístico?<br>
+      <strong>b)</strong> Formule una versión que penalice el riesgo: \(\max \sum_a \mu_a x_a - \theta\sqrt{\sum_a \sigma_a^2 x_a^2}\). Explique por qué esta función objetivo no es lineal y cómo puede manejarse.<br>
+      <strong>c)</strong> Como \(x_a\in\{0,1\}\), se cumple \(x_a^2 = x_a\). Use ese hecho para simplificar la expresión anterior y discuta si el problema se vuelve lineal.<br>
+      <strong>d)</strong> Formule una restricción de tipo <em>chance constraint</em>: "la probabilidad de que la asistencia total supere el punto de equilibrio debe ser al menos 95%". Bajo supuesto de normalidad, escríbala en forma determinística equivalente.<br>
+      <strong>e)</strong> Discuta el dilema de negocio: contratar artistas seguros y de menor convocatoria, o apostar a un headliner internacional caro y de alta varianza. ¿Cómo estructuraría la recomendación al productor?</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ============ MusicFest ============ */
+(function(){
+  var cont=document.getElementById('mf-cartas'); if(!cont)return;
+  var GEN=['POP','RAP','ROCK','LATINO'];
+  var GCOL={POP:'#5B3A6B',RAP:'#14181F',ROCK:'#C8551E',LATINO:'#0F6E63'};
+  /* nombre, pais, genero, duracion, popularidad, costo */
+  var ART=[
+    ['Ruido Austral','CL','ROCK',2,8,5],  ['Los Cormoranes','CL','ROCK',1,6,3],
+    ['Niebla Sur','CL','POP',1,7,4],      ['Mala Junta','CL','RAP',2,9,6],
+    ['Chinchinero','CL','LATINO',1,5,2],  ['Volcán Antuco','CL','ROCK',2,7,4],
+    ['Perla Negra','CL','POP',1,6,3],     ['Barrio Norte','CL','RAP',1,7,4],
+    ['Cueca Eléctrica','CL','LATINO',2,8,5],['Vaporosa','CL','POP',1,4,2],
+    ['Neón Porteño','AR','POP',2,9,6],    ['Fervor','AR','ROCK',2,8,5],
+    ['La Trocha','AR','LATINO',1,6,3],    ['Metrónomo','AR','RAP',1,5,3],
+    ['Sombra Azteca','MX','LATINO',2,9,6],['Cactus FM','MX','POP',1,7,4],
+    ['Tinta Roja','MX','RAP',2,8,5],      ['Sierra Alta','MX','ROCK',1,6,4],
+    ['Marea Ibérica','ES','POP',2,8,6],   ['Duende','ES','LATINO',1,7,4],
+    ['Calle Gótica','ES','RAP',1,6,3],    ['Costa Brava','ES','ROCK',2,7,5],
+    ['Nightfall','UK','ROCK',2,10,7],     ['Silver Loop','UK','POP',1,8,5],
+    ['Grime Hall','UK','RAP',2,9,6],      ['Northern Tide','UK','ROCK',1,7,4],
+    ['Bayou Kid','US','RAP',2,10,7],      ['Sunset Blvd','US','POP',2,9,6],
+    ['Steel Canyon','US','ROCK',1,8,5],   ['Palm Radio','US','LATINO',1,6,3],
+    ['Serra Verde','BR','LATINO',2,9,6],  ['Favela Beat','BR','RAP',1,7,4]
+  ].map(function(a,i){return {id:i,n:a[0],pais:a[1],g:a[2],t:a[3],p:a[4],c:a[5]};});
+
+  var DIAS=[
+    {n:'Viernes',N:6,B:24,H:10,gmin:{},gdist:3,chile:1},
+    {n:'Sábado', N:7,B:28,H:12,gmin:{ROCK:2},gdist:4,chile:2},
+    {n:'Domingo',N:8,B:28,H:12,gmin:{POP:2,RAP:2,ROCK:2,LATINO:2},gdist:0,chile:3}
+  ];
+  var dia=0, sel={};
+
+  function reglas(){return DIAS[dia];}
+  function estado(lista){
+    var R=reglas();
+    var n=lista.length;
+    var costo=0,tiempo=0,chile=0,porG={};
+    GEN.forEach(function(g){porG[g]=0;});
+    lista.forEach(function(a){costo+=a.c;tiempo+=a.t;if(a.pais==='CL')chile++;porG[a.g]++;});
+    var gdist=GEN.filter(function(g){return porG[g]>0;}).length;
+    var okG=true;
+    for(var g in R.gmin)if(porG[g]<R.gmin[g])okG=false;
+    return {n:n,costo:costo,tiempo:tiempo,chile:chile,porG:porG,gdist:gdist,
+      ok: n===R.N && costo<=R.B && tiempo<=R.H && chile>=R.chile && gdist>=R.gdist && okG,
+      pop: lista.reduce(function(s,a){return s+a.p;},0)};
+  }
+  function factible(lista){return estado(lista).ok;}
+
+  /* branch and bound por popularidad */
+  function optimo(){
+    var R=reglas();
+    var orden=ART.slice().sort(function(a,b){return b.p-a.p;});
+    var sufijo=new Array(orden.length+1).fill(0);
+    for(var i=orden.length-1;i>=0;i--)sufijo[i]=sufijo[i+1]+orden[i].p;
+    var mejor={pop:-1,set:[]};
+    var cur=[];
+    function dfs(i,costo,tiempo,pop){
+      if(cur.length===R.N){
+        if(costo<=R.B&&tiempo<=R.H){
+          var e=estado(cur);
+          if(e.ok&&pop>mejor.pop)mejor={pop:pop,set:cur.slice()};
+        }
+        return;
+      }
+      if(i>=orden.length)return;
+      var falta=R.N-cur.length;
+      if(orden.length-i<falta)return;
+      /* cota: popularidad actual + las 'falta' mejores restantes */
+      var cota=pop;
+      for(var k=0;k<falta&&i+k<orden.length;k++)cota+=orden[i+k].p;
+      if(cota<=mejor.pop)return;
+      var a=orden[i];
+      if(costo+a.c<=R.B&&tiempo+a.t<=R.H){
+        cur.push(a); dfs(i+1,costo+a.c,tiempo+a.t,pop+a.p); cur.pop();
+      }
+      dfs(i+1,costo,tiempo,pop);
+    }
+    dfs(0,0,0,0);
+    return mejor;
+  }
+  function voraz(){
+    var R=reglas();
+    var orden=ART.slice().sort(function(a,b){return b.p/b.c-a.p/a.c;});
+    var elegidos=[],costo=0,tiempo=0;
+    /* primero cubrir cuotas */
+    var necesita={};
+    for(var g in R.gmin)necesita[g]=R.gmin[g];
+    var chileF=R.chile;
+    orden.forEach(function(a){
+      if(elegidos.length>=R.N)return;
+      var util=(necesita[a.g]>0)||(a.pais==='CL'&&chileF>0);
+      if(!util)return;
+      if(costo+a.c<=R.B&&tiempo+a.t<=R.H){
+        elegidos.push(a);costo+=a.c;tiempo+=a.t;
+        if(necesita[a.g]>0)necesita[a.g]--;
+        if(a.pais==='CL')chileF--;
+      }
+    });
+    orden.forEach(function(a){
+      if(elegidos.length>=R.N)return;
+      if(elegidos.indexOf(a)>=0)return;
+      if(costo+a.c<=R.B&&tiempo+a.t<=R.H){elegidos.push(a);costo+=a.c;tiempo+=a.t;}
+    });
+    return elegidos;
+  }
+  var OPT=null;
+
+  function pintar(){
+    var R=reglas();
+    var lista=ART.filter(function(a){return sel[a.id];});
+    var e=estado(lista);
+
+    /* cartas */
+    cont.innerHTML='';
+    ART.forEach(function(a){
+      var on=!!sel[a.id];
+      var d=document.createElement('div');
+      d.style.cssText='border:1.5px solid '+(on?GCOL[a.g]:'rgba(20,24,31,.14)')+';border-radius:11px;padding:9px 11px;cursor:pointer;background:'+(on?GCOL[a.g]:'#fff')+';color:'+(on?'#fff':'var(--ink)')+';transition:.15s;font-size:.8rem;line-height:1.35';
+      d.innerHTML='<div style="font-weight:700;font-size:.86rem;margin-bottom:3px">'+a.n+'</div>'+
+        '<div style="font-family:var(--fm);font-size:.68rem;opacity:.8;letter-spacing:.06em">'+a.pais+' · '+a.g+'</div>'+
+        '<div style="font-family:var(--fm);font-size:.72rem;margin-top:5px">★'+a.p+' · $'+a.c+' · '+a.t+'h</div>';
+      d.onclick=function(){
+        if(sel[a.id])delete sel[a.id];
+        else if(lista.length<R.N)sel[a.id]=true;
+        pintar();
+      };
+      cont.appendChild(d);
+    });
+
+    /* estado */
+    var est=document.getElementById('mf-estado');
+    function chip(lab,val,ok){
+      return '<div style="background:'+(ok?'var(--teal-soft)':'var(--amber-soft)')+';border:1px solid '+(ok?'var(--teal)':'var(--amber)')+';border-radius:9px;padding:8px 11px">'+
+        '<div style="font-family:var(--fm);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)">'+lab+'</div>'+
+        '<div style="font-weight:700;font-size:.92rem">'+val+'</div></div>';
+    }
+    var reqG='';
+    if(R.gdist>0)reqG=chip('géneros distintos',e.gdist+' / '+R.gdist,e.gdist>=R.gdist);
+    else {
+      var okAll=true, txt=[];
+      GEN.forEach(function(g){var need=R.gmin[g]||0;if(e.porG[g]<need)okAll=false;txt.push(g[0]+e.porG[g]);});
+      reqG=chip('2 por género',txt.join(' '),okAll);
+    }
+    var reqRock=R.gmin.ROCK?chip('rock mínimo',e.porG.ROCK+' / '+R.gmin.ROCK,e.porG.ROCK>=R.gmin.ROCK):'';
+    est.innerHTML=
+      chip('artistas',e.n+' / '+R.N,e.n===R.N)+
+      chip('presupuesto',e.costo+' / '+R.B,e.costo<=R.B)+
+      chip('duración',e.tiempo+' / '+R.H,e.tiempo<=R.H)+
+      chip('chilenos',e.chile+' / '+R.chile,e.chile>=R.chile)+
+      reqG+reqRock;
+
+    document.getElementById('mf-pop').textContent=e.pop;
+    document.getElementById('mf-optv').textContent=OPT&&OPT.pop>0?OPT.pop:'sin solución';
+    var gap=OPT&&OPT.pop>0?OPT.pop-e.pop:0;
+    document.getElementById('mf-gap').textContent=e.ok?(gap===0?'óptimo':'−'+gap):'—';
+    document.getElementById('mf-gap').className=e.ok&&gap===0?'ok':'mal';
+
+    var msg=document.getElementById('mf-msg');
+    if(!e.ok){
+      var faltan=[];
+      if(e.n!==R.N)faltan.push('el número de artistas debe ser exactamente '+R.N);
+      if(e.costo>R.B)faltan.push('te pasaste del presupuesto');
+      if(e.tiempo>R.H)faltan.push('te pasaste de la duración');
+      if(e.chile<R.chile)faltan.push('faltan artistas chilenos');
+      if(R.gdist>0&&e.gdist<R.gdist)faltan.push('faltan géneros distintos');
+      for(var g in R.gmin)if(e.porG[g]<R.gmin[g])faltan.push('faltan artistas de '+g);
+      msg.innerHTML='<b>Line-up aún no válido:</b> '+faltan.join('; ')+'.';
+      msg.style.borderLeftColor='var(--amber)';
+    }else if(gap===0){
+      msg.innerHTML='<b>Line-up óptimo.</b> Ninguna combinación factible de '+R.N+' artistas alcanza más de '+OPT.pop+' de popularidad. Esto no lo demuestra la intuición: lo demuestra la poda por cota.';
+      msg.style.borderLeftColor='var(--teal)';
+    }else{
+      msg.innerHTML='Line-up <b>válido</b> con popularidad '+e.pop+'. El óptimo es '+OPT.pop+': te faltan '+gap+' puntos. Prueba intercambiar un artista caro por dos baratos de géneros que aún no cubres.';
+      msg.style.borderLeftColor='var(--gold)';
+    }
+  }
+
+  document.getElementById('dia').onchange=function(){
+    dia=+this.value; sel={}; OPT=optimo(); pintar();
+  };
+  document.getElementById('mf-limpiar').onclick=function(){sel={};pintar();};
+  document.getElementById('mf-voraz').onclick=function(){
+    sel={}; voraz().forEach(function(a){sel[a.id]=true;}); pintar();
+  };
+  document.getElementById('mf-opt').onclick=function(){
+    sel={}; if(OPT&&OPT.set)OPT.set.forEach(function(a){sel[a.id]=true;}); pintar();
+  };
+  OPT=optimo();
+  pintar();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>

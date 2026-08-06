@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Función con N posibles valores y lote mínimo · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+details.pauta{border-top:1px solid var(--line);background:var(--paper-2)}
+details.pauta summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker{display:none}
+details.pauta summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover{color:var(--ink)}
+details.pauta .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta{background:#f2efe8 !important}
+  details.pauta .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 04</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">04</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Ni cualquier valor,<br>ni <em style="font-style:italic;color:var(--amber)">cualquier cantidad</em></h1>
+  <p class="lead">El mundo no viene en variables continuas. Los enlaces se venden en 10, 100 o 1000 Mbps. Las máquinas, si arrancan, no producen tres unidades. Hoy modelamos esas dos indivisibilidades.</p>
+  <div class="meta">
+    <span class="chip on">N posibles valores</span>
+    <span class="chip">Lote mínimo</span>
+    <span class="chip">Semicontinuas</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>De qué se trata esta clase</h2>
+  <p class="lead">Dos estructuras distintas, un mismo origen: la realidad física no permite que una variable tome cualquier valor del continuo.</p>
+  <p>La primera es la <strong>función con \(N\) posibles valores</strong>. Cuando compras ancho de banda no eliges 237 Mbps: eliges uno de los planes comerciales. Cuando arriendas un container no pides 27 m³: pides un 20 o un 40 pies. Cuando dimensionas una planta eliges entre tres tamaños de diseño. La variable debe valer \(d_1\) o \(d_2\) o ... o \(d_N\), y solo uno de esos valores.</p>
+  <p>La segunda es el <strong>lote mínimo</strong>. Una inyectora de plástico que arranca no puede hacer 5 piezas: el ciclo de calentamiento y purga exige un mínimo. Un proveedor mayorista no te vende 3 unidades: el pedido mínimo son 500. Aquí la variable no está restringida a valores discretos, sino a un conjunto de la forma \(\{0\} \cup [L, U]\) — cero, o al menos \(L\). Se les llama <strong>variables semicontinuas</strong>, y aparecen en todas partes.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Formular</strong> una variable que debe tomar exactamente uno de \(N\) valores predefinidos usando binarias y una restricción de conteo.</li>
+    <li><strong>Reconocer</strong> que esa misma estructura sirve para linealizar funciones por tramos y para elegir entre configuraciones discretas.</li>
+    <li><strong>Formular</strong> el lote mínimo mediante la doble desigualdad \(L_j y_j \le x_j \le U_j y_j\).</li>
+    <li><strong>Explicar</strong> por qué el lote mínimo <em>no</em> puede escribirse simplemente como \(x_j \ge L_j\).</li>
+    <li><strong>Combinar</strong> ambas estructuras con costo fijo en un modelo de planificación de producción completo.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="N posibles valores: motivación">
+  <div class="eyebrow">Estructura 1</div>
+  <h2>Cuando solo existen ciertos valores</h2>
+
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <span class="icono">TELECOM</span>
+      <h4>Ancho de banda</h4>
+      <p>La capacidad de un enlace no se elige de forma continua, sino entre paquetes comerciales: 10 Mbps, 100 Mbps, 1 Gbps. La decisión es <em>cuál</em> de esas capacidades contratar.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">MANUFACTURA</span>
+      <h4>Tamaños de lote estándar</h4>
+      <p>Un proveedor despacha en pallets de 24, 48 o 96 unidades. No existe el pedido de 60.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">INFRAESTRUCTURA</span>
+      <h4>Dimensionamiento de planta</h4>
+      <p>Una planta se diseña para 50, 120 o 250 mil toneladas anuales. Cada tamaño tiene su propia inversión y su propio costo unitario.</p>
+    </div>
+  </div>
+
+  <div class="modelo">
+    <span class="et">Formulación</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.8);font-size:.94rem;margin-bottom:10px">Se tiene una función \(f(x)\) que debe ser igual a \(d_1\) o \(d_2\) o … o \(d_N\), y <strong>solo a uno</strong> de esos valores.</p>
+    \[
+    \begin{aligned}
+    f(x) &= \sum_{i=1}^{N} d_i\,y_i\\
+    \sum_{i=1}^{N} y_i &= 1\\
+    y_i &\in\{0,1\}\qquad i=1,\dots,N
+    \end{aligned}
+    \]
+    <p class="glosa">\(y_i = 1\) si la función toma el valor \(d_i\). La restricción de conteo con <em>igualdad</em> es la que garantiza que se elija exactamente uno. Si se escribiera \(\le 1\), el modelo podría no elegir ninguno y dejar \(f(x)=0\).</p>
+  </div>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Selección de niveles discretos de producción</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">La cantidad a producir del producto A debe ser 0, 10, 20, 35 o 50 unidades. La del producto B debe ser 30, 55 u 85. Elige un nivel de cada uno y observa qué binarias se activan y si el plan es factible.</p>
+      <div class="controles">
+        <div class="ctrl">
+          <label style="display:block">Nivel del producto A</label>
+          <select id="nivA"><option>0</option><option>10</option><option selected>20</option><option>35</option><option>50</option></select>
+        </div>
+        <div class="ctrl">
+          <label style="display:block">Nivel del producto B</label>
+          <select id="nivB"><option selected>30</option><option>55</option><option>85</option></select>
+        </div>
+        <div class="ctrl">
+          <label>Capacidad total de horas <b id="v-cap">300</b></label>
+          <input type="range" id="capH" min="150" max="500" step="10" value="300">
+        </div>
+      </div>
+      <div class="tabla-scroll">
+        <table id="t-niv"><thead><tr><th>Variable binaria</th><th>Significado</th><th class="num">Valor</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="marcador">
+        <div><span>Horas usadas (2 h/A, 3 h/B)</span><b id="n-h">—</b></div>
+        <div><span>Margen total (8/A, 11/B)</span><b class="ok" id="n-z">—</b></div>
+        <div><span>Mejor plan posible</span><b id="n-opt">—</b></div>
+      </div>
+      <p id="n-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">El mismo mecanismo, otro uso</span>
+    <p>Esta estructura es la base de la <strong>linealización de funciones por tramos</strong>. Si una función de costo tiene pendientes distintas en distintos rangos (descuentos por volumen, tarifas escalonadas), se define un tramo por binaria y se obliga a elegir uno solo. Es también la forma de modelar economías de escala, que de otro modo harían el problema no lineal y no convexo.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Chequeo">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+
+  <div class="quiz" data-correcta="2" data-retro='["Con \\(\\le 1\\) el modelo puede no elegir ningún nivel, lo que dejaría la variable en cero incluso cuando el enunciado exige elegir uno.","Esa restricción obligaría a activar todos los niveles a la vez, lo que es imposible.","Correcto. La igualdad a 1 obliga a activar exactamente una binaria, y por lo tanto a que la función tome exactamente uno de los valores permitidos.","La suma de los \\(d_i\\) no tiene interpretación aquí: mezcla los valores posibles con las variables de selección."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">Para que \(f(x)\) tome exactamente uno de los \(N\) valores permitidos, ¿qué restricción de conteo debe acompañar a \(f(x)=\sum_i d_i y_i\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>\(\sum_i y_i \le 1\)</span></button>
+      <button><span class="k">B</span><span>\(\sum_i y_i = N\)</span></button>
+      <button><span class="k">C</span><span>\(\sum_i y_i = 1\)</span></button>
+      <button><span class="k">D</span><span>\(\sum_i d_i y_i = 1\)</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. \\(x_j \\ge L_j\\) obligaría a producir siempre al menos \\(L_j\\), eliminando la opción de no producir nada, que es justamente una de las dos alternativas válidas.","La restricción sí es lineal; el problema es de significado, no de forma.","El lote mínimo no exige integralidad de \\(x_j\\): la cantidad puede ser fraccionaria mientras supere \\(L_j\\).","No se trata de que \\(L_j\\) sea grande o chico, sino de que la formulación elimina la alternativa de producción nula."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">¿Por qué el lote mínimo <strong>no</strong> se puede escribir simplemente como \(x_j \ge L_j\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Porque elimina la opción \(x_j = 0\), que debe seguir siendo factible</span></button>
+      <button><span class="k">B</span><span>Porque \(x_j \ge L_j\) no es una restricción lineal</span></button>
+      <button><span class="k">C</span><span>Porque \(x_j\) debería ser entera y esa forma no lo garantiza</span></button>
+      <button><span class="k">D</span><span>Porque \(L_j\) suele ser un número muy grande</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Lote mínimo">
+  <div class="eyebrow">Estructura 2</div>
+  <h2>Cero, o al menos \(L\): variables semicontinuas</h2>
+  <p class="lead">Si una máquina de inyección se enciende, no puede producir menos de cierta cantidad porque el arranque exige un mínimo eficiente. Si compras a un mayorista, el pedido mínimo es 500 unidades — o no compras. El conjunto factible es \(\{0\} \cup [L_j, U_j]\): un punto aislado más un intervalo.</p>
+
+  <div class="modelo">
+    <span class="et">Formulación del lote mínimo</span>
+    \[
+    \begin{aligned}
+    L_j\,y_j \;\le\; x_j \;&\le\; U_j\,y_j && \forall j=1,\dots,n\\
+    y_j &\in \{0,1\} && \forall j=1,\dots,n
+    \end{aligned}
+    \]
+    <p class="glosa">Si \(y_j=0\): la doble desigualdad se vuelve \(0 \le x_j \le 0\), forzando \(x_j=0\). Si \(y_j=1\): queda \(L_j \le x_j \le U_j\), el lote mínimo vigente. Una sola binaria y dos desigualdades capturan un conjunto no convexo.</p>
+  </div>
+
+  <div class="widget">
+    <header><span class="tag viz">Visualización</span><h4>El conjunto factible de una variable semicontinua</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl"><label>Lote mínimo \(L\) <b id="v-L">30</b></label><input type="range" id="Lmin" min="0" max="70" step="5" value="30"></div>
+        <div class="ctrl"><label>Capacidad \(U\) <b id="v-U">100</b></label><input type="range" id="Umax" min="40" max="120" step="5" value="100"></div>
+      </div>
+      <svg id="g-semi" viewBox="0 0 420 120" style="width:100%;height:auto"></svg>
+      <p id="semi-msg" style="margin-top:6px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+      <p style="font-size:.9rem;color:var(--ink-2)">El "hueco" entre 0 y \(L\) es lo que hace no convexo al conjunto: el punto medio entre \(x=0\) (factible) y \(x=L\) (factible) es \(L/2\), que <em>no</em> es factible. Convexidad rota, PL descartada.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Ejemplo: fábrica de motos">
+  <div class="eyebrow">Aplicación integradora</div>
+  <h2>Fábrica de motos: los tres mecanismos juntos</h2>
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Producción con lote mínimo y capacidad compartida</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Una empresa evalúa producir tres tipos de motos. Los recursos son acero (800 toneladas) y horas de línea (1.200 horas). Si se decide producir un tipo, deben fabricarse <strong>al menos \(L\)</strong> unidades de ese tipo. Mueve el lote mínimo y observa cómo cambia el plan óptimo.</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Modelo</th><th class="num">Acero (ton/u)</th><th class="num">Horas (h/u)</th><th class="num">Margen (UF/u)</th></tr></thead>
+          <tbody>
+            <tr><td>Enduro</td><td class="num">2</td><td class="num">3</td><td class="num">12</td></tr>
+            <tr><td>Scooter</td><td class="num">1</td><td class="num">2</td><td class="num">7</td></tr>
+            <tr><td>Motocross</td><td class="num">3</td><td class="num">4</td><td class="num">18</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="controles">
+        <div class="ctrl"><label>Lote mínimo \(L\) (unidades) <b id="v-Lm">0</b></label><input type="range" id="Lmoto" min="0" max="220" step="10" value="0"></div>
+      </div>
+      <div class="marcador">
+        <div><span>Enduro</span><b id="mo-1">—</b></div>
+        <div><span>Scooter</span><b id="mo-2">—</b></div>
+        <div><span>Motocross</span><b id="mo-3">—</b></div>
+        <div><span>Margen total</span><b class="ok" id="mo-z">—</b></div>
+      </div>
+      <p id="mo-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+      <p style="font-size:.86rem;color:var(--ink-3);margin-top:10px">El simulador enumera todos los subconjuntos de modelos a producir y, para cada uno, busca el mejor plan en una malla fina. Es enumeración explícita — viable con 3 productos, impensable con 300.</p>
+    </div>
+  </div>
+
+  <div class="modelo">
+    <span class="et">Modelo completo</span>
+    \[
+    \begin{aligned}
+    \max\;\; & z=\sum_{j=1}^{n} m_j x_j\\
+    \text{s.a.}\;\; & \sum_{j=1}^{n} a_j x_j \le A && \text{(acero)}\\
+    & \sum_{j=1}^{n} h_j x_j \le H && \text{(horas)}\\
+    & L_j y_j \le x_j \le U_j y_j && \forall j=1,\dots,n \quad \text{(lote mínimo y capacidad)}\\
+    & x_j \ge 0,\ y_j\in\{0,1\} && \forall j=1,\dots,n
+    \end{aligned}
+    \]
+    <p class="glosa">Si además hubiera un costo fijo de setup \(k_j\), bastaría restar \(\sum_j k_j y_j\) en el objetivo: la misma binaria sirve para las dos cosas. Esa economía de variables es una buena práctica de modelamiento.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="TeC: motos con lote mínimo">
+  <div class="eyebrow">Trabajo en clases</div>
+  <h2>TeC 02 · Volvamos a las motos</h2>
+  <div class="widget">
+    <header><span class="tag caso">En equipos de 3</span><h4>Extensiones al modelo de producción</h4></header>
+    <div class="cuerpo">
+      <p>Con los datos del simulador (acero 800 ton, horas 1.200), incorpore sucesivamente cada una de estas condiciones y determine cómo cambia el modelo:</p>
+      <p><strong>a)</strong> Si se produce algún modelo, deben producirse al menos 100 unidades de ese modelo.<br>
+      <strong>b)</strong> La cantidad de scooters debe ser 0, 150 o 300 unidades exactamente.<br>
+      <strong>c)</strong> Se pueden producir a lo más dos modelos distintos.<br>
+      <strong>d)</strong> Producir motocross exige haber producido enduro (comparten línea de montaje y calibración).<br>
+      <strong>e)</strong> Cada modelo producido implica un costo fijo de setup: 400, 250 y 600 UF respectivamente.<br>
+      <strong>f)</strong> Escriba el modelo final completo con todas las condiciones anteriores simultáneamente.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>Una variable que debe tomar <strong>uno de \(N\) valores</strong> se modela con \(f(x)=\sum_i d_iy_i\) y \(\sum_i y_i = 1\).</li>
+    <li>Esa misma estructura sirve para <strong>linealizar funciones por tramos</strong>, descuentos por volumen y economías de escala.</li>
+    <li>El <strong>lote mínimo</strong> define una variable semicontinua: factible en \(\{0\}\cup[L,U]\), un conjunto no convexo.</li>
+    <li>Se formula con la <strong>doble desigualdad</strong> \(L_jy_j \le x_j \le U_jy_j\), nunca con \(x_j \ge L_j\) a secas.</li>
+    <li>La misma binaria \(y_j\) puede servir simultáneamente para lote mínimo, costo fijo y conteo de productos: <strong>reutilícela</strong>.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>Las indivisibilidades del mundo real —planes comerciales, tamaños estándar, pedidos mínimos— no son detalles de implementación que se puedan redondear al final. Son parte de la estructura del problema, y modelarlas explícitamente suele cambiar la decisión óptima, no solo su valor.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Contratación de ancho de banda</h4></div>
+    <div class="enunciado">
+      <p>Una empresa debe dimensionar 4 enlaces de su red. Para cada enlace \(e\) puede contratar uno de tres planes: 10 Mbps (costo 5), 100 Mbps (costo 30) o 1 Gbps (costo 180) — o no contratar el enlace. El tráfico que debe cursar el enlace \(e\) es \(t_e\) Mbps y no puede exceder la capacidad contratada.</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Enlace</th><th class="num">Tráfico requerido (Mbps)</th></tr></thead>
+        <tbody><tr><td>E1</td><td class="num">8</td></tr><tr><td>E2</td><td class="num">85</td></tr><tr><td>E3</td><td class="num">140</td></tr><tr><td>E4</td><td class="num">0</td></tr></tbody>
+      </table></div>
+      <p><strong>a)</strong> Formule el modelo de minimización de costo total.<br>
+      <strong>b)</strong> Resuelva: ¿qué plan corresponde a cada enlace y cuál es el costo total?<br>
+      <strong>c)</strong> Agregue la condición: el presupuesto total no puede exceder 200. ¿Sigue siendo factible? Si no, proponga qué relajar.<br>
+      <strong>d)</strong> Suponga que ahora el tráfico se puede repartir entre enlaces redundantes. ¿Qué tipo de variable nueva necesita y cómo cambia la estructura del problema?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Lote mínimo y costo fijo en una panificadora</h4></div>
+    <div class="enunciado">
+      <p>Una panificadora produce 4 tipos de pan. Cada tipo requiere un setup de horno con costo \(k_j\), y si se produce debe hacerse al menos un lote mínimo \(L_j\) por razones de eficiencia térmica. La capacidad diaria del horno es 900 kg.</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Pan</th><th class="num">Margen (\$/kg)</th><th class="num">Setup \(k_j\)</th><th class="num">Lote mín. \(L_j\) (kg)</th><th class="num">Demanda máx. (kg)</th></tr></thead>
+        <tbody>
+          <tr><td>Marraqueta</td><td class="num">420</td><td class="num">60.000</td><td class="num">200</td><td class="num">500</td></tr>
+          <tr><td>Hallulla</td><td class="num">380</td><td class="num">45.000</td><td class="num">150</td><td class="num">400</td></tr>
+          <tr><td>Integral</td><td class="num">610</td><td class="num">90.000</td><td class="num">100</td><td class="num">250</td></tr>
+          <tr><td>Ciabatta</td><td class="num">700</td><td class="num">120.000</td><td class="num">80</td><td class="num">150</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Formule el modelo completo.<br>
+      <strong>b)</strong> Calcule la utilidad neta de producir cada pan hasta su demanda máxima aisladamente. ¿Alguno no conviene nunca?<br>
+      <strong>c)</strong> Resuelva el modelo y reporte el plan óptimo.<br>
+      <strong>d)</strong> ¿Cómo cambia la solución si el lote mínimo de la marraqueta sube a 450 kg?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Descuentos por volumen y linealización por tramos</h4></div>
+    <div class="enunciado">
+      <p>Un proveedor ofrece un producto con la siguiente estructura de precios: las primeras 100 unidades a \$50 c/u; de la 101 a la 300 a \$40 c/u; sobre 300 a \$32 c/u. El descuento es <em>incremental</em> (cada tramo se paga a su precio, como en los tramos de impuesto).</p>
+      <p><strong>a)</strong> Grafique la función de costo total \(C(q)\) y verifique que es continua, creciente y <em>cóncava</em>.<br>
+      <strong>b)</strong> Formule la linealización por tramos usando variables \(q_1, q_2, q_3\) (cantidad comprada en cada tramo) y binarias. Escriba todas las restricciones.<br>
+      <strong>c)</strong> Demuestre que si el objetivo es <strong>minimizar</strong> el costo, las binarias son innecesarias: el modelo con solo \(0\le q_1\le100\), \(0\le q_2 \le 200\), \(q_3\ge0\) ya entrega la solución correcta. Explique por qué.<br>
+      <strong>d)</strong> Ahora suponga que el descuento es <em>total</em> (all-units): si compras 350 unidades, <em>todas</em> se pagan a \$32. Grafique esa función y muestre que ya no es cóncava ni continua. Formule el modelo correspondiente.<br>
+      <strong>e)</strong> Explique por qué en (d) las binarias sí son indispensables.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Planificación multiperíodo con lote mínimo e inventario</h4></div>
+    <div class="enunciado">
+      <p>Una planta produce un único producto durante 6 meses. La demanda del mes \(t\) es \(d_t\) y debe satisfacerse sin faltantes. Producir en el mes \(t\) implica un setup de \(k=8.000\), un costo variable de \(c=15\) por unidad, un lote mínimo de \(L=200\) unidades y una capacidad de \(U=900\). El inventario tiene costo de mantención \(h=2\) por unidad y por mes, y el inventario inicial es cero.</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Mes</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th><th class="num">5</th><th class="num">6</th></tr></thead>
+        <tbody><tr><td>Demanda \(d_t\)</td><td class="num">300</td><td class="num">700</td><td class="num">150</td><td class="num">800</td><td class="num">250</td><td class="num">600</td></tr></tbody>
+      </table></div>
+      <p><strong>a)</strong> Formule el modelo completo (es el <em>lot sizing</em> capacitado con lote mínimo).<br>
+      <strong>b)</strong> Escriba la ecuación de balance de inventario y explique su rol.<br>
+      <strong>c)</strong> Justifique una cota superior ajustada para \(U_t\) distinta de la capacidad, usando la demanda futura.<br>
+      <strong>d)</strong> Proponga y evalúe dos planes heurísticos: (i) producir exactamente la demanda cada mes (<em>lote por lote</em>), (ii) producir cada dos meses la demanda acumulada. Compare costos.<br>
+      <strong>e)</strong> Explique qué es la <em>desigualdad válida</em> \(x_t \le \left(\sum_{s\ge t} d_s\right) y_t\) y por qué fortalece la formulación.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ============ N valores posibles ============ */
+(function(){
+  var A=document.getElementById('nivA'); if(!A)return;
+  var B=document.getElementById('nivB'), cap=document.getElementById('capH');
+  var dA=[0,10,20,35,50], dB=[30,55,85];
+  function act(){
+    var a=+A.value, b=+B.value, H=+cap.value;
+    document.getElementById('v-cap').textContent=H;
+    var tb=document.getElementById('t-niv').querySelector('tbody');
+    tb.innerHTML='';
+    dA.forEach(function(d,i){
+      var on=(d===a);
+      var tr=document.createElement('tr'); if(on)tr.className='sel';
+      tr.innerHTML='<td style="font-family:var(--fm)">y<sup>A</sup><sub>'+(i+1)+'</sub></td><td>producto A = '+d+' unidades</td><td class="num" style="font-weight:600;color:'+(on?'var(--amber)':'var(--ink-3)')+'">'+(on?1:0)+'</td>';
+      tb.appendChild(tr);
+    });
+    dB.forEach(function(d,i){
+      var on=(d===b);
+      var tr=document.createElement('tr'); if(on)tr.className='sel';
+      tr.innerHTML='<td style="font-family:var(--fm)">y<sup>B</sup><sub>'+(i+1)+'</sub></td><td>producto B = '+d+' unidades</td><td class="num" style="font-weight:600;color:'+(on?'var(--amber)':'var(--ink-3)')+'">'+(on?1:0)+'</td>';
+      tb.appendChild(tr);
+    });
+    var horas=2*a+3*b, z=8*a+11*b;
+    document.getElementById('n-h').textContent=horas+' / '+H;
+    document.getElementById('n-h').className=horas>H?'mal':'';
+    document.getElementById('n-z').textContent=horas>H?'—':z;
+    var mejor=0,mp='';
+    dA.forEach(function(x){dB.forEach(function(y){
+      if(2*x+3*y<=H&&8*x+11*y>mejor){mejor=8*x+11*y;mp='A='+x+', B='+y;}
+    });});
+    document.getElementById('n-opt').textContent=mejor+' ('+mp+')';
+    document.getElementById('n-opt').style.fontSize='1.05rem';
+    var msg=document.getElementById('n-msg');
+    if(horas>H){msg.innerHTML='<b>Plan infactible:</b> requiere '+horas+' horas y solo hay '+H+'. Las binarias que elegiste activan una combinación que viola la capacidad.';msg.style.borderLeftColor='var(--amber)';}
+    else if(z===mejor){msg.innerHTML='<b>Es el mejor plan factible</b> con esta capacidad. Observe que exactamente una binaria de cada familia vale 1: eso es la restricción \\(\\sum_i y_i = 1\\) en acción.';msg.style.borderLeftColor='var(--teal)';}
+    else {msg.innerHTML='Plan factible con margen '+z+', pero el mejor posible es '+mejor+' ('+mp+'). Prueba otra combinación de niveles.';msg.style.borderLeftColor='var(--gold)';}
+    if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([msg]);
+  }
+  A.onchange=act;B.onchange=act;cap.oninput=act;act();
+})();
+
+/* ============ Semicontinua ============ */
+(function(){
+  var svg=document.getElementById('g-semi'); if(!svg)return;
+  function dib(){
+    var L=+document.getElementById('Lmin').value, U=+document.getElementById('Umax').value;
+    if(L>U){L=U;document.getElementById('Lmin').value=L;}
+    document.getElementById('v-L').textContent=L;
+    document.getElementById('v-U').textContent=U;
+    var W=420,ML=20,MR=20,y=58,XMAX=130;
+    function sx(x){return ML+x/XMAX*(W-ML-MR);}
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:y,x2:sx(XMAX),y2:y,stroke:'#6B7683','stroke-width':1.2}));
+    /* zona prohibida */
+    if(L>0)svg.appendChild(svgEl('rect',{x:sx(0),y:y-9,width:sx(L)-sx(0),height:18,fill:'rgba(200,85,30,.14)'}));
+    /* intervalo factible */
+    svg.appendChild(svgEl('line',{x1:sx(L),y1:y,x2:sx(U),y2:y,stroke:'#0F6E63','stroke-width':7,'stroke-linecap':'round'}));
+    /* punto 0 */
+    svg.appendChild(svgEl('circle',{cx:sx(0),cy:y,r:6,fill:'#0F6E63'}));
+    for(var t=0;t<=XMAX;t+=20){
+      svg.appendChild(svgEl('line',{x1:sx(t),y1:y+5,x2:sx(t),y2:y+10,stroke:'#6B7683'}));
+      var tx=svgEl('text',{x:sx(t),y:y+24,'text-anchor':'middle'});tx.textContent=t;svg.appendChild(tx);
+    }
+    var t1=svgEl('text',{x:sx(0),y:y-16,'text-anchor':'middle',fill:'#0F6E63'});t1.textContent='x = 0';svg.appendChild(t1);
+    var t2=svgEl('text',{x:(sx(L)+sx(U))/2,y:y-16,'text-anchor':'middle',fill:'#0F6E63'});t2.textContent='L ≤ x ≤ U';svg.appendChild(t2);
+    if(L>0){var t3=svgEl('text',{x:(sx(0)+sx(L))/2,y:y+40,'text-anchor':'middle',fill:'#C8551E'});t3.textContent='prohibido';svg.appendChild(t3);}
+    document.getElementById('semi-msg').innerHTML='Conjunto factible: <b>{0} ∪ ['+L+', '+U+']</b>. '+
+      (L===0?'Con L = 0 no hay hueco: la variable vuelve a ser continua ordinaria y la binaria deja de ser necesaria.':'El intervalo (0, '+L+') está prohibido: producir poco es peor que no producir.');
+  }
+  document.getElementById('Lmin').oninput=dib;
+  document.getElementById('Umax').oninput=dib;
+  dib();
+})();
+
+/* ============ Motos con lote mínimo ============ */
+(function(){
+  var s=document.getElementById('Lmoto'); if(!s)return;
+  var a=[2,1,3], h=[3,2,4], m=[12,7,18], A=800, H=1200;
+  function act(){
+    var L=+s.value;
+    document.getElementById('v-Lm').textContent=L;
+    var mejor={z:-1,x:[0,0,0]};
+    /* enumerar subconjuntos producidos y buscar en malla */
+    for(var sub=0;sub<8;sub++){
+      var act1=[(sub&1)>0,(sub&2)>0,(sub&4)>0];
+      var lo=[act1[0]?L:0,act1[1]?L:0,act1[2]?L:0];
+      for(var x1=lo[0];x1<=(act1[0]?400:0);x1+=5){
+        for(var x2=lo[1];x2<=(act1[1]?600:0);x2+=5){
+          var restA=A-a[0]*x1-a[1]*x2, restH=H-h[0]*x1-h[1]*x2;
+          if(restA<0||restH<0)break;
+          var x3=act1[2]?Math.min(restA/a[2],restH/h[2]):0;
+          if(act1[2]&&x3<L)continue;
+          var z=m[0]*x1+m[1]*x2+m[2]*x3;
+          if(z>mejor.z)mejor={z:z,x:[x1,x2,x3]};
+          if(!act1[1])break;
+        }
+        if(!act1[0])break;
+      }
+    }
+    document.getElementById('mo-1').textContent=fmt(mejor.x[0],0);
+    document.getElementById('mo-2').textContent=fmt(mejor.x[1],0);
+    document.getElementById('mo-3').textContent=fmt(mejor.x[2],1);
+    document.getElementById('mo-z').textContent=fmt(mejor.z,1)+' UF';
+    var producidos=mejor.x.filter(function(v){return v>0.001;}).length;
+    var msg=document.getElementById('mo-msg');
+    if(L===0)msg.innerHTML='Sin lote mínimo el problema es <b>programación lineal pura</b>: no hace falta ninguna binaria. Sube el deslizador y observa cómo el plan óptimo se reconfigura de golpe.';
+    else msg.innerHTML='Con lote mínimo '+L+' el plan óptimo produce <b>'+producidos+' modelo(s)</b>. Note que el margen no baja suavemente: cae en escalones cuando un modelo deja de ser viable. Esa discontinuidad es la firma de un problema entero.';
+  }
+  s.oninput=act; act();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relaciones lógicas y costo fijo · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+details.pauta{border-top:1px solid var(--line);background:var(--paper-2)}
+details.pauta summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker{display:none}
+details.pauta summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover{color:var(--ink)}
+details.pauta .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta{background:#f2efe8 !important}
+  details.pauta .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 02</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">02</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Si esto,<br>entonces <em style="font-style:italic;color:var(--amber)">aquello</em></h1>
+  <p class="lead">Implicaciones, exclusiones y costos que se pagan completos o no se pagan. Hoy convertimos frases de la gerencia en restricciones lineales.</p>
+  <div class="meta">
+    <span class="chip on">Relaciones lógicas</span>
+    <span class="chip">Costo fijo</span>
+    <span class="chip">Big-M</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>De qué se trata esta clase</h2>
+  <p class="lead">Las decisiones reales rara vez son independientes. "Si abrimos la planta del sur, hay que habilitar el centro de acopio". "No podemos operar ambas líneas al mismo tiempo". "Contratar al proveedor tiene un cargo fijo de entrada, más el precio por unidad".</p>
+  <p>Ninguna de estas frases se puede escribir en programación lineal. Todas se pueden escribir con variables binarias, y casi todas siguen uno de cinco patrones que hoy vamos a dejar completamente automatizados en tu cabeza.</p>
+  <p>La segunda mitad de la clase aborda el <strong>costo fijo</strong>, que es probablemente la estructura de modelamiento más frecuente en la industria: abrir una instalación, encender una máquina, contratar un proveedor, hacer un setup de producción. Todas comparten la misma forma matemática y el mismo truco — la restricción de acoplamiento con \(M\) — y el mismo peligro: elegir mal ese \(M\).</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Traducir</strong> condiciones lógicas en lenguaje natural (implicación, exclusión, equivalencia, disyunción, conteo) a restricciones lineales con binarias.</li>
+    <li><strong>Verificar</strong> una restricción lógica construyendo su tabla de verdad y comprobando qué combinaciones deja factibles.</li>
+    <li><strong>Formular</strong> un modelo con costo fijo usando la variable de activación y la restricción de acoplamiento \(x_j \le M y_j\).</li>
+    <li><strong>Elegir un valor de \(M\)</strong> justificado con los datos del problema y explicar qué ocurre si es demasiado chico o demasiado grande.</li>
+    <li><strong>Distinguir</strong> entre una formulación correcta y una formulación <em>ajustada</em>: dos modelos pueden dar el mismo óptimo y demorar tiempos muy distintos.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Las cinco relaciones lógicas">
+  <div class="eyebrow">Catálogo</div>
+  <h2>Cinco patrones que resuelven el 90% de los casos</h2>
+  <p class="lead">Sea \(x_j=1\) si se realiza la actividad \(j\), y 0 en otro caso. Todo lo que sigue son restricciones lineales sobre esas binarias.</p>
+
+  <div class="widget">
+    <header><span class="tag viz">Laboratorio</span><h4>Traductor de condiciones lógicas</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Elige una condición en lenguaje natural. Verás la restricción correspondiente y la tabla de verdad: cuáles de las cuatro combinaciones \((x_1,x_2)\) quedan permitidas.</p>
+      <div class="controles">
+        <div class="ctrl">
+          <label style="display:block">Condición</label>
+          <select id="cond">
+            <option value="0">Si se hace 1, entonces se debe hacer 2 (contingencia)</option>
+            <option value="1">No se pueden hacer ambas (exclusión mutua)</option>
+            <option value="2">Se hacen ambas o ninguna (equivalencia)</option>
+            <option value="3">Se debe hacer al menos una de las dos</option>
+            <option value="4">Se debe hacer exactamente una de las dos</option>
+            <option value="5">Se hace 1 si y solo si NO se hace 2</option>
+            <option value="6">Se debe hacer 2 solo si NO se hace 1</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label style="display:block">Restricción resultante</label>
+          <div id="restr" style="font-family:var(--fm);font-size:1.05rem;padding:9px 12px;background:var(--ink);color:var(--paper);border-radius:9px;text-align:center"></div>
+        </div>
+      </div>
+      <div class="tabla-scroll">
+        <table id="tabla-verdad">
+          <thead><tr><th class="num">\(x_1\)</th><th class="num">\(x_2\)</th><th>Lectura</th><th>¿Cumple la restricción?</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p id="cond-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <h3>Y cuando hay más de dos actividades</h3>
+  <div class="rejilla r3">
+    <div class="tarjeta"><span class="icono">CONTEO</span><h4>A lo más \(k\) de \(n\)</h4><p>\(\sum_{j=1}^{n} x_j \le k\). Ejemplo: abrir a lo más 3 sucursales entre 8 candidatas.</p></div>
+    <div class="tarjeta"><span class="icono">CONTEO</span><h4>Al menos \(k\) de \(n\)</h4><p>\(\sum_{j=1}^{n} x_j \ge k\). Ejemplo: incluir al menos 2 artistas chilenos en el line-up.</p></div>
+    <div class="tarjeta"><span class="icono">CONTEO</span><h4>Exactamente \(k\)</h4><p>\(\sum_{j=1}^{n} x_j = k\). Ejemplo: seleccionar exactamente 5 jugadores titulares por posición.</p></div>
+    <div class="tarjeta"><span class="icono">DISYUNCIÓN</span><h4>Si \(a\), entonces \(b\) o \(c\)</h4><p>\(x_a \le x_b + x_c\). Cuidado: escribirlo como dos restricciones separadas convierte el "o" en un "y".</p></div>
+    <div class="tarjeta"><span class="icono">CONJUNCIÓN</span><h4>Si \(a\), entonces \(b\) y \(c\)</h4><p>\(x_a \le x_b\) y \(x_a \le x_c\). Aquí sí son dos restricciones. También se puede escribir \(2x_a \le x_b+x_c\).</p></div>
+    <div class="tarjeta"><span class="icono">CADENA</span><h4>Precedencia</h4><p>\(x_{j} \le x_{j-1}\) para \(j=2..n\): la actividad \(j\) solo se hace si ya se hizo la anterior. Típico en etapas de un proyecto.</p></div>
+  </div>
+
+  <div class="nota libro">
+    <span class="et">Hillier &amp; Lieberman · §11.3</span>
+    <p>El texto llama a este repertorio los <em>usos innovadores de variables binarias</em> y lo organiza en cuatro grupos: decisiones contingentes, restricciones mutuamente excluyentes, funciones con \(N\) valores posibles y funciones con costo fijo. Los dos primeros son el contenido de hoy; el tercero lo veremos en la Clase 04 y el cuarto cierra esta clase.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Chequeo lógico">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+
+  <div class="quiz" data-correcta="2" data-retro='["Eso obligaría a hacer ambas cuando se hace 1, y no permite hacer 2 sin 1 — más restrictivo de lo pedido.","Esta forma permite hacer 1 sin hacer ninguna de las otras dos: no captura la implicación.","Correcto. Si \\(x_1=1\\), el lado derecho debe valer al menos 1, obligando a que \\(x_2\\) o \\(x_3\\) (o ambas) valgan 1. Si \\(x_1=0\\), la restricción no impone nada.","Esa restricción obliga a que se hagan exactamente dos de las tres actividades, sin relación de implicación."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">"Si se realiza la actividad 1, entonces debe realizarse la actividad 2 <strong>o</strong> la actividad 3." ¿Cuál restricción corresponde?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>\(x_1 \le x_2\) y \(x_1 \le x_3\)</span></button>
+      <button><span class="k">B</span><span>\(x_2 + x_3 \le x_1\)</span></button>
+      <button><span class="k">C</span><span>\(x_1 \le x_2 + x_3\)</span></button>
+      <button><span class="k">D</span><span>\(x_1 + x_2 + x_3 = 2\)</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="1" data-retro='["El modelo no se vuelve infactible: simplemente prohíbe soluciones que deberían estar permitidas.","Correcto. Si \\(M\\) es menor que el nivel óptimo de producción, la restricción \\(x_j \\le M y_j\\) actúa como una capacidad artificial y corta soluciones factibles: el óptimo reportado será peor que el real.","Al contrario: un \\(M\\) chico ajusta la relajación, pero al costo de eliminar soluciones válidas.","El valor de \\(M\\) sí afecta el resultado; no es un parámetro cosmético."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">En la restricción de costo fijo \(x_j \le M y_j\), ¿qué ocurre si se elige un \(M\) <strong>demasiado pequeño</strong>?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>El modelo se vuelve infactible siempre</span></button>
+      <button><span class="k">B</span><span>Se cortan soluciones factibles y el óptimo puede ser incorrecto</span></button>
+      <button><span class="k">C</span><span>No pasa nada malo: siempre conviene un \(M\) chico</span></button>
+      <button><span class="k">D</span><span>Solo cambia el tiempo de cómputo, nunca el resultado</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Costo fijo: el problema">
+  <div class="eyebrow">Costo fijo</div>
+  <h2>El costo que no depende de cuánto produzcas</h2>
+  <p class="lead">En casi cualquier operación real, realizar una actividad implica dos cosas distintas: un costo proporcional al nivel de uso, y un costo que se paga completo por el solo hecho de iniciarla. Abrir una planta, encender un horno, contratar un proveedor, hacer el setup de una línea.</p>
+
+  <div class="modelo">
+    <span class="et">La función de costo real</span>
+    \[
+    f_j(x_j)=\begin{cases}
+    k_j + c_j x_j & \text{si } x_j > 0\\
+    0 & \text{si } x_j = 0
+    \end{cases}
+    \qquad j=1,\dots,n
+    \]
+    <p class="glosa">\(x_j\): nivel de la actividad. \(c_j\): costo variable unitario. \(k_j\): costo fijo de habilitación. Esta función es <strong>discontinua en el origen</strong> — y por eso no es lineal ni convexa.</p>
+  </div>
+
+  <div class="widget">
+    <header><span class="tag viz">Visualización</span><h4>Por qué la PL no puede con esto</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl"><label>Costo fijo \(k\) <b id="v-k">40</b></label><input type="range" id="ck" min="0" max="80" step="5" value="40"></div>
+        <div class="ctrl"><label>Costo variable \(c\) <b id="v-c">3</b></label><input type="range" id="cc" min="1" max="8" step="1" value="3"></div>
+      </div>
+      <svg id="g-costo" viewBox="0 0 420 250" style="width:100%;height:auto"></svg>
+      <div class="leyenda">
+        <span><i style="background:var(--amber)"></i>Costo real (con salto en el origen)</span>
+        <span><i style="background:var(--teal)"></i>Lo que la PL vería si linealizamos ingenuamente</span>
+      </div>
+      <p style="font-size:.92rem;color:var(--ink-2);margin-top:12px">El salto vertical en \(x=0\) es el problema. Una función lineal no puede tener saltos, y una función convexa por tramos tampoco. La única salida es introducir una variable binaria que "encienda" el costo fijo.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Costo fijo: la formulación">
+  <div class="eyebrow">Formulación</div>
+  <h2>La variable de activación y el acoplamiento</h2>
+
+  <div class="modelo">
+    <span class="et">Paso 1 · Introducir la binaria</span>
+    \[
+    y_j=\begin{cases}1 & \text{si } x_j>0 \text{ (la actividad } j \text{ se habilita)}\\ 0 & \text{si } x_j=0\end{cases}
+    \qquad j=1,\dots,n
+    \]
+    <p class="glosa">Con esto el objetivo ya se puede escribir de forma lineal: \(\min \sum_j (c_j x_j + k_j y_j)\).</p>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">¿Eso es todo?</span>
+    <p>No. Nada en el modelo obliga aún a que \(y_j\) valga 1 cuando \(x_j>0\). Si el costo fijo es positivo y estamos minimizando, el modelo simplemente pondría \(y_j=0\) y produciría igual, sin pagar nada. Hay que <strong>acoplar</strong> ambas variables.</p>
+  </div>
+
+  <div class="modelo">
+    <span class="et">Paso 2 · Restricción de acoplamiento</span>
+    \[ x_j \le M\,y_j \qquad j=1,\dots,n \]
+    <p class="glosa">Si \(y_j=0\) entonces \(x_j\le0\), lo que junto a \(x_j\ge0\) fuerza \(x_j=0\). Si \(y_j=1\), la restricción se vuelve \(x_j\le M\), que no estorba mientras \(M\) sea suficientemente grande.</p>
+  </div>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Elegir \(M\): ni tan chico que corte, ni tan grande que ciegue</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Un centro de distribución con capacidad real de <b>100</b> unidades. Costo fijo de apertura 400, costo variable 3 por unidad, ingreso 9 por unidad, demanda máxima 100. Mueve \(M\) y observa qué pasa con la solución entera y con la relajación lineal.</p>
+      <div class="controles">
+        <div class="ctrl"><label>Valor de \(M\) <b id="v-M">100</b></label><input type="range" id="bigM" min="20" max="2000" step="20" value="100"></div>
+      </div>
+      <div class="marcador">
+        <div><span>Óptimo entero obtenido</span><b id="M-ip">—</b></div>
+        <div><span>Relajación lineal (cota)</span><b id="M-lp">—</b></div>
+        <div><span>Gap de la relajación</span><b id="M-gap">—</b></div>
+      </div>
+      <p id="M-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Regla práctica</span>
+    <p>Elige \(M\) como la <strong>cota superior natural más pequeña</strong> que tenga sentido físico para \(x_j\): la capacidad de la planta, la demanda total del mercado, el presupuesto disponible. Un \(M\) innecesariamente grande no cambia el óptimo entero, pero <em>degrada la relajación lineal</em>: permite que \(y_j\) tome valores fraccionarios diminutos, la cota se vuelve inútil y el árbol de ramificación explota. Es la diferencia entre un modelo que resuelve en 2 segundos y uno que no resuelve en 2 horas.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Ejemplo: red de distribución">
+  <div class="eyebrow">Aplicación</div>
+  <h2>Ejemplo integrador: red de distribución</h2>
+  <div class="widget">
+    <header><span class="tag caso">Caso</span><h4>Qué centros abrir y desde dónde despachar</h4></header>
+    <div class="cuerpo">
+      <p>Una empresa distribuidora debe abastecer la demanda \(d_j\) de \(J\) clientes. Puede operar \(I\) centros de distribución potenciales. Cada centro \(i\) tiene un costo fijo de apertura \(k_i\), una capacidad \(K_i\), y un costo de despacho \(c_{ij}\) por unidad enviada al cliente \(j\).</p>
+      <div class="modelo" style="margin-top:8px">
+        <span class="et">Modelo</span>
+        \[
+        \begin{aligned}
+        \min\;\; & z=\sum_{i=1}^{I} k_i y_i + \sum_{i=1}^{I}\sum_{j=1}^{J} c_{ij}x_{ij}\\
+        \text{s.a.}\;\; & \sum_{i=1}^{I} x_{ij} = d_j && \forall j=1,\dots,J \quad \text{(demanda satisfecha)}\\
+        & \sum_{j=1}^{J} x_{ij} \le K_i\,y_i && \forall i=1,\dots,I \quad \text{(capacidad y acoplamiento)}\\
+        & x_{ij}\ge 0 && \forall i,j\\
+        & y_i\in\{0,1\} && \forall i=1,\dots,I
+        \end{aligned}
+        \]
+        <p class="glosa">Note que aquí \(M\) no es un número arbitrario: es \(K_i\), la capacidad real del centro. Siempre que exista una cota física, úsela.</p>
+      </div>
+      <p><strong>Variante desagregada.</strong> Se puede reemplazar la restricción de acoplamiento por \(x_{ij}\le d_j\,y_i\) para cada par \((i,j)\), manteniendo aparte \(\sum_j x_{ij}\le K_i\). Son \(I\times J\) restricciones en vez de \(I\), pero la relajación lineal resultante es <strong>estrictamente más ajustada</strong>. En modelos grandes esa diferencia decide si el problema se resuelve o no.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="TeC: centrales eléctricas">
+  <div class="eyebrow">Trabajo en clases</div>
+  <h2>TeC 01 · Centrales y localidades</h2>
+  <div class="widget">
+    <header><span class="tag caso">En equipos de 3</span><h4>Abastecer \(L\) localidades con \(N\) centrales</h4></header>
+    <div class="cuerpo">
+      <p>Se tienen \(N\) centrales eléctricas que deben abastecer de energía a \(L\) localidades. Una localidad puede ser abastecida por cualquiera de las centrales, y es posible que más de una central abastezca a la misma localidad. Los datos son: costo fijo \(k_n\) de poner en marcha la central \(n\); capacidad máxima de generación \(G_n\) de la central \(n\); demanda \(D_l\) de la localidad \(l\); costo unitario de transmisión \(t_{nl}\) desde la central \(n\) a la localidad \(l\).</p>
+      <p><strong>a)</strong> Defina las variables de decisión indicando claramente dominio e índices.<br>
+      <strong>b)</strong> Formule la función objetivo y todas las restricciones.<br>
+      <strong>c)</strong> Incorpore: por normativa, al menos \(P\) centrales deben quedar operativas como respaldo.<br>
+      <strong>d)</strong> Incorpore: la central 1 y la central 2 comparten línea de evacuación, así que no pueden operar simultáneamente.<br>
+      <strong>e)</strong> Incorpore: si se pone en marcha la central 3, debe ponerse en marcha también la 4 o la 5.<br>
+      <strong>f)</strong> Discuta: ¿qué valor de \(M\) usaría en la restricción de acoplamiento y por qué?</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>Las <strong>relaciones lógicas</strong> entre decisiones se escriben como desigualdades lineales sobre binarias: \(x_a\le x_b\), \(x_a+x_b\le1\), \(x_a=x_b\), \(x_a\le x_b+x_c\).</li>
+    <li>Ante la duda, <strong>construye la tabla de verdad</strong>: una restricción lógica es correcta si y solo si deja factibles exactamente las combinaciones deseadas.</li>
+    <li>El <strong>costo fijo</strong> hace que la función de costo sea discontinua en el origen: no es lineal ni convexa, y exige una binaria de activación.</li>
+    <li>La <strong>restricción de acoplamiento</strong> \(x_j\le My_j\) es lo que obliga a pagar el costo fijo cuando se usa la actividad.</li>
+    <li>El valor de \(M\) debe ser la <strong>cota superior física más pequeña</strong>: chico corta soluciones válidas, grande destruye la calidad de la relajación.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>Un modelo correcto y un modelo bueno no son lo mismo. Dos formulaciones pueden describir exactamente el mismo conjunto de soluciones enteras y diferir en horas de cómputo. La calidad de la relajación lineal — cuán pegada está al conjunto entero — es la variable oculta que decide eso.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l9" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Del acta de directorio a las restricciones</h4></div>
+    <div class="enunciado">
+      <p>Una empresa evalúa 6 iniciativas (\(x_1\) a \(x_6\), binarias). El acta del directorio dice textualmente:</p>
+      <p style="font-family:var(--fm);font-size:.88rem;background:var(--paper-2);padding:14px 16px;border-radius:10px">
+      (i) Se aprobarán entre 2 y 4 iniciativas.<br>
+      (ii) La iniciativa 5 solo tiene sentido si se aprueba la 1.<br>
+      (iii) Las iniciativas 2 y 3 usan el mismo equipo: no pueden ir juntas.<br>
+      (iv) Si se aprueba la 6, deben aprobarse la 2 o la 4.<br>
+      (v) Las iniciativas 1 y 4 son complementarias: van juntas o no va ninguna.<br>
+      (vi) Si no se aprueba la 3, entonces obligatoriamente debe aprobarse la 6.
+      </p>
+      <p><strong>a)</strong> Escriba cada condición como una o más restricciones lineales.<br>
+      <strong>b)</strong> Determine cuántas de las 64 combinaciones posibles quedan factibles (razone, no enumere a ciegas).<br>
+      <strong>c)</strong> Si el retorno es \((8,5,6,7,4,9)\) para \(x_1\) a \(x_6\), encuentre la combinación factible de mayor retorno.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Costo fijo en producción multiproducto</h4></div>
+    <div class="enunciado">
+      <p>Una fábrica puede producir 4 productos. Producir el producto \(j\) requiere un setup de máquina que cuesta \(k_j\) (independiente de la cantidad) y luego un costo variable \(c_j\) por unidad. El precio de venta es \(p_j\). La demanda máxima del producto \(j\) es \(D_j\) y la capacidad total de máquina es 500 horas; el producto \(j\) consume \(h_j\) horas por unidad.</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Producto</th><th class="num">\(k_j\) setup</th><th class="num">\(c_j\)</th><th class="num">\(p_j\)</th><th class="num">\(D_j\)</th><th class="num">\(h_j\)</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td class="num">3.000</td><td class="num">12</td><td class="num">28</td><td class="num">200</td><td class="num">2,0</td></tr>
+          <tr><td>B</td><td class="num">5.000</td><td class="num">18</td><td class="num">40</td><td class="num">150</td><td class="num">3,0</td></tr>
+          <tr><td>C</td><td class="num">2.000</td><td class="num">9</td><td class="num">19</td><td class="num">300</td><td class="num">1,0</td></tr>
+          <tr><td>D</td><td class="num">8.000</td><td class="num">25</td><td class="num">60</td><td class="num">100</td><td class="num">4,0</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Formule el modelo de maximización de utilidad.<br>
+      <strong>b)</strong> Justifique el valor de \(M\) que usaría para cada producto.<br>
+      <strong>c)</strong> Calcule el margen de contribución unitario y la utilidad neta de producir cada producto <em>solo</em> hasta su demanda máxima (ignorando la capacidad). ¿Algún producto no conviene ni siquiera aislado?<br>
+      <strong>d)</strong> Explique por qué no basta con ordenar por margen unitario para decidir qué producir.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Localización con niveles de servicio y economías de escala</h4></div>
+    <div class="enunciado">
+      <p>Una empresa de delivery evalúa abrir bodegas en 6 comunas para atender 10 zonas de Concepción. Datos: costo fijo \(k_i\) de abrir la bodega \(i\); capacidad \(K_i\); costo de despacho \(c_{ij}\); demanda \(d_j\); tiempo de viaje \(t_{ij}\) en minutos.</p>
+      <p><strong>a)</strong> Formule el modelo base de localización con costo fijo.<br>
+      <strong>b)</strong> Incorpore un <em>nivel de servicio</em>: al menos el 80% de la demanda total debe ser atendida desde una bodega ubicada a menos de 20 minutos. Escriba la restricción (defina el conjunto \(S=\{(i,j): t_{ij}<20\}\)).<br>
+      <strong>c)</strong> Ahora suponga que la bodega \(i\) tiene <em>dos tamaños posibles</em>: chica (costo \(k_i^{c}\), capacidad \(K_i^{c}\)) o grande (costo \(k_i^{g}\), capacidad \(K_i^{g}\)). Reformule usando dos binarias por bodega y escriba la restricción que impide elegir ambos tamaños.<br>
+      <strong>d)</strong> La gerencia quiere que "ninguna zona dependa de una sola bodega": cada zona debe recibir de al menos dos bodegas distintas. Escriba esta condición. Advertencia: requiere una binaria adicional.<br>
+      <strong>e)</strong> Discuta el efecto de (d) sobre el costo óptimo y sobre el tamaño del modelo.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Big-M, calidad de formulación y experimento numérico</h4></div>
+    <div class="enunciado">
+      <p>Considere el problema: \(\max z = 9x_1 + 9x_2 - 40y_1 - 40y_2\) sujeto a \(x_1+x_2 \le 100\), \(x_1 \le M y_1\), \(x_2 \le M y_2\), \(x_1,x_2\ge0\), \(y_1,y_2\in\{0,1\}\).</p>
+      <p><strong>a)</strong> Determine el óptimo entero (es independiente de \(M\) si \(M\ge100\)). Justifique.<br>
+      <strong>b)</strong> Resuelva la relajación lineal (\(y_i\in[0,1]\)) para \(M=100\), \(M=1.000\) y \(M=10.000\). Muestre que el valor de la relajación crece con \(M\).<br>
+      <strong>c)</strong> Explique el mecanismo: ¿qué hace la relajación con \(y_i\) cuando \(M\) es grande?<br>
+      <strong>d)</strong> Generalice: enuncie la relación entre el valor de \(M\), el gap de integralidad y el tamaño esperado del árbol de ramificación y acotamiento.<br>
+      <strong>e)</strong> Proponga una reformulación que elimine el problema por completo en este caso, sin usar Big-M.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ============ Traductor lógico ============ */
+(function(){
+  var sel=document.getElementById('cond'); if(!sel)return;
+  var defs=[
+    {r:'x₁ ≤ x₂',        f:function(a,b){return a<=b;}, m:'Permite hacer 2 sin hacer 1: la implicación es en un solo sentido. El único caso prohibido es hacer 1 sin 2.'},
+    {r:'x₁ + x₂ ≤ 1',    f:function(a,b){return a+b<=1;}, m:'Prohíbe solo la combinación (1,1). Note que "no ambas" incluye la posibilidad de no hacer ninguna.'},
+    {r:'x₁ = x₂',        f:function(a,b){return a===b;}, m:'Las dos actividades quedan atadas: son en la práctica una sola decisión. Podría reemplazar ambas variables por una.'},
+    {r:'x₁ + x₂ ≥ 1',    f:function(a,b){return a+b>=1;}, m:'Prohíbe solo la combinación (0,0). Es la negación lógica de "ninguna de las dos".'},
+    {r:'x₁ + x₂ = 1',    f:function(a,b){return a+b===1;}, m:'Exactamente una: combina "al menos una" y "a lo más una" en una sola igualdad.'},
+    {r:'x₁ = 1 − x₂',    f:function(a,b){return a===1-b;}, m:'Es idéntica a x₁ + x₂ = 1, escrita de otra forma. Útil cuando quiere eliminar una variable por sustitución.'},
+    {r:'x₂ ≤ 1 − x₁',    f:function(a,b){return b<=1-a;}, m:'Equivale a x₁ + x₂ ≤ 1. Escribir la negación como (1 − x) es un recurso muy útil para traducir frases con "no".'}
+  ];
+  var tb=document.getElementById('tabla-verdad').querySelector('tbody');
+  var lect=[['no 1, no 2'],['no 1, sí 2'],['sí 1, no 2'],['sí 1, sí 2']];
+  function act(){
+    var d=defs[+sel.value];
+    document.getElementById('restr').textContent=d.r;
+    tb.innerHTML='';
+    var n=0;
+    [[0,0],[0,1],[1,0],[1,1]].forEach(function(c,i){
+      var ok=d.f(c[0],c[1]); if(ok)n++;
+      var tr=document.createElement('tr');
+      if(ok)tr.className='sel';
+      tr.innerHTML='<td class="num">'+c[0]+'</td><td class="num">'+c[1]+'</td><td>'+lect[i][0]+'</td>'+
+        '<td style="font-weight:600;color:'+(ok?'var(--teal)':'var(--amber)')+'">'+(ok?'✓ factible':'✗ prohibida')+'</td>';
+      tb.appendChild(tr);
+    });
+    var msg=document.getElementById('cond-msg');
+    msg.innerHTML='<b>'+n+' de 4</b> combinaciones quedan permitidas. '+d.m;
+  }
+  sel.onchange=act; act();
+})();
+
+/* ============ Función de costo fijo ============ */
+(function(){
+  var svg=document.getElementById('g-costo'); if(!svg)return;
+  var W=420,H=250,ML=48,MB=34,MT=14,MR=14,XMAX=20,YMAX=140;
+  function sx(x){return ML+x/XMAX*(W-ML-MR);}
+  function sy(y){return H-MB-y/YMAX*(H-MB-MT);}
+  function dib(){
+    var k=+document.getElementById('ck').value, c=+document.getElementById('cc').value;
+    document.getElementById('v-k').textContent=k;
+    document.getElementById('v-c').textContent=c;
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    for(var g=0;g<=XMAX;g+=5)svg.appendChild(svgEl('line',{x1:sx(g),y1:sy(0),x2:sx(g),y2:sy(YMAX),stroke:'rgba(20,24,31,.07)'}));
+    for(var h=0;h<=YMAX;h+=20)svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(h),x2:sx(XMAX),y2:sy(h),stroke:'rgba(20,24,31,.07)'}));
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(0),x2:sx(XMAX),y2:sy(0),stroke:'#6B7683','stroke-width':1.2}));
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(0),x2:sx(0),y2:sy(YMAX),stroke:'#6B7683','stroke-width':1.2}));
+    /* linealizacion ingenua: solo costo variable */
+    var yl=Math.min(YMAX,c*XMAX);
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(0),x2:sx(yl/c),y2:sy(yl),stroke:'#0F6E63','stroke-width':2,'stroke-dasharray':'5 4'}));
+    /* costo real */
+    var xf=Math.min(XMAX,(YMAX-k)/c);
+    if(xf>0){
+      svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(k),x2:sx(xf),y2:sy(k+c*xf),stroke:'#C8551E','stroke-width':2.6}));
+      svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(0),x2:sx(0),y2:sy(k),stroke:'#C8551E','stroke-width':2.6,'stroke-dasharray':'3 3',opacity:.55}));
+      svg.appendChild(svgEl('circle',{cx:sx(0),cy:sy(k),r:4,fill:'#fff',stroke:'#C8551E','stroke-width':2.4}));
+    }
+    svg.appendChild(svgEl('circle',{cx:sx(0),cy:sy(0),r:4.5,fill:'#C8551E'}));
+    var t=svgEl('text',{x:sx(0)+9,y:sy(k)-6,fill:'#C8551E'});t.textContent='salto = k = '+k;svg.appendChild(t);
+    var tx=svgEl('text',{x:sx(XMAX),y:sy(0)+20,'text-anchor':'end'});tx.textContent='nivel de actividad x';svg.appendChild(tx);
+    var ty=svgEl('text',{x:sx(0)-6,y:sy(YMAX)+4,'text-anchor':'end'});ty.textContent='costo';svg.appendChild(ty);
+  }
+  document.getElementById('ck').oninput=dib;
+  document.getElementById('cc').oninput=dib;
+  dib();
+})();
+
+/* ============ Efecto de Big-M ============ */
+(function(){
+  var s=document.getElementById('bigM'); if(!s)return;
+  var K=400,C=3,P=9,DEM=100,CAP=100;
+  function act(){
+    var M=+s.value;
+    document.getElementById('v-M').textContent=M;
+    /* entero: abrir (y=1) si conviene y x<=min(DEM,CAP,M) */
+    var xmax=Math.min(DEM,CAP,M);
+    var zAbre=(P-C)*xmax-K, zCierra=0;
+    var zIP=Math.max(zAbre,zCierra);
+    /* relajacion: y=x/M, z=(P-C)x - K x/M, x<=min(DEM,CAP) y x<=M */
+    var xr=Math.min(DEM,CAP,M);
+    var zLP=Math.max(0,(P-C)*xr-K*xr/M);
+    var gap=zIP>0?((zLP-zIP)/zIP*100):0;
+    document.getElementById('M-ip').textContent=fmt(zIP,0);
+    document.getElementById('M-lp').textContent=fmt(zLP,1);
+    document.getElementById('M-gap').textContent=fmt(gap,1)+'%';
+    document.getElementById('M-gap').className=gap<1?'ok':(gap<30?'':'mal');
+    var msg=document.getElementById('M-msg');
+    if(M<CAP){
+      msg.innerHTML='<b>M demasiado chico.</b> Con M = '+M+' el modelo cree que el centro solo puede despachar '+xmax+' unidades, cuando su capacidad real es 100. El óptimo reportado ('+fmt(zIP,0)+') es <b>menor que el verdadero</b> (200): estás cortando soluciones factibles.';
+      msg.style.borderLeftColor='var(--amber)';
+    }else if(M===CAP){
+      msg.innerHTML='<b>M perfecto.</b> M = 100 es exactamente la cota física. El óptimo entero es correcto y la relajación coincide con él: gap 0%. Esta es la formulación más ajustada posible.';
+      msg.style.borderLeftColor='var(--teal)';
+    }else{
+      msg.innerHTML='<b>M innecesariamente grande.</b> El óptimo entero sigue siendo correcto (200), pero la relajación ahora vale '+fmt(zLP,1)+': permite abrir solo una fracción y'+' = '+fmt(CAP/M,3)+' del centro, pagando casi nada del costo fijo. La cota se degradó y el árbol de ramificación crecerá.';
+      msg.style.borderLeftColor='var(--gold)';
+    }
+  }
+  s.oninput=act; act();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>

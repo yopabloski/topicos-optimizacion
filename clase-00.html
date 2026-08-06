@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Introducción a la Programación Lineal Entera · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+details.pauta{border-top:1px solid var(--line);background:var(--paper-2)}
+details.pauta summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker{display:none}
+details.pauta summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover{color:var(--ink)}
+details.pauta .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta{background:#f2efe8 !important}
+  details.pauta .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 00</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">00</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Cuando la solución<br>debe ser <em style="font-style:italic;color:var(--amber)">entera</em></h1>
+  <p class="lead">No se puede abrir media planta, contratar 2,4 conductores ni despachar 0,7 camiones. Este curso empieza donde la programación lineal deja de alcanzar.</p>
+  <div class="meta">
+    <span class="chip on">Programación Lineal Entera</span>
+    <span class="chip">Relajación lineal</span>
+    <span class="chip">Explosión combinatoria</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="De qué se trata y qué vas a aprender">
+  <div class="eyebrow">Introducción</div>
+  <h2>De qué se trata esta clase</h2>
+  <p class="lead">Durante dos semestres modelaste con variables continuas: cuántos litros, cuántas horas, cuántas toneladas. La programación lineal (PL) te dio una herramienta potente y un algoritmo — el símplex — que la resuelve rápido y bien.</p>
+  <p>El problema es que buena parte de las decisiones que toma una empresa <strong>no son cantidades: son decisiones de sí o no</strong>. ¿Abrimos el centro de distribución en Talcahuano? ¿Compramos la máquina? ¿Este camión hace esta ruta? Esas decisiones no admiten valores intermedios, y modelarlas exige un tipo de variable nueva y una teoría de solución completamente distinta.</p>
+  <p>La programación lineal entera (PLE) es el lenguaje de esas decisiones. Gana un enorme poder de representación — y paga por él con una dificultad computacional que no existía en PL. Entender ese intercambio es el hilo conductor de todo el curso.</p>
+
+  <div class="nota ojo">
+    <span class="et">La idea que sostiene el semestre</span>
+    <p>Agregar la palabra "entero" a un modelo lineal no lo hace un poco más difícil: lo cambia de categoría. Pasamos de un problema que se resuelve en tiempo polinomial a uno <em>NP-difícil</em>. Todo lo que veremos después — ramificación y acotamiento, planos cortantes, heurísticas — son respuestas a esa sola palabra.</p>
+  </div>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Reconocer</strong> cuándo un problema de decisión real requiere variables enteras o binarias, y cuándo la PL basta.</li>
+    <li><strong>Distinguir</strong> entre PLE pura, PLE mixta y programación entera binaria (PEB), e identificar a cuál pertenece un modelo dado.</li>
+    <li><strong>Explicar y mostrar gráficamente</strong> por qué la región factible de un problema entero es un conjunto discreto y no un poliedro.</li>
+    <li><strong>Argumentar con un contraejemplo</strong> por qué redondear la solución de la relajación lineal es una mala estrategia general.</li>
+    <li><strong>Usar la relajación lineal</strong> como cota del valor óptimo y estimar el tamaño combinatorio de un modelo binario.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Dónde vive la PLE">
+  <div class="eyebrow">Aplicaciones</div>
+  <h2>Dónde vive la programación entera</h2>
+  <p class="lead">La PLE es probablemente la técnica de optimización con más impacto económico documentado. No es un tema de pizarra: es lo que corre detrás de operaciones que mueven miles de millones de dólares al día.</p>
+
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <span class="icono">AEROLÍNEAS</span>
+      <h4>Crew scheduling</h4>
+      <p>Asignar tripulaciones a secuencias de vuelos es un <em>set partitioning</em> con millones de columnas. American Airlines documentó ahorros del orden de US$ 20 millones anuales solo en este modelo.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">RETAIL / LOGÍSTICA</span>
+      <h4>Localización de centros</h4>
+      <p>Decidir <em>qué</em> bodegas abrir (binaria) y <em>cuánto</em> despachar desde cada una (continua) es el arquetipo de la PLE mixta. Es el modelo de costo fijo que veremos en la Clase 02.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">ENERGÍA</span>
+      <h4>Unit commitment</h4>
+      <p>El Coordinador Eléctrico Nacional decide cada día qué unidades generadoras encender. Encender tiene costo fijo y mínimo técnico: binarias + continuas, resuelto cada 24 horas.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">MINERÍA</span>
+      <h4>Secuenciamiento de rajo</h4>
+      <p>Qué bloque de mineral extraer y en qué período, respetando precedencias geométricas. Modelos de cientos de miles de binarias en operaciones del norte de Chile.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">SALUD</span>
+      <h4>Pabellones y turnos</h4>
+      <p>Programación de quirófanos: cada cirugía se asigna a un pabellón y a un bloque horario. Asignación + secuenciamiento, con restricciones de disponibilidad médica.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">TELECOM</span>
+      <h4>Diseño de red</h4>
+      <p>Qué enlaces instalar y con qué capacidad, cuando las capacidades vienen en paquetes discretos (10 Mbps, 100 Mbps, 1 Gbps). Es el caso de "N posibles valores" de la Clase 04.</p>
+    </div>
+  </div>
+
+  <div class="nota libro">
+    <span class="et">Hillier &amp; Lieberman · §11.2</span>
+    <p>El texto agrupa las aplicaciones de programación entera binaria en cuatro familias que reaparecerán en casi todas nuestras clases: <strong>decisiones de inversión</strong> (selección de proyectos), <strong>decisiones de localización</strong> (plantas, bodegas, estaciones), <strong>decisiones de diseño de producción y distribución</strong> (qué producir, dónde y con qué máquina) y <strong>decisiones de programación</strong> (secuenciar trabajos, asignar tripulaciones).</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Metodología de solución en IO">
+  <div class="eyebrow">Proceso</div>
+  <h2>El modelo es un medio, no el fin</h2>
+  <p class="lead">Antes de escribir una sola restricción conviene recordar dónde encaja el modelo dentro de un estudio de investigación de operaciones. El error más caro de esta disciplina no es equivocarse en el álgebra: es resolver muy bien el problema equivocado.</p>
+
+  <div class="rejilla r3">
+    <div class="tarjeta"><span class="icono">01</span><h4>Definir el problema</h4><p>Delimitar alcance, identificar al decisor y sus objetivos reales, reconocer las restricciones que no son negociables.</p></div>
+    <div class="tarjeta"><span class="icono">02</span><h4>Construir el modelo</h4><p>Traducir a variables, función objetivo y restricciones. Aquí es donde la elección entre continuo y entero se define.</p></div>
+    <div class="tarjeta"><span class="icono">03</span><h4>Recolectar datos</h4><p>Costos, capacidades, tiempos. Suele consumir más del 50% del proyecto y determina si el modelo sirve o no.</p></div>
+    <div class="tarjeta"><span class="icono">04</span><h4>Resolver</h4><p>Elegir el algoritmo adecuado al tamaño y estructura. En PLE esta etapa deja de ser trivial.</p></div>
+    <div class="tarjeta"><span class="icono">05</span><h4>Validar</h4><p>¿La solución tiene sentido operacional? Análisis de sensibilidad, escenarios, prueba retrospectiva.</p></div>
+    <div class="tarjeta"><span class="icono">06</span><h4>Implementar</h4><p>Integrar la solución al proceso de decisión real. Sin esta etapa, todo lo anterior es un ejercicio académico.</p></div>
+  </div>
+
+  <p style="font-size:.95rem;color:var(--ink-2)">Las flechas de retroalimentación importan tanto como las etapas: validar casi siempre obliga a volver a modelar, y recolectar datos casi siempre obliga a redefinir el problema.</p>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Definición y tipos de PLE">
+  <div class="eyebrow">Definición</div>
+  <h2>Qué es exactamente un problema entero</h2>
+  <p class="lead">Un problema de programación lineal entera es, literalmente, un problema de programación lineal con una condición extra: algunas o todas las variables deben tomar valores enteros.</p>
+
+  <div class="modelo">
+    <span class="et">Forma general</span>
+    \[
+    \begin{aligned}
+    \max\;\; & z=\sum_{j=1}^{n} c_j x_j \\[2pt]
+    \text{s.a.}\;\; & \sum_{j=1}^{n} a_{ij}x_j \le b_i && i=1,\dots,m \\[2pt]
+    & x_j \ge 0 && j=1,\dots,n \\[2pt]
+    & x_j \in \mathbb{Z} && j \in I \subseteq \{1,\dots,n\}
+    \end{aligned}
+    \]
+    <p class="glosa">Todo es lineal: la función objetivo y las restricciones. Lo único que cambia respecto de PL es la última línea — y esa línea lo cambia todo.</p>
+  </div>
+
+  <h3>Las tres familias</h3>
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <span class="icono">PLE PURA</span>
+      <h4>Todas las variables enteras</h4>
+      <p>\(I = \{1,\dots,n\}\). Ejemplos: problema de la mochila entero, problemas de corte de material, cuántos buses comprar de cada tipo.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">PLE MIXTA · PEM</span>
+      <h4>Enteras y continuas conviviendo</h4>
+      <p>\(I \subsetneq \{1,\dots,n\}\). Ejemplos: localización de plantas (abrir o no = binaria; cuánto enviar = continua), planificación de producción con costo de setup.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">PEB</span>
+      <h4>Programación entera binaria</h4>
+      <p>Todas las variables en \(\{0,1\}\). Es el caso más común y el más rico: modela decisiones de sí/no, relaciones lógicas, exclusiones y contingencias.</p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Consecuencia geométrica</span>
+    <p>En PL la región factible es un <strong>poliedro convexo</strong>: un cuerpo continuo cuyos vértices contienen siempre un óptimo. En PLE la región factible es un <strong>conjunto discreto de puntos</strong>. No hay vértices que recorrer, no hay símplex que aplicar, no hay convexidad que explotar. Ese es el origen de toda la dificultad.</p>
+  </div>
+
+  <h3>Lo que ganamos y lo que perdemos</h3>
+  <div class="rejilla r2">
+    <div class="tarjeta" style="border-color:var(--teal);background:var(--teal-soft)">
+      <span class="icono" style="color:var(--teal)">VENTAJAS</span>
+      <h4>Poder de representación</h4>
+      <p>Modelos mucho más realistas: costos fijos, decisiones lógicas, indivisibilidades, economías de escala, secuenciamiento. Cosas que la PL simplemente no puede expresar.</p>
+    </div>
+    <div class="tarjeta" style="border-color:var(--amber);background:var(--amber-soft)">
+      <span class="icono" style="color:var(--amber)">DESVENTAJAS</span>
+      <h4>Costo computacional</h4>
+      <p>No existe un algoritmo eficiente general. El tiempo de resolución puede crecer exponencialmente con el número de variables enteras, y modelos "pequeños" pueden ser intratables.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Laboratorio: PL vs PLE">
+  <div class="eyebrow">Visualización interactiva</div>
+  <h2>Ver la diferencia, no solo escucharla</h2>
+  <p class="lead">Tomemos un problema chico, con dos variables, para poder dibujarlo. Muévele los coeficientes de la función objetivo y observa qué pasa con el óptimo continuo, con el redondeo y con el óptimo entero verdadero.</p>
+
+  <div class="widget">
+    <header>
+      <span class="tag viz">Visualización</span>
+      <h4>Región factible, puntos enteros y la trampa del redondeo</h4>
+    </header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl">
+          <label>Coeficiente \(c_1\) de \(x_1\) <b id="v-c1">8</b></label>
+          <input type="range" id="c1" min="1" max="12" step="1" value="8">
+        </div>
+        <div class="ctrl">
+          <label>Coeficiente \(c_2\) de \(x_2\) <b id="v-c2">5</b></label>
+          <input type="range" id="c2" min="1" max="12" step="1" value="5">
+        </div>
+        <div class="ctrl">
+          <label style="display:block">Capas visibles</label>
+          <div class="botonera">
+            <button class="btn ghost capa" data-capa="region">Región PL</button>
+            <button class="btn ghost capa" data-capa="enteros">Puntos enteros</button>
+            <button class="btn ghost capa" data-capa="redondeo">Redondeo</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:20px;grid-template-columns:minmax(280px,1.25fr) minmax(230px,1fr)">
+        <div><svg id="grafico" viewBox="0 0 420 340" style="width:100%;height:auto"></svg></div>
+        <div>
+          <div class="modelo" style="margin-top:0;padding:18px 20px">
+            <span class="et">Modelo</span>
+            <div id="modelo-tex" style="font-size:.92rem"></div>
+          </div>
+          <div class="marcador" style="flex-direction:column">
+            <div><span>Óptimo relajación PL</span><b id="m-lp">41,25</b><small style="font-family:var(--fm);font-size:.72rem;color:var(--ink-3)" id="m-lpx">en (3,75 ; 2,25)</small></div>
+            <div><span>Óptimo entero real</span><b class="ok" id="m-ip">40</b><small style="font-family:var(--fm);font-size:.72rem;color:var(--ink-3)" id="m-ipx">en (5 ; 0)</small></div>
+            <div><span>Si redondeas el óptimo PL</span><b class="mal" id="m-rd">infactible</b><small style="font-family:var(--fm);font-size:.72rem;color:var(--ink-3)" id="m-rdx"></small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="leyenda">
+        <span><i style="background:rgba(15,110,99,.18);border:1px solid var(--teal)"></i>Región factible de la relajación PL</span>
+        <span><i style="background:var(--ink)"></i>Puntos enteros factibles</span>
+        <span><i style="background:var(--teal)"></i>Óptimo PL</span>
+        <span><i style="background:var(--amber)"></i>Óptimo entero</span>
+      </div>
+
+      <p id="mensaje" style="margin-top:16px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--amber-soft);border-left:3px solid var(--amber)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Lo que hay que sacar de aquí</span>
+    <p>Con \(c_1=8,\ c_2=5\) la relajación entrega \((3{,}75\,;\,2{,}25)\) con \(z=41{,}25\). Redondear hacia arriba da \((4;2)\), que <strong>viola</strong> \(9x_1+5x_2\le 45\). Redondear hacia abajo da \((3;2)\) con \(z=34\). El óptimo entero verdadero es \((5;0)\) con \(z=40\) — un punto que <em>no está cerca</em> del óptimo continuo. El redondeo no solo pierde calidad: puede perder factibilidad y puede apuntar a la región equivocada.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Chequeo rápido">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+
+  <div class="quiz" data-correcta="2" data-retro='["El valor de la relajación nunca es peor que el entero en un problema de maximización, así que no puede ser una cota inferior.","Es exactamente al revés: al agregar la restricción de integralidad la región factible se achica, por lo que el óptimo no puede mejorar.","Exacto. La región factible entera está contenida en la de la relajación, así que en maximización \\(z_{PL} \\ge z_{PLE}\\). Esa cota superior es la base de ramificación y acotamiento.","La relajación se resuelve con símplex y es rápida; el problema entero es el caro."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">En un problema de <strong>maximización</strong>, ¿qué relación existe siempre entre el valor óptimo de la relajación lineal \(z_{PL}\) y el valor óptimo entero \(z_{PLE}\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>\(z_{PL}\) es una cota inferior de \(z_{PLE}\)</span></button>
+      <button><span class="k">B</span><span>\(z_{PL} \le z_{PLE}\), porque hay menos soluciones factibles</span></button>
+      <button><span class="k">C</span><span>\(z_{PL} \ge z_{PLE}\): la relajación es una cota superior</span></button>
+      <button><span class="k">D</span><span>No hay relación garantizada; depende de los datos</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="1" data-retro='["Ese es un caso de PLE pura: todas las variables serían enteras.","Correcto. La decisión de abrir es binaria y el volumen despachado es continuo: conviven ambos tipos, y eso define un problema de programación entera mixta.","La PEB exige que <em>todas</em> las variables sean binarias, y aquí el volumen despachado no lo es.","El modelo sí es lineal en ambos tipos de variable; la no linealidad no aparece por mezclar tipos."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">Un modelo decide <strong>qué bodegas abrir</strong> (sí/no) y <strong>cuántas toneladas despachar</strong> desde cada bodega abierta. ¿Qué tipo de problema es?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>PLE pura</span></button>
+      <button><span class="k">B</span><span>PLE mixta (PEM)</span></button>
+      <button><span class="k">C</span><span>Programación entera binaria (PEB)</span></button>
+      <button><span class="k">D</span><span>Programación no lineal</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Por qué es difícil">
+  <div class="eyebrow">Complejidad</div>
+  <h2>Por qué "probar todas" no es un plan</h2>
+  <p class="lead">La intuición dice: si las variables son binarias, hay un número finito de combinaciones — enumerémoslas todas. El problema es cuán finito es ese número.</p>
+
+  <div class="widget">
+    <header>
+      <span class="tag sim">Simulador</span>
+      <h4>Explosión combinatoria en variables binarias</h4>
+    </header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl">
+          <label>Variables binarias \(n\) <b id="v-n">20</b></label>
+          <input type="range" id="nbin" min="5" max="120" step="1" value="20">
+        </div>
+        <div class="ctrl">
+          <label>Soluciones evaluadas por segundo <b id="v-vel">10⁹</b></label>
+          <input type="range" id="vel" min="6" max="15" step="1" value="9">
+        </div>
+      </div>
+      <div class="marcador">
+        <div><span>Combinaciones \(2^n\)</span><b id="m-comb">1,05 × 10⁶</b></div>
+        <div><span>Tiempo de enumeración total</span><b id="m-tiempo">0,001 s</b></div>
+        <div><span>Comparación</span><b id="m-comp" style="font-size:1rem;line-height:1.35">un parpadeo</b></div>
+      </div>
+      <svg id="barra-comp" viewBox="0 0 420 70" style="width:100%;height:auto;margin-top:16px"></svg>
+      <p style="font-size:.9rem;color:var(--ink-2);margin-top:12px">Un modelo de asignación de tripulaciones puede tener decenas de miles de variables binarias. Un modelo de secuenciamiento minero, cientos de miles. Mueve el deslizador hasta 60 y compara el resultado con la edad del universo (unos \(4{,}4\times10^{17}\) segundos).</p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Entonces, ¿cómo se resuelven en la práctica?</span>
+    <p>Con <strong>enumeración inteligente</strong>: explorar el árbol de soluciones descartando ramas completas mediante cotas (ramificación y acotamiento, Clases 08-09), y ajustando la región factible relajada hasta que se parezca a la entera (planos cortantes, Clases 10-13). Cuando ni eso alcanza, se renuncia a la optimalidad garantizada y se usan heurísticas y metaheurísticas (Clases 18-21). Ese es, en una frase, el mapa completo del semestre.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Caso: Coordinador Eléctrico Nacional">
+  <div class="eyebrow">Caso de aplicación</div>
+  <h2>Un modelo entero que corre todos los días en Chile</h2>
+
+  <div class="widget">
+    <header><span class="tag caso">Caso real</span><h4>Unit commitment: encender o no encender</h4></header>
+    <div class="cuerpo">
+      <p>El Coordinador Eléctrico Nacional debe decidir, para cada hora del día siguiente, qué unidades generadoras del Sistema Eléctrico Nacional van a operar. Sea \(I\) el conjunto de unidades generadoras y \(T=\{1,\dots,24\}\) el conjunto de horas del día. La decisión tiene dos capas que no se pueden separar:</p>
+      <div class="rejilla r2">
+        <div class="tarjeta">
+          <span class="icono">CAPA BINARIA</span>
+          <h4>¿Se enciende la unidad \(i\) en la hora \(t\)?</h4>
+          <p>\(u_{it}\in\{0,1\}\) para todo \(i\in I,\ t\in T\). Encender una central térmica tiene un costo de partida que se paga completo, sin importar cuánta energía se genere después.</p>
+        </div>
+        <div class="tarjeta">
+          <span class="icono">CAPA CONTINUA</span>
+          <h4>¿Cuántos MW genera?</h4>
+          <p>\(p_{it}\ge 0\) para todo \(i\in I,\ t\in T\), sujeta a mínimo técnico y máximo:</p>
+          <p style="text-align:center">\(P^{\min}_i\,u_{it} \le p_{it} \le P^{\max}_i\,u_{it} \qquad \forall i\in I,\ \forall t\in T\)</p>
+          <p>Si \(u_{it}=0\) la restricción fuerza \(p_{it}=0\).</p>
+        </div>
+      </div>
+      <p>Fíjate en la restricción de la derecha: la binaria <strong>activa o desactiva</strong> a la continua. Es exactamente el mecanismo de costo fijo que formalizaremos en la Clase 02, y es la razón por la que este problema no se puede resolver con PL pura.</p>
+      <p style="font-size:.93rem;color:var(--ink-2)">Otras restricciones del modelo real: balance oferta-demanda hora a hora, reserva en giro, rampas de subida y bajada, tiempos mínimos de operación y de detención, límites de transmisión por línea. El resultado determina el costo marginal del sistema — es decir, parte de lo que aparece en tu boleta de la luz.</p>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l9" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>La <strong>PLE</strong> es un modelo lineal más la exigencia de que algunas variables sean enteras. Se clasifica en pura, mixta (PEM) y binaria (PEB).</li>
+    <li>Las <strong>variables binarias</strong> son el instrumento para modelar decisiones de sí/no: invertir, localizar, asignar, secuenciar.</li>
+    <li>La región factible entera es un <strong>conjunto discreto</strong>, no un poliedro: se pierden la convexidad y el símplex.</li>
+    <li><strong>Redondear la relajación lineal no funciona</strong>: puede dar soluciones infactibles o muy lejanas del óptimo.</li>
+    <li>La relajación sí sirve como <strong>cota</strong> (superior en maximización), y esa cota es el motor de todos los algoritmos exactos del curso.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>La palabra "entero" no es un detalle técnico al final de un modelo: es la frontera entre un problema que un computador resuelve sin transpirar y uno que puede dejarlo pensando durante días. Modelar bien en PLE es, sobre todo, saber cuánto cuesta cada binaria que agregas.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l10" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+  <p class="lead">Dos ejercicios de nivel medio para consolidar y dos complejos para empujar el razonamiento más allá de la clase. Las pautas están ocultas: intenta primero.</p>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · La trampa del redondeo, en tus manos</h4></div>
+    <div class="enunciado">
+      <p>Considere el problema \(\max z = 5x_1 + 4x_2\) sujeto a \(6x_1+4x_2\le 24\), \(x_1+2x_2\le 6\), \(x_1,x_2\ge 0\) y enteras.</p>
+      <p><strong>a)</strong> Resuelva gráficamente la relajación lineal e identifique el vértice óptimo.<br>
+      <strong>b)</strong> Redondee esa solución en las cuatro direcciones posibles e indique cuáles son factibles y cuál es el mejor valor obtenido por redondeo.<br>
+      <strong>c)</strong> Enumere todos los puntos enteros factibles y determine el óptimo entero verdadero.<br>
+      <strong>d)</strong> Calcule el <em>gap de integralidad</em> \((z_{PL}-z_{PLE})/z_{PLE}\) y comente qué le dice sobre la calidad de la relajación como cota.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Clasificar y justificar</h4></div>
+    <div class="enunciado">
+      <p>Para cada situación, (i) proponga las variables de decisión con su dominio, (ii) clasifique el modelo resultante en PL, PLE pura, PEM o PEB, y (iii) justifique en una línea por qué la integralidad es o no indispensable.</p>
+      <p><strong>a)</strong> Una planta de celulosa decide cuántos m³ de cada tipo de pulpa producir por turno.<br>
+      <strong>b)</strong> Una municipalidad decide en cuáles de 12 sectores instalar contenedores de reciclaje, con un presupuesto tope.<br>
+      <strong>c)</strong> Una empresa de buses decide cuántos buses comprar de tres modelos distintos y cuántos km asignar a cada modelo.<br>
+      <strong>d)</strong> Una tienda decide cuántas cajas registradoras abrir en cada franja horaria del sábado.<br>
+      <strong>e)</strong> Un hospital decide qué cirugía se asigna a qué pabellón y en qué bloque horario.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Cuándo el redondeo sí es seguro</h4></div>
+    <div class="enunciado">
+      <p>Un contraejemplo demuestra que redondear falla en general. Pero existen familias de problemas donde la relajación lineal <em>siempre</em> entrega soluciones enteras sin pedirlo.</p>
+      <p><strong>a)</strong> Resuelva la relajación lineal del siguiente problema de asignación 3×3 (minimizar costo, cada trabajo a exactamente una máquina y viceversa) con costos \(C=\begin{pmatrix}4&2&8\\4&3&7\\3&1&6\end{pmatrix}\). Verifique que el óptimo de la relajación es entero.<br>
+      <strong>b)</strong> Investigue y explique el concepto de <em>matriz totalmente unimodular</em> (TU): defina la propiedad y enuncie el teorema que vincula unimodularidad total con vértices enteros del poliedro \(\{x: Ax\le b,\ x\ge0\}\) para \(b\) entero.<br>
+      <strong>c)</strong> Argumente por qué la matriz de restricciones de un problema de asignación es TU, y por qué la del problema de la mochila no lo es.<br>
+      <strong>d)</strong> Discuta la consecuencia práctica: si su modelo resulta ser TU, ¿qué algoritmo debería usar y qué debería evitar?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Diseño de un modelo desde cero</h4></div>
+    <div class="enunciado">
+      <p>Una empresa de logística de última milla en Concepción atiende 8 comunas. Evalúa abrir hasta 3 microbodegas entre 5 ubicaciones candidatas. Abrir la ubicación \(i\) cuesta \(f_i\) mensuales y le da una capacidad de \(K_i\) pedidos/día. Despachar un pedido desde \(i\) a la comuna \(j\) cuesta \(c_{ij}\). La comuna \(j\) tiene demanda \(d_j\) pedidos/día. Toda la demanda debe ser satisfecha.</p>
+      <p><strong>a)</strong> Formule el modelo completo: variables (indicando dominio), función objetivo y todas las restricciones.<br>
+      <strong>b)</strong> Clasifíquelo y cuente cuántas variables binarias y continuas tiene.<br>
+      <strong>c)</strong> Escriba la restricción de acoplamiento entre apertura y despacho de <em>dos</em> formas distintas — una agregada y una desagregada — y argumente cuál produce una relajación lineal más ajustada.<br>
+      <strong>d)</strong> La gerencia exige además que "si se abre la ubicación 2, entonces obligatoriamente debe abrirse la 5" y que "no pueden abrirse simultáneamente la 1 y la 3". Escriba ambas condiciones como restricciones lineales.<br>
+      <strong>e)</strong> Estime el número de soluciones binarias posibles y comente si la enumeración exhaustiva sería viable aquí.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ============ Visualización PL vs PLE ============ */
+(function(){
+  var svg=document.getElementById('grafico'); if(!svg)return;
+  var W=420,H=340,ML=44,MB=40,MT=18,MR=18;
+  var XMAX=6.5,YMAX=6.5;
+  var sx=function(x){return ML+x/XMAX*(W-ML-MR);};
+  var sy=function(y){return H-MB-y/YMAX*(H-MB-MT);};
+  var capas={region:true,enteros:true,redondeo:false};
+
+  /* restricciones: x1+x2<=6 ; 9x1+5x2<=45 */
+  function factible(x,y){return x>=-1e-9&&y>=-1e-9&&x+y<=6+1e-9&&9*x+5*y<=45+1e-9;}
+  var vertices=[[0,0],[5,0],[3.75,2.25],[0,6]];
+
+  function optLP(c1,c2){
+    var mejor=null;
+    vertices.forEach(function(v){
+      var z=c1*v[0]+c2*v[1];
+      if(!mejor||z>mejor.z+1e-9)mejor={x:v[0],y:v[1],z:z};
+    });
+    return mejor;
+  }
+  function optIP(c1,c2){
+    var mejor={x:0,y:0,z:0};
+    for(var i=0;i<=6;i++)for(var j=0;j<=6;j++){
+      if(!factible(i,j))continue;
+      var z=c1*i+c2*j;
+      if(z>mejor.z+1e-9)mejor={x:i,y:j,z:z};
+    }
+    return mejor;
+  }
+  function puntosEnteros(){
+    var p=[];for(var i=0;i<=6;i++)for(var j=0;j<=6;j++)if(factible(i,j))p.push([i,j]);
+    return p;
+  }
+
+  function dibujar(){
+    var c1=+document.getElementById('c1').value, c2=+document.getElementById('c2').value;
+    document.getElementById('v-c1').textContent=c1;
+    document.getElementById('v-c2').textContent=c2;
+    var lp=optLP(c1,c2), ip=optIP(c1,c2);
+
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+
+    /* grilla */
+    for(var g=0;g<=6;g++){
+      svg.appendChild(svgEl('line',{x1:sx(g),y1:sy(0),x2:sx(g),y2:sy(YMAX),stroke:'rgba(20,24,31,.07)'}));
+      svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(g),x2:sx(XMAX),y2:sy(g),stroke:'rgba(20,24,31,.07)'}));
+    }
+    /* region */
+    if(capas.region){
+      var d=vertices.map(function(v,i){return (i?'L':'M')+sx(v[0])+','+sy(v[1]);}).join(' ')+' Z';
+      svg.appendChild(svgEl('path',{d:d,fill:'rgba(15,110,99,.16)',stroke:'#0F6E63','stroke-width':1.6}));
+    }
+    /* ejes */
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(0),x2:sx(XMAX),y2:sy(0),stroke:'#6B7683','stroke-width':1.2}));
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(0),x2:sx(0),y2:sy(YMAX),stroke:'#6B7683','stroke-width':1.2}));
+    for(var t=0;t<=6;t++){
+      var tx=svgEl('text',{x:sx(t),y:sy(0)+14,'text-anchor':'middle'});tx.textContent=t;svg.appendChild(tx);
+      if(t>0){var ty=svgEl('text',{x:sx(0)-8,y:sy(t)+4,'text-anchor':'end'});ty.textContent=t;svg.appendChild(ty);}
+    }
+    var lx=svgEl('text',{x:sx(XMAX),y:sy(0)+27,'text-anchor':'end','font-size':11});lx.textContent='x₁';svg.appendChild(lx);
+    var ly=svgEl('text',{x:sx(0)-8,y:sy(YMAX)-6,'text-anchor':'end','font-size':11});ly.textContent='x₂';svg.appendChild(ly);
+
+    /* puntos enteros */
+    if(capas.enteros){
+      puntosEnteros().forEach(function(p){
+        svg.appendChild(svgEl('circle',{cx:sx(p[0]),cy:sy(p[1]),r:3.2,fill:'#14181F',opacity:.72}));
+      });
+    }
+    /* curva de nivel del objetivo por el optimo entero */
+    (function(){
+      var z=ip.z, pts=[];
+      for(var xx=0;xx<=XMAX;xx+=0.05){var yy=(z-c1*xx)/c2;if(yy>=0&&yy<=YMAX)pts.push([xx,yy]);}
+      if(pts.length>1){
+        var dd=pts.map(function(p,i){return (i?'L':'M')+sx(p[0])+','+sy(p[1]);}).join(' ');
+        svg.appendChild(svgEl('path',{d:dd,fill:'none',stroke:'#C8551E','stroke-width':1.1,'stroke-dasharray':'4 4',opacity:.7}));
+      }
+    })();
+
+    /* optimo LP */
+    svg.appendChild(svgEl('circle',{cx:sx(lp.x),cy:sy(lp.y),r:6.5,fill:'none',stroke:'#0F6E63','stroke-width':2.4}));
+    /* redondeo */
+    var rx=Math.round(lp.x), ry=Math.round(lp.y), rFact=factible(rx,ry);
+    if(capas.redondeo){
+      svg.appendChild(svgEl('line',{x1:sx(lp.x),y1:sy(lp.y),x2:sx(rx),y2:sy(ry),stroke:'#C8551E','stroke-width':1.2,'stroke-dasharray':'3 3'}));
+      svg.appendChild(svgEl('rect',{x:sx(rx)-5,y:sy(ry)-5,width:10,height:10,fill:'none',stroke:rFact?'#B8892B':'#C8551E','stroke-width':2,transform:'rotate(45 '+sx(rx)+' '+sy(ry)+')'}));
+    }
+    /* optimo entero */
+    svg.appendChild(svgEl('circle',{cx:sx(ip.x),cy:sy(ip.y),r:7,fill:'#C8551E',stroke:'#fff','stroke-width':2}));
+
+    /* marcadores numericos */
+    document.getElementById('m-lp').textContent=fmt(lp.z);
+    document.getElementById('m-lpx').textContent='en ('+fmt(lp.x)+' ; '+fmt(lp.y)+')';
+    document.getElementById('m-ip').textContent=fmt(ip.z);
+    document.getElementById('m-ipx').textContent='en ('+ip.x+' ; '+ip.y+')';
+    var mrd=document.getElementById('m-rd');
+    if(rFact){
+      var zr=c1*rx+c2*ry;
+      mrd.textContent=fmt(zr); mrd.className=zr>=ip.z-1e-9?'ok':'mal';
+      document.getElementById('m-rdx').textContent='en ('+rx+' ; '+ry+')'+(zr<ip.z?' — peor que el óptimo':' — coincide con el óptimo');
+    }else{
+      mrd.textContent='infactible'; mrd.className='mal';
+      document.getElementById('m-rdx').textContent='('+rx+' ; '+ry+') viola una restricción';
+    }
+
+    /* mensaje pedagogico */
+    var gap=lp.z>0?((lp.z-ip.z)/ip.z*100):0;
+    var msg='';
+    if(!rFact){msg='Con estos coeficientes el redondeo del óptimo continuo cae <b>fuera</b> de la región factible. El gap de integralidad es '+fmt(gap,1)+'%.';}
+    else if(Math.abs(c1*rx+c2*ry-ip.z)<1e-9){msg='Aquí el redondeo <b>acierta</b> por casualidad. Que funcione en un caso no lo convierte en método: no hay garantía alguna. Gap de integralidad: '+fmt(gap,1)+'%.';}
+    else {msg='El redondeo es factible pero <b>subóptimo</b>: pierde '+fmt(ip.z-(c1*rx+c2*ry))+' unidades de objetivo. Gap de integralidad: '+fmt(gap,1)+'%.';}
+    document.getElementById('mensaje').innerHTML=msg;
+
+    /* modelo en TeX */
+    var m=document.getElementById('modelo-tex');
+    m.innerHTML='\\[\\begin{aligned}\\max\\;& z='+c1+'x_1+'+c2+'x_2\\\\ \\text{s.a.}\\;& x_1+x_2\\le 6\\\\ & 9x_1+5x_2\\le 45\\\\ & x_1,x_2\\ge 0,\\ \\text{enteras}\\end{aligned}\\]';
+    if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([m]);
+  }
+
+  document.getElementById('c1').oninput=dibujar;
+  document.getElementById('c2').oninput=dibujar;
+  document.querySelectorAll('.capa').forEach(function(b){
+    if(capas[b.dataset.capa])b.classList.remove('ghost');
+    b.onclick=function(){
+      capas[b.dataset.capa]=!capas[b.dataset.capa];
+      b.classList.toggle('ghost',!capas[b.dataset.capa]);
+      dibujar();
+    };
+  });
+  dibujar();
+})();
+
+/* ============ Explosión combinatoria ============ */
+(function(){
+  var n=document.getElementById('nbin'); if(!n)return;
+  var vel=document.getElementById('vel');
+  var svg=document.getElementById('barra-comp');
+  var refs=[
+    {t:1e-3,l:'un parpadeo'},
+    {t:1,l:'un segundo'},
+    {t:60,l:'un minuto de clase'},
+    {t:3600,l:'una hora'},
+    {t:86400,l:'un día completo'},
+    {t:2.6e6,l:'un mes'},
+    {t:3.15e7,l:'un año'},
+    {t:3.15e9,l:'un siglo'},
+    {t:1.4e17,l:'la edad de la Tierra'},
+    {t:4.4e17,l:'la edad del universo'}
+  ];
+  function act(){
+    var N=+n.value, V=Math.pow(10,+vel.value);
+    var comb=Math.pow(2,N);
+    var seg=comb/V;
+    document.getElementById('v-n').textContent=N;
+    document.getElementById('v-vel').textContent='10'+String(+vel.value).split('').map(function(d){return '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d];}).join('');
+    document.getElementById('m-comb').textContent= comb<1e6? comb.toLocaleString('es-CL') : comb.toExponential(2).replace('e+',' × 10^').replace('.',',');
+    var txt;
+    if(seg<1e-3)txt=fmt(seg*1e6,1)+' µs';
+    else if(seg<1)txt=fmt(seg*1e3,1)+' ms';
+    else if(seg<60)txt=fmt(seg,1)+' s';
+    else if(seg<3600)txt=fmt(seg/60,1)+' min';
+    else if(seg<86400)txt=fmt(seg/3600,1)+' h';
+    else if(seg<3.15e7)txt=fmt(seg/86400,1)+' días';
+    else txt=(seg/3.15e7).toExponential(2).replace('e+',' × 10^').replace('.',',')+' años';
+    document.getElementById('m-tiempo').textContent=txt;
+    var r=refs[0];
+    for(var i=0;i<refs.length;i++)if(seg>=refs[i].t)r=refs[i];
+    document.getElementById('m-comp').textContent = seg<1e-3?'imperceptible':'≈ '+r.l;
+
+    /* barra logaritmica */
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    var W=420,h=18,y=26;
+    var frac=Math.max(0,Math.min(1,(Math.log10(Math.max(seg,1e-9))+9)/(Math.log10(4.4e17)+9)));
+    svg.appendChild(svgEl('rect',{x:0,y:y,width:W,height:h,rx:9,fill:'#EAE5DA',stroke:'rgba(20,24,31,.14)'}));
+    svg.appendChild(svgEl('rect',{x:0,y:y,width:Math.max(4,W*frac),height:h,rx:9,fill:seg>3.15e7?'#C8551E':(seg>60?'#B8892B':'#0F6E63')}));
+    var t1=svgEl('text',{x:0,y:y-8});t1.textContent='µs';svg.appendChild(t1);
+    var t2=svgEl('text',{x:W/2,y:y-8,'text-anchor':'middle'});t2.textContent='escala logarítmica';svg.appendChild(t2);
+    var t3=svgEl('text',{x:W,y:y-8,'text-anchor':'end'});t3.textContent='edad del universo';svg.appendChild(t3);
+  }
+  n.oninput=act; vel.oninput=act; act();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>
