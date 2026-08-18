@@ -448,7 +448,7 @@ body.editando .aviso-edicion{display:flex}
   <h3>Al terminar esta clase deberías poder</h3>
   <ol class="objetivos">
     <li><strong>Reconocer</strong> cuándo un enunciado describe restricciones alternativas y no simultáneas.</li>
-    <li><strong>Formular</strong> la elección entre dos restricciones usando una binaria y el término \(M(1-z)\) / \(Mz\).</li>
+    <li><strong>Formular</strong> la elección entre dos restricciones usando una binaria \(w\) y el término \(M(1-w)\) / \(Mw\).</li>
     <li><strong>Generalizar</strong> a la selección de \(K\) restricciones entre \(N\) posibles.</li>
     <li><strong>Extender</strong> el mecanismo a la elección entre dos <em>grupos</em> de restricciones (tecnologías o modos de operación completos).</li>
     <li><strong>Explicar geométricamente</strong> por qué la región resultante es no convexa y qué papel juega \(M\) en representarla.</li>
@@ -479,8 +479,8 @@ body.editando .aviso-edicion{display:flex}
           <label style="display:block">Modo de visualización</label>
           <select id="modo-ab">
             <option value="0">Ambas restricciones simultáneas (intersección: lo que haría la PL)</option>
-            <option value="1">Solo tecnología A activa (z = 0)</option>
-            <option value="2">Solo tecnología B activa (z = 1)</option>
+            <option value="1">Solo tecnología A activa (w = 0)</option>
+            <option value="2">Solo tecnología B activa (w = 1)</option>
             <option value="3">Elección A o B (unión: lo que queremos modelar)</option>
           </select>
         </div>
@@ -515,12 +515,12 @@ body.editando .aviso-edicion{display:flex}
     <span class="et">Elección entre dos restricciones</span>
     \[
     \begin{aligned}
-    x_1 + 2x_2 &\le 6 + M(1-z)\\
-    x_1 + x_2 &\le 4{,}5 + Mz\\
-    z &\in \{0,1\}
+    x_1 + 2x_2 &\le 6 + M(1-w)\\
+    x_1 + x_2 &\le 4{,}5 + Mw\\
+    w &\in \{0,1\}
     \end{aligned}
     \]
-    <p class="glosa">Si \(z=1\): la primera queda \(\le 6\) (activa) y la segunda \(\le 4{,}5+M\) (relajada, no restringe). Si \(z=0\): ocurre lo contrario. La binaria decide cuál rige.</p>
+    <p class="glosa">Si \(w=1\): la primera queda \(\le 6\) (activa) y la segunda \(\le 4{,}5+M\) (relajada, no restringe). Si \(w=0\): ocurre lo contrario. La binaria decide cuál rige.</p>
   </div>
 
   <div class="nota ojo">
@@ -533,7 +533,7 @@ body.editando .aviso-edicion{display:flex}
     <span class="et">Deben cumplirse \(K\) de las \(N\) restricciones</span>
     \[
     \begin{aligned}
-    \sum_{j} a_{ij}x_j &\le b_i + M y_i && i=1,\dots,N\\
+    \sum_{j\in J} a_{ij}x_j &\le b_i + M_i\, y_i && \forall i=1,\dots,N\\
     \sum_{i=1}^{N} y_i &= N-K\\
     y_i &\in\{0,1\} && \forall i=1,\dots,N
     \end{aligned}
@@ -544,20 +544,34 @@ body.editando .aviso-edicion{display:flex}
   <div class="widget">
     <header><span class="tag sim">Simulador</span><h4>K de N: elige cuántas restricciones deben regir</h4></header>
     <div class="cuerpo">
-      <p style="font-size:.94rem">Cuatro restricciones candidatas sobre \(x_1, x_2 \ge 0\). El modelo debe cumplir \(K\) de ellas y maximizar \(z = 3x_1 + 2x_2\). El simulador enumera todos los subconjuntos de tamaño \(K\) y muestra el mejor.</p>
+      <p style="font-size:.94rem">Cuatro restricciones candidatas, con las variables acotadas por \(0 \le x_1, x_2 \le 8\). El modelo debe cumplir \(K\) de ellas y maximizar \(z = 3x_1 + 2x_2\). Cada restricción trae su propio \(M_i\) <strong>fijo y ajustado</strong>, calculado como el máximo del lado izquierdo dentro de la caja menos su lado derecho: es el valor más chico que la deja verdaderamente fuera de juego.</p>
       <div class="controles">
         <div class="ctrl"><label>Restricciones que deben cumplirse \(K\) <b id="v-K">2</b></label><input type="range" id="Kn" min="1" max="4" step="1" value="2"></div>
       </div>
-      <div class="tabla-scroll">
-        <table id="t-kn">
-          <thead><tr><th>Restricción</th><th>Expresión</th><th>¿Activa en la mejor combinación?</th></tr></thead>
-          <tbody></tbody>
-        </table>
+
+      <div style="display:grid;gap:18px;grid-template-columns:minmax(280px,1.05fr) minmax(240px,1fr);align-items:start">
+        <svg id="g-kn" viewBox="0 0 380 350" style="width:100%;height:auto"></svg>
+        <div>
+          <div class="tabla-scroll">
+            <table id="t-kn">
+              <thead><tr><th>Restr.</th><th>Expresión</th><th class="num">\(M_i\)</th><th>Estado</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="marcador" style="flex-direction:column">
+            <div><span>Mejor valor \(z\)</span><b class="ok" id="kn-z">—</b></div>
+            <div><span>Solución \((x_1,x_2)\)</span><b id="kn-x" style="font-size:1.05rem">—</b></div>
+            <div><span>Subconjuntos evaluados</span><b id="kn-c">—</b></div>
+          </div>
+        </div>
       </div>
-      <div class="marcador">
-        <div><span>Mejor valor \(z\)</span><b class="ok" id="kn-z">—</b></div>
-        <div><span>Solución \((x_1,x_2)\)</span><b id="kn-x" style="font-size:1.1rem">—</b></div>
-        <div><span>Subconjuntos evaluados</span><b id="kn-c">—</b></div>
+
+      <div class="leyenda">
+        <span><i style="background:rgba(15,110,99,.2);border:1px solid var(--teal)"></i>Región factible</span>
+        <span><i style="background:transparent;border:2px solid var(--ink)"></i>Restricción activa</span>
+        <span><i style="background:transparent;border:1.5px dashed var(--amber)"></i>Relajada: dónde estaba</span>
+        <span><i style="background:transparent;border:1.5px dotted var(--amber)"></i>Relajada: dónde queda con \(+M_i\)</span>
+        <span><i style="background:var(--amber);border-radius:50%"></i>Óptimo</span>
       </div>
       <p id="kn-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
     </div>
@@ -568,28 +582,33 @@ body.editando .aviso-edicion{display:flex}
   <div class="eyebrow">Verificación de comprensión</div>
   <h2>Pausa de 60 segundos</h2>
 
-  <div class="quiz" data-correcta="1" data-retro='["Esa suma obligaría a relajar solo una restricción, es decir a cumplir tres — no dos.","Correcto. Si \\(y_i=1\\) relaja la restricción \\(i\\), y deben cumplirse 2 de 4, hay que relajar exactamente \\(4-2=2\\).","Con la suma igual a 2 pero interpretando \\(y_i=1\\) como <em>cumplir</em>, la restricción de relajación debería escribirse con \\(M(1-y_i)\\). La expresión y la convención tienen que ser coherentes entre sí.","La desigualdad permitiría relajar menos de dos, lo que es más restrictivo que lo pedido, pero no es incorrecto en todos los casos; sin embargo no expresa exactamente <em>K de N</em>."]'>
+  <div class="quiz" data-correcta="1" data-retro='["Esa suma relajaría tres restricciones, dejando solo dos en vigencia.","Correcto. Si \\(y_i=1\\) relaja la restricción \\(i\\), y deben cumplirse 3 de 5, hay que relajar exactamente \\(5-3=2\\).","Ese sería el conteo si \\(y_i=1\\) significara <em>se cumple</em>. En ese caso el término de relajación debe escribirse \\(M(1-y_i)\\): la convención y la expresión tienen que ser coherentes entre sí.","La desigualdad permite relajar menos de dos, es decir cumplir más de tres. No expresa <em>exactamente</em> tres."]'>
     <span class="et">Chequeo 1 de 2</span>
-    <p class="preg">Se deben cumplir exactamente 2 de 4 restricciones. Con \(y_i=1\) indicando que la restricción \(i\) se <strong>relaja</strong>, ¿cuál es la restricción de conteo?</p>
+    <p class="preg">Se deben cumplir <strong>exactamente 3 de 5</strong> restricciones. Con \(y_i=1\) indicando que la restricción \(i\) se <strong>relaja</strong>, ¿cuál es la restricción de conteo?</p>
     <div class="opciones">
-      <button><span class="k">A</span><span>\(\sum_{i=1}^{4} y_i = 1\)</span></button>
-      <button><span class="k">B</span><span>\(\sum_{i=1}^{4} y_i = 2\)</span></button>
-      <button><span class="k">C</span><span>\(\sum_{i=1}^{4} y_i = 2\) con el término \(M(1-y_i)\)</span></button>
-      <button><span class="k">D</span><span>\(\sum_{i=1}^{4} y_i \le 2\)</span></button>
+      <button><span class="k">A</span><span>\(\sum_{i=1}^{5} y_i = 3\)</span></button>
+      <button><span class="k">B</span><span>\(\sum_{i=1}^{5} y_i = 2\)</span></button>
+      <button><span class="k">C</span><span>\(\sum_{i=1}^{5} y_i = 3\) con el término \(M(1-y_i)\)</span></button>
+      <button><span class="k">D</span><span>\(\sum_{i=1}^{5} y_i \le 2\)</span></button>
     </div>
     <div class="retro"></div>
   </div>
 
-  <div class="quiz" data-correcta="3" data-retro='["La unión de dos poliedros convexos puede ser no convexa: basta tomar dos triángulos separados.","Que cada región sea convexa no implica que la unión lo sea; la convexidad no se hereda por unión.","La intersección sí preserva convexidad, pero aquí estamos tomando una unión.","Correcto. Una unión de conjuntos convexos generalmente no es convexa: hay pares de puntos factibles cuyo segmento sale de la región. Por eso el problema no se puede resolver con PL y requiere binarias."]'>
+  <div class="quiz" data-correcta="1" data-retro='["Casi, pero le falta la primera mitad: con la binaria <em>fija</em> el problema sí es un programa lineal ordinario y su región es convexa. La no convexidad no aparece por tener restricciones lineales, sino por dejar que la binaria elija.","Correcto. Fijado \\(w=0\\) queda un programa lineal con región convexa; fijado \\(w=1\\), otro programa lineal con otra región convexa. Lo que el modelo entero describe es la <em>unión</em> de ambas, y una unión de convexos en general no lo es. La binaria es la que introduce la disyunción.","La región con \\(w\\) fijo sí es convexa: son restricciones lineales. Lo que no es convexo es el conjunto que resulta de permitir ambos valores.","El valor de \\(M\\) cambia cuán bien se representa cada rama, pero no convierte una unión de dos regiones separadas en un conjunto convexo."]'>
     <span class="et">Chequeo 2 de 2</span>
-    <p class="preg">La región factible resultante de "cumplir A <strong>o</strong> B" es la unión de dos poliedros. ¿Qué se puede afirmar?</p>
+    <p class="preg">En el modelo \(x_1+2x_2 \le 6 + M(1-w)\), \(x_1+x_2 \le 4{,}5 + Mw\), con \(w\in\{0,1\}\): ¿qué se puede afirmar sobre la convexidad?</p>
     <div class="opciones">
-      <button><span class="k">A</span><span>Sigue siendo convexa, porque ambos poliedros lo son</span></button>
-      <button><span class="k">B</span><span>Es convexa si los poliedros se intersectan</span></button>
-      <button><span class="k">C</span><span>Es convexa porque la intersección de convexos es convexa</span></button>
-      <button><span class="k">D</span><span>En general <em>no</em> es convexa, y esa es la razón de usar binarias</span></button>
+      <button><span class="k">A</span><span>Es convexa siempre: todas las restricciones son lineales</span></button>
+      <button><span class="k">B</span><span>Con \(w\) fijo es convexa; permitiendo ambos valores de \(w\), en general no</span></button>
+      <button><span class="k">C</span><span>Nunca es convexa, ni siquiera con \(w\) fijo</span></button>
+      <button><span class="k">D</span><span>Es convexa si \(M\) es suficientemente grande</span></button>
     </div>
     <div class="retro"></div>
+  </div>
+
+  <div class="nota">
+    <span class="et">La idea en una línea</span>
+    <p>Fijar la binaria es quedarse en <strong>una</strong> de las dos ramas, y ahí todo es programación lineal de la buena: región convexa, símplex, vértices. Dejar que el modelo <em>elija</em> la binaria es quedarse con la <strong>unión</strong> de las dos ramas — y esa unión, salvo casos particulares, no es convexa. Ese salto es exactamente lo que pagas al escribir la disyunción.</p>
   </div>
 </section>
 
@@ -602,11 +621,11 @@ body.editando .aviso-edicion{display:flex}
     <span class="et">Elección entre dos grupos</span>
     \[
     \begin{aligned}
-    \text{Si se usa el método A:} \quad & \sum_j a^{A}_{ij}x_j \le b^{A}_i && i\in G_A\\
-    \text{Si se usa el método B:} \quad & \sum_j a^{B}_{ij}x_j \le b^{B}_i && i\in G_B
+    \text{Si se usa el método A:} \quad & \sum_{j\in J} a^{A}_{ij}x_j \le b^{A}_i && \forall i\in G_A\\
+    \text{Si se usa el método B:} \quad & \sum_{j\in J} a^{B}_{ij}x_j \le b^{B}_i && \forall i\in G_B
     \end{aligned}
     \]
-    <p class="glosa">Se introduce <strong>una sola</strong> binaria \(z\) para todo el grupo: \(z=1\) si se usa el método B. Luego cada restricción de \(G_A\) recibe \(+Mz\) y cada una de \(G_B\) recibe \(+M(1-z)\). Es clave que sea una sola binaria: si usara una por restricción, el modelo podría mezclar restricciones de A con restricciones de B.</p>
+    <p class="glosa">Se introduce <strong>una sola</strong> binaria \(w\) para todo el grupo: \(w=1\) si se usa el método B. Luego cada restricción de \(G_A\) recibe \(+Mw\) y cada una de \(G_B\) recibe \(+M(1-w)\). Es clave que sea una sola binaria: si usara una por restricción, el modelo podría mezclar restricciones de A con restricciones de B.</p>
   </div>
 
   <div class="rejilla r2">
@@ -633,7 +652,7 @@ body.editando .aviso-edicion{display:flex}
   <h2>Lo esencial en cinco líneas</h2>
   <ul class="resumen">
     <li>Cuando las restricciones son <strong>alternativas y no simultáneas</strong>, la región factible es una unión y deja de ser convexa.</li>
-    <li>El mecanismo es <strong>relajar con \(M\)</strong> la restricción no elegida: \(\text{LHS} \le b + M(1-z)\) la deja activa cuando \(z=1\).</li>
+    <li>El mecanismo es <strong>relajar con \(M\)</strong> la restricción no elegida: \(\text{LHS} \le b + M(1-w)\) la deja activa cuando \(w=1\).</li>
     <li>Para \(K\) de \(N\): un \(y_i\) por restricción más la restricción de conteo \(\sum y_i = N-K\).</li>
     <li>Para elegir entre <strong>grupos</strong> de restricciones se usa <em>una sola</em> binaria compartida por todo el grupo.</li>
     <li>La convención importa: defina si \(y_i=1\) significa "se cumple" o "se relaja", y mantenga la coherencia en todo el modelo.</li>
@@ -659,10 +678,12 @@ body.editando .aviso-edicion{display:flex}
       R3: \(x_1 + x_2 \le 6\)<br>
       R4: \(3x_1 + x_2 \le 15\)
       </p>
-      <p><strong>a)</strong> Formule el modelo que exige cumplir exactamente 3 de las 4 restricciones, usando binarias y \(M\).<br>
-      <strong>b)</strong> Justifique un valor de \(M\) apropiado suponiendo además que \(x_1 \le 10\) y \(x_2 \le 10\).<br>
-      <strong>c)</strong> Resuelva enumerando los cuatro subconjuntos posibles de 3 restricciones y reporte el óptimo.<br>
-      <strong>d)</strong> ¿Qué ocurre con el óptimo si \(K\) baja de 3 a 2? ¿Y si sube a 4? Explique la monotonía.</p>
+      <p><strong>a)</strong> Formule el modelo que exige cumplir exactamente 3 de las 4 restricciones, usando binarias y el término de relajación.<br>
+      <strong>b)</strong> Sabiendo además que \(x_1 \le 10\) y \(x_2 \le 10\), determine un \(M_i\) <em>ajustado para cada restricción</em> y justifique cómo lo obtuvo. ¿Por qué es preferible a usar un único \(M\) grande para todas?<br>
+      <strong>c)</strong> Reescriba el modelo completo con la <strong>convención opuesta</strong>: \(y_i=1\) si la restricción \(i\) <em>sí se cumple</em>. Indique cómo cambian el término de relajación y la restricción de conteo.<br>
+      <strong>d)</strong> Sin resolver nada: si en lugar de 3 se exigieran solo 2 restricciones, ¿la región factible del modelo crece, se achica o queda igual? Justifique en una línea.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Enumere los cuatro subconjuntos posibles de 3 restricciones, resuelva gráficamente cada uno y reporte cuál conviene relajar. Sirve para comprobar la intuición de (d), pero no es el objetivo de esta unidad: aquí lo que se evalúa es formular, no resolver.</p>
     </div>
   </div>
 
@@ -675,10 +696,11 @@ body.editando .aviso-edicion{display:flex}
       Modo orgánico: \(3x_1 + 2x_2 \le 40\) (horas de línea, proceso más lento); \(x_2 \ge 5\) (volumen mínimo comprometido con el certificador); \(x_1 \le 8\).
       </p>
       <p>El margen es \(z = 6x_1 + 9x_2\) en modo estándar y \(z = 6x_1 + 14x_2\) en modo orgánico (el producto 2 se vende con premio).</p>
-      <p><strong>a)</strong> Formule el modelo completo con una sola binaria \(z_{mod}\).<br>
+      <p><strong>a)</strong> Formule el modelo completo con una sola binaria \(w\), donde \(w=1\) indica modo orgánico. Explique por qué debe ser <em>una sola</em> y no una por restricción.<br>
       <strong>b)</strong> Preste atención a la función objetivo: el margen depende del modo. ¿Cómo se escribe eso linealmente?<br>
-      <strong>c)</strong> Resuelva ambos modos por separado y determine cuál conviene.<br>
-      <strong>d)</strong> ¿Qué pasa con la restricción \(x_2 \ge 5\) si el modo elegido es el estándar? Escríbala correctamente.</p>
+      <strong>c)</strong> ¿Qué pasa con la restricción \(x_2 \ge 5\) si el modo elegido es el estándar? Escríbala correctamente y explique por qué el término con \(M\) cambia de signo respecto de las restricciones de tipo \(\le\).</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Resuelva cada modo por separado y determine cuál conviene. La conclusión es interesante para discutir en clase, pero lo evaluado aquí es la formulación.</p>
     </div>
   </div>
 
@@ -696,23 +718,29 @@ body.editando .aviso-edicion{display:flex}
           <tr><td>T5</td><td class="num">5</td><td class="num">28</td></tr>
         </tbody>
       </table></div>
-      <p><strong>a)</strong> Defina \(s_i \ge 0\) como el instante de inicio del trabajo \(i\). Escriba la condición de no solapamiento entre dos trabajos \(i\) y \(j\) como una disyunción y formúlela con una binaria \(z_{ij}\).<br>
+      <p><strong>a)</strong> Defina \(s_i \ge 0\) como el instante de inicio del trabajo \(i\). Escriba la condición de no solapamiento entre dos trabajos \(i\) y \(j\) como una disyunción y formúlela con una binaria \(w_{ij}\).<br>
       <strong>b)</strong> ¿Cuántas binarias disyuntivas necesita el modelo completo con 5 trabajos? ¿Y con \(n\) trabajos?<br>
       <strong>c)</strong> Justifique un valor de \(M\) apropiado a partir de los datos.<br>
       <strong>d)</strong> Formule el objetivo de minimizar el atraso total \(\sum_i \max\{0,\ s_i+p_i-d_i\}\), linealizándolo con variables auxiliares.<br>
-      <strong>e)</strong> La regla EDD (<em>earliest due date</em>) ordena por fecha de entrega creciente. Aplíquela, calcule el atraso total, y explique en qué caso EDD es demostrablemente óptima y por qué aquí puede no serlo para este objetivo.</p>
+      <strong>e)</strong> La máquina requiere un tiempo de limpieza \(\sigma\) entre dos trabajos consecutivos. Modifique las dos restricciones disyuntivas de (a) para incorporarlo. ¿Cambia el valor de \(M\) que justificó en (c)?</p>
     </div>
   </div>
 
   <div class="ejercicio">
-    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Región no convexa y calidad de la formulación</h4></div>
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Un régimen o el otro: la banda prohibida</h4></div>
     <div class="enunciado">
-      <p>Considere el conjunto \(S = \{(x_1,x_2) \ge 0 : x_1+2x_2\le6\ \text{o}\ x_1+x_2\le4{,}5\}\) intersectado con \(x_1\le6,\ x_2\le6\).</p>
-      <p><strong>a)</strong> Dibuje \(S\) y demuestre formalmente que no es convexo exhibiendo dos puntos de \(S\) cuyo punto medio no pertenece a \(S\).<br>
-      <strong>b)</strong> Escriba la formulación Big-M y determine el mínimo valor de \(M\) que la hace correcta.<br>
-      <strong>c)</strong> Describa el conjunto factible de la <em>relajación lineal</em> de esa formulación (con \(z\in[0,1]\)) para \(M=6\). ¿Contiene puntos que no están en \(S\)?<br>
-      <strong>d)</strong> Investigue y describa brevemente la <em>formulación disyuntiva de Balas</em> (envoltura convexa de la unión de poliedros): cuántas variables agrega y qué ventaja tiene sobre Big-M.<br>
-      <strong>e)</strong> Discuta el trade-off: ¿cuándo preferiría una formulación más grande pero más ajustada?</p>
+      <p>Un reactor químico opera de forma estable solo en <strong>régimen bajo</strong> o en <strong>régimen alto</strong>. Si \(x_1\) y \(x_2\) son los caudales de dos insumos, en toneladas por hora, la condición técnica es:</p>
+      <p style="font-family:var(--fm);font-size:.9rem;background:var(--paper-2);padding:13px 16px;border-radius:10px">
+      \(x_1 + x_2 \le 3\)  (régimen bajo)  <b>o</b>  \(x_1 + x_2 \ge 7\)  (régimen alto)<br>
+      con \(0 \le x_1 \le 6\) y \(0 \le x_2 \le 6\).
+      </p>
+      <p>Entre 3 y 7 toneladas por hora el reactor vibra y no puede operar: esa franja está físicamente prohibida.</p>
+      <p><strong>a)</strong> Dibuje el conjunto factible. Elija dos puntos factibles concretos cuyo punto medio <em>no</em> lo sea, y con eso demuestre que el conjunto no es convexo.<br>
+      <strong>b)</strong> Formule la disyunción con una binaria \(w\), donde \(w=1\) indica régimen alto. Atención al sentido de cada término de relajación: una de las dos restricciones es de tipo \(\ge\).<br>
+      <strong>c)</strong> Determine el \(M_i\) más pequeño que hace válida cada una de las dos restricciones, usando las cotas de las variables.<br>
+      <strong>d)</strong> Verifique su formulación evaluándola en \(w=0\) y en \(w=1\): escriba qué queda en cada caso y confirme que reproduce exactamente los dos regímenes.<br>
+      <strong>e)</strong> ¿Podría modelar esta condición sin binarias, solo con restricciones lineales? Justifique a partir de lo que respondió en (a).<br>
+      <strong>f)</strong> Esta estructura reaparecerá pronto con otro nombre: una variable que debe valer cero o estar por encima de un mínimo. ¿Se le ocurre un ejemplo industrial de esa misma forma?</p>
     </div>
   </div>
 </section>
@@ -1256,17 +1284,21 @@ function aviso(txt,color){
 /* ============ K de N ============ */
 (function(){
   var s=document.getElementById('Kn'); if(!s)return;
+  var U=8;                      /* cotas de las variables: 0 <= x <= 8 */
   var R=[
     {n:'R1',a:2,b:1,c:10,txt:'2x₁ + x₂ ≤ 10'},
     {n:'R2',a:1,b:3,c:12,txt:'x₁ + 3x₂ ≤ 12'},
     {n:'R3',a:1,b:1,c:6, txt:'x₁ + x₂ ≤ 6'},
     {n:'R4',a:3,b:1,c:15,txt:'3x₁ + x₂ ≤ 15'}
   ];
+  /* M ajustado por restricción: el máximo del lado izquierdo dentro de la caja
+     menos el lado derecho. Es el más chico que la deja fuera de juego. */
+  R.forEach(function(r){ r.M=r.a*U+r.b*U-r.c; });
   var C1=3,C2=2;
+
   function resolver(sub){
-    /* max 3x1+2x2 sobre interseccion de restricciones en sub, mas x<=20 */
     var cand=[[0,0]];
-    var todas=sub.map(function(i){return R[i];}).concat([{a:1,b:0,c:20},{a:0,b:1,c:20}]);
+    var todas=sub.map(function(i){return R[i];}).concat([{a:1,b:0,c:U},{a:0,b:1,c:U}]);
     todas.forEach(function(r){
       if(r.b!==0)cand.push([0,r.c/r.b]);
       if(r.a!==0)cand.push([r.c/r.a,0]);
@@ -1286,6 +1318,76 @@ function aviso(txt,color){
     });
     return mejor;
   }
+
+  /* ---- gráfico ---- */
+  var XMAX=10, YMAX=10, W=380, H=350, ML=40, MB=38, MT=14, MR=16;
+  function sx(x){return ML+x/XMAX*(W-ML-MR);}
+  function sy(y){return H-MB-y/YMAX*(H-MB-MT);}
+
+  function recta(svg,a,b,c,color,dash,ancho){
+    /* dibuja a·x1 + b·x2 = c dentro de la ventana */
+    var p=[];
+    if(b!==0){
+      var y0=c/b, y1=(c-a*XMAX)/b;
+      p=[[0,y0],[XMAX,y1]];
+    }else{ p=[[c/a,0],[c/a,YMAX]]; }
+    svg.appendChild(svgEl('line',{x1:sx(p[0][0]),y1:sy(p[0][1]),x2:sx(p[1][0]),y2:sy(p[1][1]),
+      stroke:color,'stroke-width':ancho||2,'stroke-dasharray':dash||'','clip-path':'url(#marco-kn)'}));
+  }
+
+  function dibujar(sub,opt){
+    var svg=document.getElementById('g-kn');
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+
+    var defs=svgEl('defs',{});
+    var cp=svgEl('clipPath',{id:'marco-kn'});
+    cp.appendChild(svgEl('rect',{x:sx(0),y:sy(YMAX),width:sx(XMAX)-sx(0),height:sy(0)-sy(YMAX)}));
+    defs.appendChild(cp); svg.appendChild(defs);
+
+    for(var g=0;g<=XMAX;g+=2){
+      svg.appendChild(svgEl('line',{x1:sx(g),y1:sy(0),x2:sx(g),y2:sy(YMAX),stroke:'rgba(20,24,31,.07)'}));
+      svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(g),x2:sx(XMAX),y2:sy(g),stroke:'rgba(20,24,31,.07)'}));
+    }
+    /* caja de cotas */
+    svg.appendChild(svgEl('rect',{x:sx(0),y:sy(U),width:sx(U)-sx(0),height:sy(0)-sy(U),
+      fill:'none',stroke:'rgba(20,24,31,.22)','stroke-dasharray':'2 3'}));
+    var tc=svgEl('text',{x:sx(U)-3,y:sy(U)-5,'text-anchor':'end','font-size':9});
+    tc.textContent='cotas x ≤ 8'; svg.appendChild(tc);
+
+    /* región factible del subconjunto activo, por muestreo */
+    var paso=0.11;
+    for(var x=0;x<XMAX;x+=paso)for(var y=0;y<YMAX;y+=paso){
+      if(x>U||y>U)continue;
+      var ok=sub.every(function(i){return R[i].a*x+R[i].b*y<=R[i].c+1e-9;});
+      if(ok)svg.appendChild(svgEl('rect',{x:sx(x),y:sy(y+paso),
+        width:Math.abs(sx(paso)-sx(0))+.7,height:Math.abs(sy(0)-sy(paso))+.7,fill:'rgba(15,110,99,.2)'}));
+    }
+    /* restricciones */
+    R.forEach(function(r,i){
+      if(sub.indexOf(i)>=0){
+        recta(svg,r.a,r.b,r.c,'#14181F','',2.1);
+      }else{
+        recta(svg,r.a,r.b,r.c,'#C8551E','5 4',1.3);            /* dónde estaba */
+        recta(svg,r.a,r.b,r.c+r.M,'#C8551E','2 4',1.6);        /* dónde queda con +M */
+      }
+    });
+    /* ejes */
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(0),x2:sx(XMAX),y2:sy(0),stroke:'#6B7683','stroke-width':1.2}));
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:sy(0),x2:sx(0),y2:sy(YMAX),stroke:'#6B7683','stroke-width':1.2}));
+    for(var t=2;t<=XMAX;t+=2){
+      var a1=svgEl('text',{x:sx(t),y:sy(0)+14,'text-anchor':'middle'});a1.textContent=t;svg.appendChild(a1);
+      var a2=svgEl('text',{x:sx(0)-7,y:sy(t)+4,'text-anchor':'end'});a2.textContent=t;svg.appendChild(a2);
+    }
+    var lx=svgEl('text',{x:sx(XMAX),y:sy(0)+27,'text-anchor':'end'});lx.textContent='x₁';svg.appendChild(lx);
+    var ly=svgEl('text',{x:sx(0)-7,y:sy(YMAX)-6,'text-anchor':'end'});ly.textContent='x₂';svg.appendChild(ly);
+    /* óptimo */
+    if(opt&&opt.x){
+      svg.appendChild(svgEl('circle',{cx:sx(opt.x[0]),cy:sy(opt.x[1]),r:6.5,fill:'#C8551E',stroke:'#fff','stroke-width':2}));
+      var to=svgEl('text',{x:sx(opt.x[0])+11,y:sy(opt.x[1])-8,'font-size':10,fill:'#C8551E','font-weight':600});
+      to.textContent='z = '+fmt(opt.z,2); svg.appendChild(to);
+    }
+  }
+
   function act(){
     var K=+s.value;
     document.getElementById('v-K').textContent=K;
@@ -1301,16 +1403,23 @@ function aviso(txt,color){
       var on=mejor.sub.indexOf(i)>=0;
       var tr=document.createElement('tr');
       if(on)tr.className='sel';
-      tr.innerHTML='<td>'+r.n+'</td><td style="font-family:var(--fm);font-size:.85rem">'+r.txt+'</td>'+
-        '<td style="font-weight:600;color:'+(on?'var(--amber)':'var(--ink-3)')+'">'+(on?'✓ debe cumplirse':'relajada (+M)')+'</td>';
+      tr.innerHTML='<td>'+r.n+'</td><td style="font-family:var(--fm);font-size:.82rem">'+r.txt+'</td>'+
+        '<td class="num">'+r.M+'</td>'+
+        '<td style="font-weight:600;font-size:.85rem;color:'+(on?'var(--ink)':'var(--amber)')+'">'+(on?'activa':'relajada')+'</td>';
       tb.appendChild(tr);
     });
     document.getElementById('kn-z').textContent=fmt(mejor.z,2);
     document.getElementById('kn-x').textContent='('+fmt(mejor.x[0],2)+' ; '+fmt(mejor.x[1],2)+')';
     document.getElementById('kn-c').textContent=subs.length;
+    dibujar(mejor.sub,mejor);
+
     var msg=document.getElementById('kn-msg');
-    if(K===4)msg.innerHTML='Con \\(K=4\\) todas las restricciones rigen: es el caso clásico de programación lineal, sin binarias. Es también el valor de \\(z\\) más bajo de todos.';
-    else msg.innerHTML='Con \\(K='+K+'\\) se relajan '+(4-K)+' restricción(es). Hay '+subs.length+' subconjuntos posibles y el modelo elige el mejor. Note que al bajar \\(K\\) el óptimo <b>nunca empeora</b>: la región factible solo puede crecer.';
+    if(K===4){
+      msg.innerHTML='Con \\(K=4\\) todas las restricciones rigen: es el caso clásico de programación lineal, sin binarias. La región es la intersección de las cuatro.';
+    }else{
+      var rel=R.filter(function(r,i){return mejor.sub.indexOf(i)<0;}).map(function(r){return r.n;});
+      msg.innerHTML='Con \\(K='+K+'\\) el modelo relaja '+rel.join(' y ')+'. En el gráfico, cada relajada aparece dos veces: <b>a rayas</b> donde estaba cortando, y <b>punteada</b> donde queda al sumarle su \\(M_i\\) — apoyada justo en la esquina de la caja, sin tocar la región. Eso es lo que significa "dejar de restringir".';
+    }
     if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([msg]);
   }
   s.oninput=act; act();
