@@ -474,7 +474,8 @@ body.editando .aviso-edicion{display:flex}
             <option value="3">Se debe hacer al menos una de las dos</option>
             <option value="4">Se debe hacer exactamente una de las dos</option>
             <option value="5">Se hace 1 si y solo si NO se hace 2</option>
-            <option value="6">Se debe hacer 2 solo si NO se hace 1</option>
+            <option value="6">Solo se PUEDE hacer 2 si no se hace 1 (permiso)</option>
+            <option value="7">Si no se hace 1, se DEBE hacer 2 (obligación)</option>
           </select>
         </div>
         <div class="ctrl">
@@ -508,9 +509,10 @@ body.editando .aviso-edicion{display:flex}
   </div>
 </section>
 
-<section class="lamina" id="l3" data-titulo="Chequeo lógico">
+<section class="lamina" id="l3" data-titulo="Pausa 1: relaciones lógicas">
   <div class="eyebrow">Verificación de comprensión</div>
   <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre lo que acabamos de ver en el traductor.</p>
 
   <div class="quiz" data-correcta="2" data-retro='["Eso obligaría a hacer ambas cuando se hace 1, y no permite hacer 2 sin 1 — más restrictivo de lo pedido.","Esta forma permite hacer 1 sin hacer ninguna de las otras dos: no captura la implicación.","Correcto. Si \\(x_1=1\\), el lado derecho debe valer al menos 1, obligando a que \\(x_2\\) o \\(x_3\\) (o ambas) valgan 1. Si \\(x_1=0\\), la restricción no impone nada.","Esa restricción obliga a que se hagan exactamente dos de las tres actividades, sin relación de implicación."]'>
     <span class="et">Chequeo 1 de 2</span>
@@ -524,14 +526,14 @@ body.editando .aviso-edicion{display:flex}
     <div class="retro"></div>
   </div>
 
-  <div class="quiz" data-correcta="1" data-retro='["El modelo no se vuelve infactible: simplemente prohíbe soluciones que deberían estar permitidas.","Correcto. Si \\(M\\) es menor que el nivel óptimo de producción, la restricción \\(x_j \\le M y_j\\) actúa como una capacidad artificial y corta soluciones factibles: el óptimo reportado será peor que el real.","Al contrario: un \\(M\\) chico ajusta la relajación, pero al costo de eliminar soluciones válidas.","El valor de \\(M\\) sí afecta el resultado; no es un parámetro cosmético."]'>
+  <div class="quiz" data-correcta="1" data-retro='["Eso corresponde a \\(x_1 + x_2 = 1\\), que exige hacer exactamente una. La exclusión mutua no obliga a hacer ninguna.","Correcto. \\(x_1+x_2\\le1\\) prohíbe únicamente la combinación (1,1). Que no se puedan hacer ambas no significa que haya que hacer alguna: no hacer ninguna sigue siendo válido.","Si las cuatro fueran factibles la restricción no estaría restringiendo nada.","Esa sería \\(x_1 + x_2 = 0\\), que obliga a no hacer ninguna de las dos."]'>
     <span class="et">Chequeo 2 de 2</span>
-    <p class="preg">En la restricción de costo fijo \(x_j \le M y_j\), ¿qué ocurre si se elige un \(M\) <strong>demasiado pequeño</strong>?</p>
+    <p class="preg">La exclusión mutua \(x_1 + x_2 \le 1\) deja factibles ¿cuáles combinaciones de \((x_1,x_2)\)?</p>
     <div class="opciones">
-      <button><span class="k">A</span><span>El modelo se vuelve infactible siempre</span></button>
-      <button><span class="k">B</span><span>Se cortan soluciones factibles y el óptimo puede ser incorrecto</span></button>
-      <button><span class="k">C</span><span>No pasa nada malo: siempre conviene un \(M\) chico</span></button>
-      <button><span class="k">D</span><span>Solo cambia el tiempo de cómputo, nunca el resultado</span></button>
+      <button><span class="k">A</span><span>Solo \((0,1)\) y \((1,0)\)</span></button>
+      <button><span class="k">B</span><span>\((0,0)\), \((0,1)\) y \((1,0)\)</span></button>
+      <button><span class="k">C</span><span>Las cuatro</span></button>
+      <button><span class="k">D</span><span>Solo \((0,0)\)</span></button>
     </div>
     <div class="retro"></div>
   </div>
@@ -642,20 +644,33 @@ body.editando .aviso-edicion{display:flex}
   </div>
 </section>
 
-<section class="lamina" id="l7" data-titulo="TeC: centrales eléctricas">
-  <div class="eyebrow">Trabajo en clases</div>
-  <h2>TeC 01 · Centrales y localidades</h2>
-  <div class="widget">
-    <header><span class="tag caso">En equipos de 3</span><h4>Abastecer \(L\) localidades con \(N\) centrales</h4></header>
-    <div class="cuerpo">
-      <p>Se tienen \(N\) centrales eléctricas que deben abastecer de energía a \(L\) localidades. Una localidad puede ser abastecida por cualquiera de las centrales, y es posible que más de una central abastezca a la misma localidad. Los datos son: costo fijo \(k_n\) de poner en marcha la central \(n\); capacidad máxima de generación \(G_n\) de la central \(n\); demanda \(D_l\) de la localidad \(l\); costo unitario de transmisión \(t_{nl}\) desde la central \(n\) a la localidad \(l\).</p>
-      <p><strong>a)</strong> Defina las variables de decisión indicando claramente dominio e índices.<br>
-      <strong>b)</strong> Formule la función objetivo y todas las restricciones.<br>
-      <strong>c)</strong> Incorpore: por normativa, al menos \(P\) centrales deben quedar operativas como respaldo.<br>
-      <strong>d)</strong> Incorpore: la central 1 y la central 2 comparten línea de evacuación, así que no pueden operar simultáneamente.<br>
-      <strong>e)</strong> Incorpore: si se pone en marcha la central 3, debe ponerse en marcha también la 4 o la 5.<br>
-      <strong>f)</strong> Discuta: ¿qué valor de \(M\) usaría en la restricción de acoplamiento y por qué?</p>
+<section class="lamina" id="l7" data-titulo="Pausa 2: costo fijo">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre el bloque de costo fijo que acabamos de recorrer.</p>
+
+  <div class="quiz" data-correcta="2" data-retro='["El modelo no se vuelve infactible: con \\(y_j=0\\) y \\(x_j=0\\) siempre existe una solución. El problema es otro.","Al revés: si nada lo obliga, el modelo no tiene ninguna razón para encender una binaria que solo le agrega costo.","Correcto. Sin acoplamiento nada conecta \\(x_j\\) con \\(y_j\\): al minimizar, el modelo deja \\(y_j=0\\), no paga el costo fijo y produce igual. El costo fijo desaparece del problema y la solución no tiene sentido operacional.","Sí cambia, y de forma grave: el término \\(k_j y_j\\) queda en el objetivo pero nunca se activa."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">En un modelo de <strong>minimización</strong> con costo fijo, ¿qué ocurre si se escribe el objetivo \(\min \sum_j (c_jx_j + k_jy_j)\) pero se <strong>omite</strong> la restricción \(x_j \le M y_j\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>El modelo se vuelve infactible</span></button>
+      <button><span class="k">B</span><span>El modelo pone \(y_j=1\) para pagar el costo fijo</span></button>
+      <button><span class="k">C</span><span>El modelo pone \(y_j=0\) y produce igual, sin pagar el costo fijo</span></button>
+      <button><span class="k">D</span><span>No cambia nada: el objetivo ya incluye el costo fijo</span></button>
     </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="1" data-retro='["El modelo no se vuelve infactible: simplemente prohíbe soluciones que deberían estar permitidas.","Correcto. Si \\(M\\) es menor que el nivel óptimo de la actividad, la restricción \\(x_j \\le M y_j\\) actúa como una capacidad artificial y corta soluciones factibles: el óptimo reportado será peor que el verdadero.","Al contrario: un \\(M\\) chico ajusta la relajación, pero al costo de eliminar soluciones válidas. Lo que se busca es el \\(M\\) más chico que siga siendo <em>válido</em>.","El valor de \\(M\\) sí afecta el resultado; no es un parámetro cosmético."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">En la restricción de acoplamiento \(x_j \le M y_j\), ¿qué ocurre si se elige un \(M\) <strong>demasiado pequeño</strong>?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>El modelo se vuelve infactible siempre</span></button>
+      <button><span class="k">B</span><span>Se cortan soluciones factibles y el óptimo puede ser incorrecto</span></button>
+      <button><span class="k">C</span><span>No pasa nada malo: siempre conviene un \(M\) chico</span></button>
+      <button><span class="k">D</span><span>Solo cambia el tiempo de cómputo, nunca el resultado</span></button>
+    </div>
+    <div class="retro"></div>
   </div>
 </section>
 
@@ -731,14 +746,16 @@ body.editando .aviso-edicion{display:flex}
   </div>
 
   <div class="ejercicio">
-    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Big-M, calidad de formulación y experimento numérico</h4></div>
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Centrales eléctricas y localidades</h4></div>
     <div class="enunciado">
-      <p>Considere el problema: \(\max z = 9x_1 + 9x_2 - 40y_1 - 40y_2\) sujeto a \(x_1+x_2 \le 100\), \(x_1 \le M y_1\), \(x_2 \le M y_2\), \(x_1,x_2\ge0\), \(y_1,y_2\in\{0,1\}\).</p>
-      <p><strong>a)</strong> Determine el óptimo entero (es independiente de \(M\) si \(M\ge100\)). Justifique.<br>
-      <strong>b)</strong> Resuelva la relajación lineal (\(y_i\in[0,1]\)) para \(M=100\), \(M=1.000\) y \(M=10.000\). Muestre que el valor de la relajación crece con \(M\).<br>
-      <strong>c)</strong> Explique el mecanismo: ¿qué hace la relajación con \(y_i\) cuando \(M\) es grande?<br>
-      <strong>d)</strong> Generalice: enuncie la relación entre el valor de \(M\), el gap de integralidad y el tamaño esperado del árbol de ramificación y acotamiento.<br>
-      <strong>e)</strong> Proponga una reformulación que elimine el problema por completo en este caso, sin usar Big-M.</p>
+      <p>Se tienen \(N\) centrales eléctricas que deben abastecer de energía a \(L\) localidades. Una localidad puede ser abastecida por cualquiera de las centrales, y es posible que más de una central abastezca a la misma localidad. Los datos son: costo fijo \(k_n\) de poner en marcha la central \(n\); capacidad máxima de generación \(G_n\) de la central \(n\); demanda \(D_l\) de la localidad \(l\); costo unitario de transmisión \(t_{nl}\) desde la central \(n\) a la localidad \(l\).</p>
+      <p><strong>a)</strong> Defina las variables de decisión indicando claramente dominio e índices.<br>
+      <strong>b)</strong> Formule la función objetivo y todas las restricciones.<br>
+      <strong>c)</strong> Incorpore: por normativa, al menos \(P\) centrales deben quedar operativas como respaldo.<br>
+      <strong>d)</strong> Incorpore: la central 1 y la central 2 comparten línea de evacuación, así que no pueden operar simultáneamente.<br>
+      <strong>e)</strong> Incorpore: si se pone en marcha la central 3, debe ponerse en marcha también la 4 o la 5.<br>
+      <strong>f)</strong> Justifique qué valor de \(M\) usaría en la restricción de acoplamiento, y qué ocurriría con el modelo si lo eligiera diez veces más grande.<br>
+      <strong>g)</strong> Incorpore: si una central opera, debe generar al menos su mínimo técnico \(G^{\min}_n\).</p>
     </div>
   </div>
 </section>
@@ -1221,7 +1238,8 @@ function aviso(txt,color){
     {r:'x₁ + x₂ ≥ 1',    f:function(a,b){return a+b>=1;}, m:'Prohíbe solo la combinación (0,0). Es la negación lógica de "ninguna de las dos".'},
     {r:'x₁ + x₂ = 1',    f:function(a,b){return a+b===1;}, m:'Exactamente una: combina "al menos una" y "a lo más una" en una sola igualdad.'},
     {r:'x₁ = 1 − x₂',    f:function(a,b){return a===1-b;}, m:'Es idéntica a x₁ + x₂ = 1, escrita de otra forma. Útil cuando quiere eliminar una variable por sustitución.'},
-    {r:'x₂ ≤ 1 − x₁',    f:function(a,b){return b<=1-a;}, m:'Equivale a x₁ + x₂ ≤ 1. Escribir la negación como (1 − x) es un recurso muy útil para traducir frases con "no".'}
+    {r:'x₂ ≤ 1 − x₁',    f:function(a,b){return b<=1-a;}, m:'<b>"Solo si" marca condición necesaria:</b> para hacer 2 se requiere no hacer 1. Prohíbe únicamente (1,1) y equivale a x₁ + x₂ ≤ 1. Compárela con la opción siguiente.'},
+    {r:'x₂ ≥ 1 − x₁',    f:function(a,b){return b>=1-a;}, m:'<b>"Debe" marca obligación:</b> no hacer 1 fuerza hacer 2. Prohíbe únicamente (0,0) y equivale a x₁ + x₂ ≥ 1. Es la restricción <em>contraria</em> a la anterior, aunque las frases se parezcan: ese es el error de traducción más frecuente.'}
   ];
   var tb=document.getElementById('tabla-verdad').querySelector('tbody');
   var lect=[['no 1, no 2'],['no 1, sí 2'],['sí 1, no 2'],['sí 1, sí 2']];
