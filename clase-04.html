@@ -253,16 +253,19 @@ svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
 .ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
 .ejercicio .enunciado{padding:19px 21px}
 .ejercicio .enunciado p:last-child{margin-bottom:0}
-details.pauta{border-top:1px solid var(--line);background:var(--paper-2)}
-details.pauta summary{
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
   cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
   text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
 }
-details.pauta summary::-webkit-details-marker{display:none}
-details.pauta summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
-details.pauta[open] summary::before{transform:rotate(90deg)}
-details.pauta summary:hover{color:var(--ink)}
-details.pauta .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
 
 .pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
 
@@ -395,8 +398,8 @@ body.editando .aviso-edicion{display:flex}
   .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
   .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
   .opciones button:hover{transform:none}
-  details.pauta{background:#f2efe8 !important}
-  details.pauta .contenido{display:block !important}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
   a{color:inherit;text-decoration:none}
 }
 
@@ -493,7 +496,32 @@ body.editando .aviso-edicion{display:flex}
   <div class="widget">
     <header><span class="tag sim">Simulador</span><h4>Selección de niveles discretos de producción</h4></header>
     <div class="cuerpo">
-      <p style="font-size:.94rem">La cantidad a producir del producto A debe ser 0, 10, 20, 35 o 50 unidades. La del producto B debe ser 30, 55 u 85. Elige un nivel de cada uno y observa qué binarias se activan y si el plan es factible.</p>
+      <p style="font-size:.94rem">Una planta produce A y B. Por restricciones de envasado, la cantidad de A debe ser 0, 10, 20, 35 o 50 unidades, y la de B debe ser 30, 55 u 85. Ambos comparten una misma línea con capacidad horaria limitada.</p>
+
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Producto</th><th>Niveles posibles (unidades)</th><th class="num">Horas de línea por unidad</th><th class="num">Margen por unidad</th></tr></thead>
+          <tbody>
+            <tr><td>A</td><td style="font-family:var(--fm);font-size:.85rem">0, 10, 20, 35, 50</td><td class="num">2</td><td class="num">8</td></tr>
+            <tr><td>B</td><td style="font-family:var(--fm);font-size:.85rem">30, 55, 85</td><td class="num">3</td><td class="num">11</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modelo" style="margin-top:14px">
+        <span class="et">Modelo</span>
+        \[
+        \begin{aligned}
+        \max\;\; & z = 8x_A + 11x_B\\
+        \text{s.a.}\;\; & 2x_A + 3x_B \le H && \text{(horas de línea)}\\
+        & x_A = \textstyle\sum_{i=1}^{5} d^A_i\,y^A_i, \quad \sum_{i=1}^{5} y^A_i = 1\\
+        & x_B = \textstyle\sum_{i=1}^{3} d^B_i\,y^B_i, \quad \sum_{i=1}^{3} y^B_i = 1\\
+        & y^A_i,\ y^B_i \in\{0,1\}
+        \end{aligned}
+        \]
+        <p class="glosa">\(d^A=(0,10,20,35,50)\) y \(d^B=(30,55,85)\) son los niveles permitidos. Elige un nivel de cada producto y observa qué binarias se activan, cuántas horas consume el plan y qué margen genera.</p>
+      </div>
+
       <div class="controles">
         <div class="ctrl">
           <label style="display:block">Nivel del producto A</label>
@@ -504,7 +532,7 @@ body.editando .aviso-edicion{display:flex}
           <select id="nivB"><option selected>30</option><option>55</option><option>85</option></select>
         </div>
         <div class="ctrl">
-          <label>Capacidad total de horas <b id="v-cap">300</b></label>
+          <label>Horas de línea disponibles \(H\) <b id="v-cap">300</b></label>
           <input type="range" id="capH" min="150" max="500" step="10" value="300">
         </div>
       </div>
@@ -512,8 +540,8 @@ body.editando .aviso-edicion{display:flex}
         <table id="t-niv"><thead><tr><th>Variable binaria</th><th>Significado</th><th class="num">Valor</th></tr></thead><tbody></tbody></table>
       </div>
       <div class="marcador">
-        <div><span>Horas usadas (2 h/A, 3 h/B)</span><b id="n-h">—</b></div>
-        <div><span>Margen total (8/A, 11/B)</span><b class="ok" id="n-z">—</b></div>
+        <div><span>Horas usadas \(2x_A + 3x_B\)</span><b id="n-h">—</b></div>
+        <div><span>Margen \(z = 8x_A + 11x_B\)</span><b class="ok" id="n-z">—</b></div>
         <div><span>Mejor plan posible</span><b id="n-opt">—</b></div>
       </div>
       <p id="n-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
@@ -526,32 +554,38 @@ body.editando .aviso-edicion{display:flex}
   </div>
 </section>
 
-<section class="lamina" id="l3" data-titulo="Chequeo">
+<section class="lamina" id="l3" data-titulo="Pausa 1: N posibles valores">
   <div class="eyebrow">Verificación de comprensión</div>
   <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre la estructura de \(N\) valores posibles que acabamos de usar.</p>
 
-  <div class="quiz" data-correcta="2" data-retro='["Con \\(\\le 1\\) el modelo puede no elegir ningún nivel, lo que dejaría la variable en cero incluso cuando el enunciado exige elegir uno.","Esa restricción obligaría a activar todos los niveles a la vez, lo que es imposible.","Correcto. La igualdad a 1 obliga a activar exactamente una binaria, y por lo tanto a que la función tome exactamente uno de los valores permitidos.","La suma de los \\(d_i\\) no tiene interpretación aquí: mezcla los valores posibles con las variables de selección."]'>
+  <div class="quiz" data-correcta="2" data-retro='["Con \\(\\le 1\\) el modelo puede no elegir ningún nivel, lo que dejaría \\(f(x)=0\\) incluso cuando el enunciado exige elegir uno de los valores permitidos.","Esa restricción obligaría a activar los \\(N\\) niveles a la vez, lo que es imposible.","Correcto. La igualdad a 1 obliga a activar exactamente una binaria del conjunto \\(I\\), y por lo tanto a que la función tome exactamente uno de los valores permitidos.","Esa expresión mezcla los valores posibles \\(d_i\\) con las binarias de selección: iguala la función a 1 en vez de contar cuántos niveles se eligieron."]'>
     <span class="et">Chequeo 1 de 2</span>
-    <p class="preg">Para que \(f(x)\) tome exactamente uno de los \(N\) valores permitidos, ¿qué restricción de conteo debe acompañar a \(f(x)=\sum_i d_i y_i\)?</p>
+    <p class="preg">Sea \(I=\{1,\dots,N\}\) el conjunto de niveles permitidos. Para que \(f(x)\) tome exactamente uno de ellos, ¿qué restricción de conteo debe acompañar a \(f(x)=\sum_{i\in I} d_i y_i\)?</p>
     <div class="opciones">
-      <button><span class="k">A</span><span>\(\sum_i y_i \le 1\)</span></button>
-      <button><span class="k">B</span><span>\(\sum_i y_i = N\)</span></button>
-      <button><span class="k">C</span><span>\(\sum_i y_i = 1\)</span></button>
-      <button><span class="k">D</span><span>\(\sum_i d_i y_i = 1\)</span></button>
+      <button><span class="k">A</span><span>\(\displaystyle\sum_{i\in I} y_i \le 1\)</span></button>
+      <button><span class="k">B</span><span>\(\displaystyle\sum_{i\in I} y_i = N\)</span></button>
+      <button><span class="k">C</span><span>\(\displaystyle\sum_{i\in I} y_i = 1\)</span></button>
+      <button><span class="k">D</span><span>\(\displaystyle\sum_{i\in I} d_i y_i = 1\)</span></button>
     </div>
     <div class="retro"></div>
   </div>
 
-  <div class="quiz" data-correcta="0" data-retro='["Correcto. \\(x_j \\ge L_j\\) obligaría a producir siempre al menos \\(L_j\\), eliminando la opción de no producir nada, que es justamente una de las dos alternativas válidas.","La restricción sí es lineal; el problema es de significado, no de forma.","El lote mínimo no exige integralidad de \\(x_j\\): la cantidad puede ser fraccionaria mientras supere \\(L_j\\).","No se trata de que \\(L_j\\) sea grande o chico, sino de que la formulación elimina la alternativa de producción nula."]'>
+  <div class="quiz" data-correcta="1" data-retro='["Eso confunde el <em>índice</em> con el <em>valor</em>. El subíndice 1 numera el nivel, no la cantidad: el primer nivel vale \\(d^A_1=0\\) unidades.","Correcto. \\(y^A_1\\) es la binaria que decide si se elige el primer nivel, y ese nivel vale \\(d^A_1 = 0\\). Activarla significa producir cero unidades de A. Como el cero está entre los valores permitidos, esta estructura ya cubre el caso de no producir: no hace falta agregar nada.","Eso sería \\(y^A_1 = 0\\), el caso opuesto. Conviene fijar la diferencia: \\(d^A_1\\) es el <em>valor</em> del primer nivel (aquí, 0 unidades) y \\(y^A_1\\) es la <em>binaria</em> que decide si ese nivel se elige.","La restricción de conteo se cumple perfectamente: se activó exactamente una binaria, la del primer nivel."]'>
     <span class="et">Chequeo 2 de 2</span>
-    <p class="preg">¿Por qué el lote mínimo <strong>no</strong> se puede escribir simplemente como \(x_j \ge L_j\)?</p>
+    <p class="preg">En el simulador, los niveles permitidos de A son \(d^A_1=0\), \(d^A_2=10\), \(d^A_3=20\), \(d^A_4=35\) y \(d^A_5=50\) unidades. El modelo elige exactamente uno activando su binaria. ¿Qué está decidiendo si resulta \(y^A_1 = 1\)?</p>
     <div class="opciones">
-      <button><span class="k">A</span><span>Porque elimina la opción \(x_j = 0\), que debe seguir siendo factible</span></button>
-      <button><span class="k">B</span><span>Porque \(x_j \ge L_j\) no es una restricción lineal</span></button>
-      <button><span class="k">C</span><span>Porque \(x_j\) debería ser entera y esa forma no lo garantiza</span></button>
-      <button><span class="k">D</span><span>Porque \(L_j\) suele ser un número muy grande</span></button>
+      <button><span class="k">A</span><span>Producir una unidad de A</span></button>
+      <button><span class="k">B</span><span>No producir A, porque el nivel elegido vale \(d^A_1=0\)</span></button>
+      <button><span class="k">C</span><span>Descartar el primer nivel y producir en alguno de los otros</span></button>
+      <button><span class="k">D</span><span>Que la restricción de conteo queda sin cumplirse</span></button>
     </div>
     <div class="retro"></div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Índice y valor no son lo mismo</span>
+    <p>Vale la pena separarlo con cuidado, porque es fuente permanente de confusión: <strong>\(d^A_i\)</strong> es el <em>valor</em> del nivel \(i\) — cuántas unidades representa — y <strong>\(y^A_i\)</strong> es la <em>binaria</em> que decide si ese nivel se elige. Que \(d^A_1\) valga cero es un dato del problema; que \(y^A_1\) valga cero o uno es una decisión del modelo.</p>
   </div>
 </section>
 
@@ -572,16 +606,33 @@ body.editando .aviso-edicion{display:flex}
   </div>
 
   <div class="widget">
-    <header><span class="tag viz">Visualización</span><h4>El conjunto factible de una variable semicontinua</h4></header>
+    <header><span class="tag viz">Visualización</span><h4>Por qué la binaria tiene que estar arriba <em>y</em> abajo</h4></header>
     <div class="cuerpo">
+      <p style="font-size:.94rem">Compara las tres formulaciones posibles. Para cada una se muestra qué valores de \(x\) quedan permitidos cuando \(y=0\), cuando \(y=1\), y la unión de ambos casos — que es lo que el modelo realmente permite.</p>
       <div class="controles">
+        <div class="ctrl">
+          <label style="display:block">Formulación</label>
+          <select id="formul">
+            <option value="0">Solo cota superior: \(x \le U y\)</option>
+            <option value="1">Solo cota inferior: \(x \ge L y\)</option>
+            <option value="2" selected>Ambas: \(L y \le x \le U y\)</option>
+          </select>
+        </div>
         <div class="ctrl"><label>Lote mínimo \(L\) <b id="v-L">30</b></label><input type="range" id="Lmin" min="0" max="70" step="5" value="30"></div>
         <div class="ctrl"><label>Capacidad \(U\) <b id="v-U">100</b></label><input type="range" id="Umax" min="40" max="120" step="5" value="100"></div>
       </div>
-      <svg id="g-semi" viewBox="0 0 420 120" style="width:100%;height:auto"></svg>
-      <p id="semi-msg" style="margin-top:6px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
-      <p style="font-size:.9rem;color:var(--ink-2)">El "hueco" entre 0 y \(L\) es lo que hace no convexo al conjunto: el punto medio entre \(x=0\) (factible) y \(x=L\) (factible) es \(L/2\), que <em>no</em> es factible. Convexidad rota, PL descartada.</p>
+      <svg id="g-semi" viewBox="0 0 900 300" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
+      <div class="leyenda">
+        <span><i style="background:var(--teal)"></i>Valores permitidos</span>
+        <span><i style="background:rgba(200,85,30,.16);border:1px solid var(--amber)"></i>Zona que debería estar prohibida</span>
+      </div>
+      <p id="semi-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
     </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Lo que el visualizador deja ver</span>
+    <p>Cada mitad de la doble desigualdad hace un trabajo distinto y ninguna sirve sola. La <strong>cota superior</strong> \(x \le Uy\) es la que apaga la variable: sin ella, con \(y=0\) se podría producir igual. La <strong>cota inferior</strong> \(Ly \le x\) es la que impone el lote mínimo: sin ella, encender la actividad no obliga a nada y el hueco entre 0 y \(L\) nunca aparece. Solo juntas describen \(\{0\}\cup[L,U]\).</p>
   </div>
 </section>
 
@@ -594,25 +645,57 @@ body.editando .aviso-edicion{display:flex}
       <p style="font-size:.94rem">Una empresa evalúa producir tres tipos de motos. Los recursos son acero (800 toneladas) y horas de línea (1.200 horas). Si se decide producir un tipo, deben fabricarse <strong>al menos \(L\)</strong> unidades de ese tipo. Mueve el lote mínimo y observa cómo cambia el plan óptimo.</p>
       <div class="tabla-scroll">
         <table>
-          <thead><tr><th>Modelo</th><th class="num">Acero (ton/u)</th><th class="num">Horas (h/u)</th><th class="num">Margen (UF/u)</th></tr></thead>
+          <thead><tr><th>Modelo \(j\)</th><th class="num">Acero \(a_j\) (ton/u)</th><th class="num">Horas \(h_j\) (h/u)</th><th class="num">Margen \(m_j\) (UF/u)</th><th class="num">Cota \(U_j\) (u)</th></tr></thead>
           <tbody>
-            <tr><td>Enduro</td><td class="num">2</td><td class="num">3</td><td class="num">12</td></tr>
-            <tr><td>Scooter</td><td class="num">1</td><td class="num">2</td><td class="num">7</td></tr>
-            <tr><td>Motocross</td><td class="num">3</td><td class="num">4</td><td class="num">18</td></tr>
+            <tr><td>1 · Enduro</td><td class="num">2</td><td class="num">3</td><td class="num">12</td><td class="num">400</td></tr>
+            <tr><td>2 · Scooter</td><td class="num">1</td><td class="num">2</td><td class="num">7</td><td class="num">600</td></tr>
+            <tr><td>3 · Motocross</td><td class="num">3</td><td class="num">4</td><td class="num">18</td><td class="num">266</td></tr>
           </tbody>
         </table>
       </div>
+
+      <details class="explica" style="margin:14px 0">
+        <summary>¿De dónde sale cada \(U_j\)?</summary>
+        <div class="contenido" style="font-size:.88rem">
+          <p style="margin:10px 0 0">La cota superior de cada modelo no es un número inventado: es lo máximo que se podría producir de ese modelo <em>si fuera el único</em>, limitado por el recurso que se agote primero.</p>
+          <p style="text-align:center;margin:12px 0">\(U_j = \min\left\{\dfrac{A}{a_j},\ \dfrac{H}{h_j}\right\}\)</p>
+          <div class="tabla-scroll">
+            <table style="font-size:.85rem">
+              <thead><tr><th>Modelo</th><th class="num">Límite por acero \(A/a_j\)</th><th class="num">Límite por horas \(H/h_j\)</th><th class="num">\(U_j = \min\)</th></tr></thead>
+              <tbody>
+                <tr><td>Enduro</td><td class="num">800 / 2 = 400</td><td class="num">1.200 / 3 = 400</td><td class="num">400</td></tr>
+                <tr><td>Scooter</td><td class="num">800 / 1 = 800</td><td class="num">1.200 / 2 = 600</td><td class="num">600</td></tr>
+                <tr><td>Motocross</td><td class="num">800 / 3 = 266,7</td><td class="num">1.200 / 4 = 300</td><td class="num">266</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin:0">Note que el recurso que manda cambia según el modelo: al scooter lo limitan las horas, al motocross el acero, y al enduro ambos por igual. Usar estos valores en vez de un \(M\) grande arbitrario es lo que mantiene ajustada la formulación, por la razón que vimos en la Clase 02.</p>
+        </div>
+      </details>
+
       <div class="controles">
-        <div class="ctrl"><label>Lote mínimo \(L\) (unidades) <b id="v-Lm">0</b></label><input type="range" id="Lmoto" min="0" max="220" step="10" value="0"></div>
+        <div class="ctrl"><label>Lote mínimo enduro \(L_1\) <b id="v-L1">0</b></label><input type="range" id="L1" min="0" max="400" step="10" value="0"></div>
+        <div class="ctrl"><label>Lote mínimo scooter \(L_2\) <b id="v-L2">0</b></label><input type="range" id="L2" min="0" max="600" step="10" value="0"></div>
+        <div class="ctrl"><label>Lote mínimo motocross \(L_3\) <b id="v-L3">0</b></label><input type="range" id="L3" min="0" max="260" step="10" value="0"></div>
+      </div>
+      <div class="botonera" style="margin-bottom:14px">
+        <button class="btn ghost" id="mo-reset">Todos en cero</button>
+        <button class="btn ghost" id="mo-ej1">L = 0 · 250 · 0</button>
+        <button class="btn ghost" id="mo-ej2">L = 0 · 150 · 220</button>
       </div>
       <div class="marcador">
-        <div><span>Enduro</span><b id="mo-1">—</b></div>
-        <div><span>Scooter</span><b id="mo-2">—</b></div>
-        <div><span>Motocross</span><b id="mo-3">—</b></div>
-        <div><span>Margen total</span><b class="ok" id="mo-z">—</b></div>
+        <div><span>Enduro \(x_1\)</span><b id="mo-1">—</b></div>
+        <div><span>Scooter \(x_2\)</span><b id="mo-2">—</b></div>
+        <div><span>Motocross \(x_3\)</span><b id="mo-3">—</b></div>
+        <div><span>Margen total \(z\)</span><b class="ok" id="mo-z">—</b></div>
+      </div>
+      <div class="marcador" style="margin-top:8px">
+        <div><span>Acero usado / 800</span><b id="mo-a" style="font-size:1.05rem">—</b></div>
+        <div><span>Horas usadas / 1.200</span><b id="mo-h" style="font-size:1.05rem">—</b></div>
+        <div><span>Modelos producidos</span><b id="mo-n" style="font-size:1.05rem">—</b></div>
       </div>
       <p id="mo-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
-      <p style="font-size:.86rem;color:var(--ink-3);margin-top:10px">El simulador enumera todos los subconjuntos de modelos a producir y, para cada uno, busca el mejor plan en una malla fina. Es enumeración explícita — viable con 3 productos, impensable con 300.</p>
+      <p style="font-size:.86rem;color:var(--ink-3);margin-top:10px">El simulador enumera los ocho subconjuntos de modelos a producir y, para cada uno, busca el mejor plan en una malla fina. Es enumeración explícita — viable con 3 productos, impensable con 300.</p>
     </div>
   </div>
 
@@ -631,20 +714,33 @@ body.editando .aviso-edicion{display:flex}
   </div>
 </section>
 
-<section class="lamina" id="l6" data-titulo="TeC: motos con lote mínimo">
-  <div class="eyebrow">Trabajo en clases</div>
-  <h2>TeC 02 · Volvamos a las motos</h2>
-  <div class="widget">
-    <header><span class="tag caso">En equipos de 3</span><h4>Extensiones al modelo de producción</h4></header>
-    <div class="cuerpo">
-      <p>Con los datos del simulador (acero 800 ton, horas 1.200), incorpore sucesivamente cada una de estas condiciones y determine cómo cambia el modelo:</p>
-      <p><strong>a)</strong> Si se produce algún modelo, deben producirse al menos 100 unidades de ese modelo.<br>
-      <strong>b)</strong> La cantidad de scooters debe ser 0, 150 o 300 unidades exactamente.<br>
-      <strong>c)</strong> Se pueden producir a lo más dos modelos distintos.<br>
-      <strong>d)</strong> Producir motocross exige haber producido enduro (comparten línea de montaje y calibración).<br>
-      <strong>e)</strong> Cada modelo producido implica un costo fijo de setup: 400, 250 y 600 UF respectivamente.<br>
-      <strong>f)</strong> Escriba el modelo final completo con todas las condiciones anteriores simultáneamente.</p>
+<section class="lamina" id="l6" data-titulo="Pausa 2: lote mínimo">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre el lote mínimo y las variables semicontinuas.</p>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. \\(x_j \\ge L_j\\) obligaría a producir siempre al menos \\(L_j\\), eliminando la opción de no producir nada — que es justamente una de las dos alternativas válidas. El conjunto que se busca es \\(\\{0\\}\\cup[L_j,U_j]\\), no \\([L_j,U_j]\\).","La restricción sí es lineal; el problema es de significado, no de forma.","El lote mínimo no exige integralidad de \\(x_j\\): la cantidad puede ser fraccionaria mientras supere \\(L_j\\).","No se trata de que \\(L_j\\) sea grande o chico, sino de que esa formulación elimina la alternativa de producción nula."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">Sea \(J\) el conjunto de productos. ¿Por qué el lote mínimo <strong>no</strong> se puede escribir simplemente como \(x_j \ge L_j\ \ \forall j \in J\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Porque elimina la opción \(x_j = 0\), que debe seguir siendo factible</span></button>
+      <button><span class="k">B</span><span>Porque \(x_j \ge L_j\) no es una restricción lineal</span></button>
+      <button><span class="k">C</span><span>Porque \(x_j\) debería ser entera y esa forma no lo garantiza</span></button>
+      <button><span class="k">D</span><span>Porque \(L_j\) suele ser un número muy grande</span></button>
     </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="1" data-retro='["El apagado sí queda bien resuelto: con \\(y_j=0\\) la restricción fuerza \\(x_j=0\\). Lo que falta es lo otro.","Correcto. Con \\(y_j=1\\) la única condición sería \\(x_j \\le U_j\\), así que el modelo podría producir una sola unidad. El lote mínimo desaparece y el conjunto factible vuelve a ser el intervalo continuo \\([0,U_j]\\), sin hueco.","La formulación queda incompleta, no infactible: siempre existe la solución \\(x_j=y_j=0\\).","Sí cambia el conjunto factible, y de forma sustantiva: se pierde exactamente la condición que da nombre al modelo."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">Si en el lote mínimo se escribe <strong>solo</strong> \(x_j \le U_j y_j\ \ \forall j \in J\), omitiendo \(L_j y_j \le x_j\), ¿qué se pierde?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Se pierde el apagado: el modelo produciría con \(y_j=0\)</span></button>
+      <button><span class="k">B</span><span>Se pierde el lote mínimo: con \(y_j=1\) se podría producir una sola unidad</span></button>
+      <button><span class="k">C</span><span>Nada: el modelo se vuelve infactible</span></button>
+      <button><span class="k">D</span><span>Nada: el conjunto factible es el mismo</span></button>
+    </div>
+    <div class="retro"></div>
   </div>
 </section>
 
@@ -678,9 +774,11 @@ body.editando .aviso-edicion{display:flex}
         <tbody><tr><td>E1</td><td class="num">8</td></tr><tr><td>E2</td><td class="num">85</td></tr><tr><td>E3</td><td class="num">140</td></tr><tr><td>E4</td><td class="num">0</td></tr></tbody>
       </table></div>
       <p><strong>a)</strong> Formule el modelo de minimización de costo total.<br>
-      <strong>b)</strong> Resuelva: ¿qué plan corresponde a cada enlace y cuál es el costo total?<br>
+      <strong>b)</strong> Explique por qué el enlace E4, con tráfico cero, no debe contratar ningún plan, y cómo lo garantiza la restricción de conteo que escribió.<br>
       <strong>c)</strong> Agregue la condición: el presupuesto total no puede exceder 200. ¿Sigue siendo factible? Si no, proponga qué relajar.<br>
-      <strong>d)</strong> Suponga que ahora el tráfico se puede repartir entre enlaces redundantes. ¿Qué tipo de variable nueva necesita y cómo cambia la estructura del problema?</p>
+      <strong>d)</strong> El área de TI propone <strong>duplicar la conexión al datacenter</strong>: en vez de un único enlace E3 que debe cursar los 140 Mbps, contratar <em>dos</em> enlaces en paralelo entre los mismos dos puntos —llamémoslos E3a y E3b— y repartir el tráfico entre ambos. Cada uno contrata su propio plan de forma independiente, y entre los dos deben sumar al menos los 140 Mbps.<br>
+      Hasta ahora sus variables solo decidían <em>qué plan</em> contratar, porque el tráfico de cada enlace era un dato fijo. Con la redundancia, cuánto tráfico va por cada enlace pasa a ser una <strong>decisión</strong>. ¿Qué variable nueva necesita, de qué tipo, y qué restricción la conecta con las binarias de plan que ya tenía?</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem"><strong>Ejercicio extra, opcional.</strong> Resuelva el modelo: determine qué plan contratar en cada enlace y el costo total.</p>
     </div>
   </div>
 
@@ -699,8 +797,11 @@ body.editando .aviso-edicion{display:flex}
       </table></div>
       <p><strong>a)</strong> Formule el modelo completo.<br>
       <strong>b)</strong> Calcule la utilidad neta de producir cada pan hasta su demanda máxima aisladamente. ¿Alguno no conviene nunca?<br>
-      <strong>c)</strong> Resuelva el modelo y reporte el plan óptimo.<br>
-      <strong>d)</strong> ¿Cómo cambia la solución si el lote mínimo de la marraqueta sube a 450 kg?</p>
+      <strong>c)</strong> Antes de resolver nada, identifique qué panes se pueden descartar de plano y justifique con qué criterio. A eso se le llama <em>preprocesamiento</em>.<br>
+      <strong>d)</strong> La panificadora puede configurar el horno de dos maneras <strong>excluyentes entre sí</strong> para la jornada: en <em>modo seco</em> la capacidad es de 900 kg y no hay condiciones adicionales; en <em>modo vapor</em> la capacidad baja a 700 kg, pero el margen del pan integral sube en \$120 por kg y el certificador exige hornear al menos 150 kg de integral. Formule esta elección con <strong>una sola binaria</strong>, usando la técnica de la Clase 03. Indique qué \(M\) usaría en cada restricción y por qué la de volumen mínimo lleva el signo contrario.<br>
+      <strong>e)</strong> Incorpore además dos condiciones de la Clase 02: por logística de reparto, si se hornea ciabatta debe hornearse también marraqueta; y en una misma jornada se pueden hornear a lo más tres tipos distintos de pan.<br>
+      <strong>f)</strong> Escriba el modelo final completo y cuente cuántas binarias tiene, separándolas según qué decide cada una.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem"><strong>Ejercicio extra, opcional.</strong> Resuelva el modelo y reporte el plan óptimo de producción.</p>
     </div>
   </div>
 
@@ -710,7 +811,9 @@ body.editando .aviso-edicion{display:flex}
       <p>Un proveedor ofrece un producto con la siguiente estructura de precios: las primeras 100 unidades a \$50 c/u; de la 101 a la 300 a \$40 c/u; sobre 300 a \$32 c/u. El descuento es <em>incremental</em> (cada tramo se paga a su precio, como en los tramos de impuesto).</p>
       <p><strong>a)</strong> Grafique la función de costo total \(C(q)\) y verifique que es continua, creciente y <em>cóncava</em>.<br>
       <strong>b)</strong> Formule la linealización por tramos usando variables \(q_1, q_2, q_3\) (cantidad comprada en cada tramo) y binarias. Escriba todas las restricciones.<br>
-      <strong>c)</strong> Demuestre que si el objetivo es <strong>minimizar</strong> el costo, las binarias son innecesarias: el modelo con solo \(0\le q_1\le100\), \(0\le q_2 \le 200\), \(q_3\ge0\) ya entrega la solución correcta. Explique por qué.<br>
+      <strong>c)</strong> Considere ahora la situación <strong>inversa</strong>. En el descuento por volumen el precio unitario <em>baja</em> a medida que se compra más. En un <strong>sobrecosto por volumen</strong> ocurre lo contrario: el costo unitario <em>sube</em> a medida que se usa más del recurso. El caso típico es la mano de obra: las primeras horas se pagan a tarifa normal, pasado cierto punto empieza el recargo, y más allá se pagan como horas extra.<br>
+      Concretamente, para contratar \(q\) horas de trabajo: las primeras 100 horas cuestan \$50 cada una; de la hora 101 a la 300 cuestan \$60 cada una; y de la 301 en adelante, \$75 cada una. Igual que antes, la estructura es <em>incremental</em>: cada tramo se paga a su propia tarifa, como en los tramos de impuesto.<br>
+      Con esta estructura, ¿siguen siendo necesarias las binarias que imponen el orden de llenado de los tramos? Justifique comparando con el caso del descuento.<br>
       <strong>d)</strong> Ahora suponga que el descuento es <em>total</em> (all-units): si compras 350 unidades, <em>todas</em> se pagan a \$32. Grafique esa función y muestre que ya no es cóncava ni continua. Formule el modelo correspondiente.<br>
       <strong>e)</strong> Explique por qué en (d) las binarias sí son indispensables.</p>
     </div>
@@ -727,8 +830,60 @@ body.editando .aviso-edicion{display:flex}
       <p><strong>a)</strong> Formule el modelo completo (es el <em>lot sizing</em> capacitado con lote mínimo).<br>
       <strong>b)</strong> Escriba la ecuación de balance de inventario y explique su rol.<br>
       <strong>c)</strong> Justifique una cota superior ajustada para \(U_t\) distinta de la capacidad, usando la demanda futura.<br>
-      <strong>d)</strong> Proponga y evalúe dos planes heurísticos: (i) producir exactamente la demanda cada mes (<em>lote por lote</em>), (ii) producir cada dos meses la demanda acumulada. Compare costos.<br>
-      <strong>e)</strong> Explique qué es la <em>desigualdad válida</em> \(x_t \le \left(\sum_{s\ge t} d_s\right) y_t\) y por qué fortalece la formulación.</p>
+      <strong>d)</strong> El gerente propone producir exactamente la demanda de cada mes. Explique por qué ese plan <em>no es factible</em> con estos datos, sin calcular costos.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab">
+      <span class="nivel complejo">Complejo</span>
+      <span class="nivel" style="background:var(--plum)">Integrador</span>
+      <h4>E5 · Motos, bodegas y ampliación de capacidad</h4>
+    </div>
+    <div class="enunciado">
+      <p>Volvamos a la empresa de motos, ahora con el problema completo. Los recursos requeridos y la ganancia por unidad son:</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th></th><th class="num">Enduro</th><th class="num">Scooter</th><th class="num">Motocross</th></tr></thead>
+          <tbody>
+            <tr><td>Acero requerido (kg/u)</td><td class="num">100</td><td class="num">200</td><td class="num">400</td></tr>
+            <tr><td>Mano de obra (hr/u)</td><td class="num">15</td><td class="num">10</td><td class="num">30</td></tr>
+            <tr><td>Ganancia (M$/u)</td><td class="num">650</td><td class="num">450</td><td class="num">900</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Se dispone de <strong>800 toneladas de acero</strong> y <strong>50.000 horas</strong> de mano de obra. Para que la producción de un tipo de moto sea técnicamente factible deben producirse al menos <strong>800 enduro</strong>, <strong>600 scooter</strong> o <strong>400 motocross</strong>, según corresponda — aunque cualquiera de los tres tipos puede no producirse.</p>
+
+      <p>La empresa puede ampliar <strong>uno solo</strong> de sus dos recursos, nunca ambos: comprar 300 toneladas adicionales de acero por MM$ 600, o contratar 10.000 horas adicionales de mano de obra por MM$ 250.</p>
+
+      <p>Además, toda la producción debe almacenarse en <strong>una única bodega</strong> arrendada. Cada bodega tiene una capacidad distinta según el tipo de moto y un costo de arriendo:</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Capacidad (unidades)</th><th class="num">Concepción</th><th class="num">Talcahuano</th><th class="num">San Pedro de la Paz</th></tr></thead>
+          <tbody>
+            <tr><td>Enduro</td><td class="num">800</td><td class="num">1.200</td><td class="num">2.000</td></tr>
+            <tr><td>Scooter</td><td class="num">800</td><td class="num">1.500</td><td class="num">2.000</td></tr>
+            <tr><td>Motocross</td><td class="num">1.000</td><td class="num">800</td><td class="num">1.200</td></tr>
+            <tr><td>Costo de arriendo (MM$)</td><td class="num">200</td><td class="num">300</td><td class="num">500</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Formule un modelo que permita decidir <strong>qué tipos de moto producir, cuántas unidades de cada uno y qué bodega arrendar</strong>, de modo de maximizar la ganancia descontados los costos.</p>
+
+      <p><strong>a)</strong> Antes de escribir nada, revise las <em>unidades</em> de los datos. Hay una inconsistencia que hay que resolver para que la función objetivo tenga sentido. Identifíquela y decida en qué unidad va a trabajar.<br>
+      <strong>b)</strong> Defina los conjuntos, los parámetros y las variables de decisión. Cada variable binaria debe quedar definida con su complemento.<br>
+      <strong>c) El modelo en palabras, antes de los símbolos.</strong> Sin escribir una sola ecuación: describa con una frase cada término que debe aparecer en la función objetivo —qué suma, qué resta y por qué— y enumere todas las restricciones que el modelo debe incluir, también en una frase cada una. Debería quedarle una lista del tipo <em>"no puedo consumir más acero del que tengo, a menos que compre la ampliación"</em>.<br>
+      <strong>d)</strong> Ahora traduzca: escriba la función objetivo.<br>
+      <strong>e)</strong> Escriba las restricciones de recursos, incorporando la ampliación y la condición de que las ampliaciones son excluyentes.<br>
+      <strong>f)</strong> Escriba las restricciones de bodega: una sola arrendada, y capacidad por tipo de moto según cuál se elija.<br>
+      <strong>g)</strong> Escriba las restricciones de lote mínimo. Justifique qué cota superior \(U_j\) usar y de dónde sale.<br>
+      <strong>h)</strong> Vuelva a su lista de (c) y <strong>táchela línea por línea</strong> a medida que la encuentre escrita en el modelo. Si algo quedó en la lista sin traducirse, falta una restricción; si hay una restricción que no estaba en la lista, sobra o usted descubrió algo al modelar.<br>
+      <strong>i)</strong> Para cada familia de restricciones del modelo, indique <strong>qué estructura de modelamiento es</strong> y con qué nombre la hemos llamado en el curso.</p>
+
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Implemente el modelo en un solver y resuélvalo. Después responda, ahora sí con números: ¿conviene ampliar algún recurso? ¿qué bodega se arrienda? ¿se producen los tres tipos? Y sobre todo, <em>vuelva a resolver forzando cada decisión por separado</em> —cada bodega, cada ampliación, cada tipo fuera— para ver cómo se afectan entre sí. En un problema integrador las decisiones no son independientes, y esa interacción es difícil de anticipar solo mirando el modelo.</p>
     </div>
   </div>
 </section>
@@ -1242,74 +1397,187 @@ function aviso(txt,color){
   A.onchange=act;B.onchange=act;cap.oninput=act;act();
 })();
 
-/* ============ Semicontinua ============ */
+/* ============ Semicontinua: por qué la binaria va arriba y abajo ============ */
 (function(){
   var svg=document.getElementById('g-semi'); if(!svg)return;
+  /* lienzo 900x300 para que una unidad del viewBox equivalga a un pixel real */
+  var W=900, ML=196, MR=46, XMAX=130;
+  function sx(x){return ML+x/XMAX*(W-ML-MR);}
+
+  /* OJO: la hoja de estilos define  svg text{font-size:10px; font-family:mono}
+     y eso gana sobre los atributos de presentación. Hay que usar style inline. */
+  function texto(attrs,estilo,contenido){
+    var t=svgEl('text',attrs);
+    t.setAttribute('style',estilo);
+    if(contenido!==undefined)t.textContent=contenido;
+    return t;
+  }
+  var SANS="font-family:'Archivo',sans-serif";
+  var MATE="font-family:Georgia,serif;font-style:italic";
+
+  function tramos(form,y,L,U){
+    var lo=0, hi=XMAX;                 /* XMAX representa "sin tope" */
+    if(form===0||form===2) hi=U*y;
+    if(form===1||form===2) lo=L*y;
+    if(lo>hi)return [];
+    return [[lo,hi]];
+  }
+
+  /* etiqueta con la variable en cursiva matemática */
+  function etiqueta(x,y,partes){
+    var t=texto({x:x,y:y,'text-anchor':'end'}, SANS+";font-size:15px;fill:#3C4551");
+    partes.forEach(function(p){
+      var s=svgEl('tspan',{});
+      s.setAttribute('style', p[1]? MATE+";font-size:16px" : SANS);
+      s.textContent=p[0]; t.appendChild(s);
+    });
+    svg.appendChild(t);
+  }
+
+  function fila(yPos,titulo,segs,L,marcarHueco){
+    etiqueta(ML-18,yPos+5,titulo);
+    svg.appendChild(svgEl('line',{x1:sx(0),y1:yPos,x2:sx(XMAX),y2:yPos,stroke:'rgba(20,24,31,.25)','stroke-width':1.2}));
+    if(marcarHueco&&L>0)
+      svg.appendChild(svgEl('rect',{x:sx(0),y:yPos-13,width:sx(L)-sx(0),height:26,
+        fill:'rgba(200,85,30,.16)',stroke:'#C8551E','stroke-width':.8}));
+    segs.forEach(function(s){
+      if(s[1]-s[0]<0.5){
+        svg.appendChild(svgEl('circle',{cx:sx(s[0]),cy:yPos,r:8,fill:'#0F6E63'}));
+      }else{
+        svg.appendChild(svgEl('line',{x1:sx(s[0]),y1:yPos,x2:sx(Math.min(s[1],XMAX)),y2:yPos,
+          stroke:'#0F6E63','stroke-width':10,'stroke-linecap':'round'}));
+        if(s[1]>=XMAX)
+          svg.appendChild(texto({x:sx(XMAX)+8,y:yPos+5},SANS+";font-size:15px;fill:#0F6E63",'→'));
+      }
+    });
+  }
+
   function dib(){
+    var form=+document.getElementById('formul').value;
     var L=+document.getElementById('Lmin').value, U=+document.getElementById('Umax').value;
     if(L>U){L=U;document.getElementById('Lmin').value=L;}
     document.getElementById('v-L').textContent=L;
     document.getElementById('v-U').textContent=U;
-    var W=420,ML=20,MR=20,y=58,XMAX=130;
-    function sx(x){return ML+x/XMAX*(W-ML-MR);}
     while(svg.firstChild)svg.removeChild(svg.firstChild);
-    svg.appendChild(svgEl('line',{x1:sx(0),y1:y,x2:sx(XMAX),y2:y,stroke:'#6B7683','stroke-width':1.2}));
-    /* zona prohibida */
-    if(L>0)svg.appendChild(svgEl('rect',{x:sx(0),y:y-9,width:sx(L)-sx(0),height:18,fill:'rgba(200,85,30,.14)'}));
-    /* intervalo factible */
-    svg.appendChild(svgEl('line',{x1:sx(L),y1:y,x2:sx(U),y2:y,stroke:'#0F6E63','stroke-width':7,'stroke-linecap':'round'}));
-    /* punto 0 */
-    svg.appendChild(svgEl('circle',{cx:sx(0),cy:y,r:6,fill:'#0F6E63'}));
+
+    var t0=tramos(form,0,L,U), t1=tramos(form,1,L,U);
+    fila(78,  [['con ',false],['y',true],[' = 0',false]], t0, L, false);
+    fila(148, [['con ',false],['y',true],[' = 1',false]], t1, L, false);
+    fila(228, [['el modelo permite',false]],  t0.concat(t1), L, true);
+
+    svg.appendChild(svgEl('line',{x1:ML-160,y1:190,x2:sx(XMAX),y2:190,
+      stroke:'rgba(20,24,31,.18)','stroke-dasharray':'5 5'}));
+
+    var ejeY=262;
     for(var t=0;t<=XMAX;t+=20){
-      svg.appendChild(svgEl('line',{x1:sx(t),y1:y+5,x2:sx(t),y2:y+10,stroke:'#6B7683'}));
-      var tx=svgEl('text',{x:sx(t),y:y+24,'text-anchor':'middle'});tx.textContent=t;svg.appendChild(tx);
+      svg.appendChild(svgEl('line',{x1:sx(t),y1:ejeY-6,x2:sx(t),y2:ejeY,stroke:'#6B7683'}));
+      svg.appendChild(texto({x:sx(t),y:ejeY+16,'text-anchor':'middle'},SANS+";font-size:12.5px;fill:#6B7683",t));
     }
-    var t1=svgEl('text',{x:sx(0),y:y-16,'text-anchor':'middle',fill:'#0F6E63'});t1.textContent='x = 0';svg.appendChild(t1);
-    var t2=svgEl('text',{x:(sx(L)+sx(U))/2,y:y-16,'text-anchor':'middle',fill:'#0F6E63'});t2.textContent='L ≤ x ≤ U';svg.appendChild(t2);
-    if(L>0){var t3=svgEl('text',{x:(sx(0)+sx(L))/2,y:y+40,'text-anchor':'middle',fill:'#C8551E'});t3.textContent='prohibido';svg.appendChild(t3);}
-    document.getElementById('semi-msg').innerHTML='Conjunto factible: <b>{0} ∪ ['+L+', '+U+']</b>. '+
-      (L===0?'Con L = 0 no hay hueco: la variable vuelve a ser continua ordinaria y la binaria deja de ser necesaria.':'El intervalo (0, '+L+') está prohibido: producir poco es peor que no producir.');
+    svg.appendChild(texto({x:sx(XMAX)+20,y:ejeY+16},MATE+";font-size:15px;fill:#6B7683",'x'));
+
+    [[L,'L'],[U,'U']].forEach(function(mk){
+      if(mk[0]<=0||mk[0]>XMAX)return;
+      svg.appendChild(svgEl('line',{x1:sx(mk[0]),y1:34,x2:sx(mk[0]),y2:ejeY-6,
+        stroke:'rgba(20,24,31,.2)','stroke-dasharray':'3 5'}));
+      svg.appendChild(texto({x:sx(mk[0]),y:26,'text-anchor':'middle'},MATE+";font-size:15px;fill:#6B7683",mk[1]));
+    });
+
+    var msg=document.getElementById('semi-msg');
+    if(form===0){
+      msg.innerHTML='<b>Falta el lote mínimo.</b> Con \\(y=0\\) la variable queda apagada, correcto. Pero con \\(y=1\\) se permite cualquier valor entre 0 y '+U+': el modelo aceptaría producir 1 sola unidad. La unión es todo el intervalo \\([0,'+U+']\\) — sin hueco, es una variable continua ordinaria y la binaria no aporta nada.';
+      msg.style.borderLeftColor='var(--amber)';
+    }else if(form===1){
+      msg.innerHTML='<b>Falta el apagado.</b> Con \\(y=1\\) sí se exige al menos '+L+', correcto. Pero con \\(y=0\\) la restricción queda \\(x\\ge0\\), que no impide producir: el modelo puede fabricar sin encender la actividad — y sin pagar su costo fijo, si lo hubiera. La unión vuelve a no tener hueco.';
+      msg.style.borderLeftColor='var(--amber)';
+    }else{
+      msg.innerHTML='<b>Ahora sí.</b> Con \\(y=0\\) la doble desigualdad queda \\(0\\le x\\le 0\\) y fuerza \\(x=0\\); con \\(y=1\\) queda \\([L,U]=['+L+','+U+']\\). La unión es \\(\\{0\\}\\cup['+L+','+U+']\\), con el hueco '+(L>0?'entre 0 y '+L:'inexistente porque L = 0')+'. '+(L>0?'Ese hueco es lo que rompe la convexidad: el punto medio entre \\(x=0\\) y \\(x=L\\) es \\(L/2\\), que no es factible.':'Con L = 0 la binaria deja de ser necesaria: la variable es continua ordinaria.');
+      msg.style.borderLeftColor='var(--teal)';
+    }
+    if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([msg]);
   }
+  document.getElementById('formul').onchange=dib;
   document.getElementById('Lmin').oninput=dib;
   document.getElementById('Umax').oninput=dib;
   dib();
 })();
 
-/* ============ Motos con lote mínimo ============ */
+/* ============ Motos con lote mínimo por modelo ============ */
 (function(){
-  var s=document.getElementById('Lmoto'); if(!s)return;
+  var s1=document.getElementById('L1'); if(!s1)return;
+  var s2=document.getElementById('L2'), s3=document.getElementById('L3');
   var a=[2,1,3], h=[3,2,4], m=[12,7,18], A=800, H=1200;
-  function act(){
-    var L=+s.value;
-    document.getElementById('v-Lm').textContent=L;
-    var mejor={z:-1,x:[0,0,0]};
-    /* enumerar subconjuntos producidos y buscar en malla */
+  var U=[Math.min(A/a[0],H/h[0]), Math.min(A/a[1],H/h[1]), Math.min(A/a[2],H/h[2])];
+  var nom=['enduro','scooter','motocross'];
+
+  function resolver(L){
+    var mejor={z:-1,x:[0,0,0],sub:0};
     for(var sub=0;sub<8;sub++){
-      var act1=[(sub&1)>0,(sub&2)>0,(sub&4)>0];
-      var lo=[act1[0]?L:0,act1[1]?L:0,act1[2]?L:0];
-      for(var x1=lo[0];x1<=(act1[0]?400:0);x1+=5){
-        for(var x2=lo[1];x2<=(act1[1]?600:0);x2+=5){
+      var on=[(sub&1)>0,(sub&2)>0,(sub&4)>0];
+      /* si un modelo se produce, su lote mínimo debe caber en su propia cota */
+      var viable=true;
+      on.forEach(function(o,j){ if(o&&L[j]>U[j])viable=false; });
+      if(!viable)continue;
+      var x1i=on[0]?L[0]:0, x1f=on[0]?U[0]:0;
+      var x2i=on[1]?L[1]:0, x2f=on[1]?U[1]:0;
+      for(var x1=x1i;x1<=x1f+1e-9;x1+=5){
+        for(var x2=x2i;x2<=x2f+1e-9;x2+=5){
           var restA=A-a[0]*x1-a[1]*x2, restH=H-h[0]*x1-h[1]*x2;
-          if(restA<0||restH<0)break;
-          var x3=act1[2]?Math.min(restA/a[2],restH/h[2]):0;
-          if(act1[2]&&x3<L)continue;
+          if(restA<-1e-9||restH<-1e-9)break;
+          var x3=0;
+          if(on[2]){
+            x3=Math.min(restA/a[2],restH/h[2],U[2]);
+            if(x3<L[2]-1e-9)continue;
+          }
           var z=m[0]*x1+m[1]*x2+m[2]*x3;
-          if(z>mejor.z)mejor={z:z,x:[x1,x2,x3]};
-          if(!act1[1])break;
+          if(z>mejor.z)mejor={z:z,x:[x1,x2,x3],sub:sub};
+          if(!on[1])break;
         }
-        if(!act1[0])break;
+        if(!on[0])break;
       }
     }
-    document.getElementById('mo-1').textContent=fmt(mejor.x[0],0);
-    document.getElementById('mo-2').textContent=fmt(mejor.x[1],0);
-    document.getElementById('mo-3').textContent=fmt(mejor.x[2],1);
-    document.getElementById('mo-z').textContent=fmt(mejor.z,1)+' UF';
-    var producidos=mejor.x.filter(function(v){return v>0.001;}).length;
-    var msg=document.getElementById('mo-msg');
-    if(L===0)msg.innerHTML='Sin lote mínimo el problema es <b>programación lineal pura</b>: no hace falta ninguna binaria. Sube el deslizador y observa cómo el plan óptimo se reconfigura de golpe.';
-    else msg.innerHTML='Con lote mínimo '+L+' el plan óptimo produce <b>'+producidos+' modelo(s)</b>. Note que el margen no baja suavemente: cae en escalones cuando un modelo deja de ser viable. Esa discontinuidad es la firma de un problema entero.';
+    return mejor;
   }
-  s.oninput=act; act();
+
+  function act(){
+    var L=[+s1.value,+s2.value,+s3.value];
+    document.getElementById('v-L1').textContent=L[0];
+    document.getElementById('v-L2').textContent=L[1];
+    document.getElementById('v-L3').textContent=L[2];
+
+    var r=resolver(L);
+    document.getElementById('mo-1').textContent=fmt(r.x[0],0);
+    document.getElementById('mo-2').textContent=fmt(r.x[1],0);
+    document.getElementById('mo-3').textContent=fmt(r.x[2],1);
+    document.getElementById('mo-z').textContent=fmt(r.z,1)+' UF';
+    var usoA=a[0]*r.x[0]+a[1]*r.x[1]+a[2]*r.x[2];
+    var usoH=h[0]*r.x[0]+h[1]*r.x[1]+h[2]*r.x[2];
+    document.getElementById('mo-a').textContent=fmt(usoA,0);
+    document.getElementById('mo-h').textContent=fmt(usoH,0);
+    var prod=[]; r.x.forEach(function(v,j){ if(v>0.001)prod.push(nom[j]); });
+    document.getElementById('mo-n').textContent=prod.length?prod.length+': '+prod.join(', '):'ninguno';
+
+    /* comparación contra el óptimo sin lotes mínimos */
+    var libre=resolver([0,0,0]);
+    var msg=document.getElementById('mo-msg');
+    if(L[0]===0&&L[1]===0&&L[2]===0){
+      msg.innerHTML='Sin lotes mínimos el problema es <b>programación lineal pura</b>: no hace falta ninguna binaria. El óptimo produce '+prod.join(' y ')+'. Mueve cualquiera de los tres deslizadores y observa cómo se reconfigura el plan.';
+      msg.style.borderLeftColor='var(--teal)';
+    }else{
+      var perdida=libre.z-r.z;
+      var fuera=[]; nom.forEach(function(n,j){ if(L[j]>0&&r.x[j]<0.001)fuera.push(n); });
+      msg.innerHTML='El plan óptimo produce <b>'+(prod.length?prod.join(' y '):'nada')+'</b>, con un margen de '+fmt(r.z,1)+' UF — '+
+        (perdida>0.05?fmt(perdida,1)+' UF menos que sin lotes mínimos':'el mismo que sin lotes mínimos')+'. '+
+        (fuera.length?'Los lotes mínimos dejaron fuera: <b>'+fuera.join(', ')+'</b>. ':'')+
+        'Note que el margen no baja de forma suave: cae en escalones cuando un modelo deja de ser viable. Esa discontinuidad es la firma de un problema entero.';
+      msg.style.borderLeftColor=perdida>0.05?'var(--gold)':'var(--teal)';
+    }
+  }
+  [s1,s2,s3].forEach(function(s){ s.oninput=act; });
+  function fijar(v){ s1.value=v[0]; s2.value=v[1]; s3.value=v[2]; act(); }
+  document.getElementById('mo-reset').onclick=function(){fijar([0,0,0]);};
+  document.getElementById('mo-ej1').onclick=function(){fijar([0,250,0]);};
+  document.getElementById('mo-ej2').onclick=function(){fijar([0,150,220]);};
+  act();
 })();
 
 /* reajuste tras el primer renderizado de fórmulas */
