@@ -253,16 +253,19 @@ svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
 .ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
 .ejercicio .enunciado{padding:19px 21px}
 .ejercicio .enunciado p:last-child{margin-bottom:0}
-details.pauta{border-top:1px solid var(--line);background:var(--paper-2)}
-details.pauta summary{
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
   cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
   text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
 }
-details.pauta summary::-webkit-details-marker{display:none}
-details.pauta summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
-details.pauta[open] summary::before{transform:rotate(90deg)}
-details.pauta summary:hover{color:var(--ink)}
-details.pauta .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
 
 .pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
 
@@ -395,8 +398,8 @@ body.editando .aviso-edicion{display:flex}
   .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
   .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
   .opciones button:hover{transform:none}
-  details.pauta{background:#f2efe8 !important}
-  details.pauta .contenido{display:block !important}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
   a{color:inherit;text-decoration:none}
 }
 
@@ -451,7 +454,7 @@ body.editando .aviso-edicion{display:flex}
     <li><strong>Formular</strong> el set covering en su versión de mínimo número de instalaciones y en su versión de mínimo costo.</li>
     <li><strong>Distinguir</strong> covering, packing y partitioning por el sentido de la restricción y por el tipo de pregunta que responden.</li>
     <li><strong>Reconocer</strong> estas estructuras dentro de problemas que no las nombran: turnos, tripulaciones, ubicación de sensores, selección de test cases.</li>
-    <li><strong>Evaluar</strong> el desempeño de una heurística voraz de cobertura frente al óptimo exacto.</li>
+    <li><strong>Reconocer</strong> cuándo el conjunto de candidatos es demasiado grande para escribirlo completo, y explicar la idea de generar columnas solo cuando se necesitan.</li>
   </ol>
 </section>
 
@@ -462,14 +465,22 @@ body.editando .aviso-edicion{display:flex}
 
   <div class="modelo">
     <span class="et">Modelo de cobertura mínima</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.8);font-size:.94rem;margin-bottom:10px">Sea \(I\) el conjunto de elementos que hay que cubrir y \(J\) el conjunto de candidatos disponibles.</p>
     \[
     \begin{aligned}
-    \min\;\; & z=\sum_{j=1}^{n} c_j x_j\\
-    \text{s.a.}\;\; & \sum_{j=1}^{n} a_{ij}x_j \ge 1 && \forall i=1,\dots,m\\
-    & x_j \in\{0,1\} && \forall j=1,\dots,n
+    \min\;\; & z=\sum_{j\in J} c_j x_j\\
+    \text{s.a.}\;\; & \sum_{j\in J} a_{ij}\,x_j \ge 1 && \forall i \in I\\
+    & x_j \in\{0,1\} && \forall j \in J
     \end{aligned}
     \]
-    <p class="glosa">\(x_j=1\) si se selecciona el candidato \(j\). \(a_{ij}=1\) si el candidato \(j\) cubre al elemento \(i\). La restricción exige que cada elemento sea cubierto <strong>al menos una vez</strong>. Si \(c_j=1\) para todo \(j\), se minimiza la cantidad de candidatos.</p>
+    <p class="glosa">\(x_j=1\) si se selecciona el candidato \(j\); 0, en otro caso. \(a_{ij}=1\) si el candidato \(j\) cubre al elemento \(i\); 0, en otro caso. \(c_j\) es el costo de seleccionar el candidato \(j\). La restricción exige que cada elemento sea cubierto <strong>al menos una vez</strong>. Si \(c_j=1\) para todo \(j\in J\), se minimiza la cantidad de candidatos.</p>
+  </div>
+
+  <div class="nota">
+    <span class="et">Dos formas de escribir lo mismo</span>
+    <p>La matriz \(a_{ij}\) es la forma habitual, pero hay una alternativa que suele ser más clara y más eficiente de implementar: definir, <strong>para cada elemento \(i \in I\)</strong>, el conjunto de candidatos que lo cubren,</p>
+    <p style="text-align:center;margin:10px 0">\(J_i = \{\, j \in J \;:\; a_{ij}=1 \,\} \qquad \forall i \in I\)</p>
+    <p style="margin-bottom:0">y escribir la restricción como \(\displaystyle\sum_{j \in J_i} x_j \ge 1\quad \forall i \in I\). Es exactamente la misma condición, pero el índice ya no recorre todos los candidatos multiplicando por ceros: recorre solo los que efectivamente cubren a \(i\). En problemas reales, donde la matriz es enorme y casi toda de ceros, esta forma es la que se usa — y es la que hace manejable el modelo de tripulaciones que veremos en un momento.</p>
   </div>
 
   <div class="rejilla r3">
@@ -524,10 +535,11 @@ body.editando .aviso-edicion{display:flex}
 
   <div class="modelo">
     <span class="et">Set covering con costos y candidatos restringidos</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.8);font-size:.94rem;margin-bottom:10px">Sea \(C \subseteq J\) el subconjunto de sitios donde efectivamente se puede instalar.</p>
     \[
     \begin{aligned}
     \min\;\; & z=\sum_{j\in C} c_j x_j\\
-    \text{s.a.}\;\; & \sum_{j\in C} a_{ij}x_j \ge 1 && \forall i\\
+    \text{s.a.}\;\; & \sum_{j\in C} a_{ij}x_j \ge 1 && \forall i \in I\\
     & x_j\in\{0,1\} && \forall j \in C
     \end{aligned}
     \]
@@ -536,30 +548,85 @@ body.editando .aviso-edicion{display:flex}
 
   <div class="nota">
     <span class="et">Extensiones frecuentes en la práctica</span>
-    <p><strong>Cobertura múltiple:</strong> \(\sum_j a_{ij}x_j \ge k_i\), exigiendo que las zonas críticas queden cubiertas por al menos \(k_i\) estaciones (redundancia ante fallas).<br>
-    <strong>Cobertura máxima (MCLP):</strong> si el presupuesto solo alcanza para \(p\) estaciones, el objetivo cambia a maximizar la población cubierta: \(\max \sum_i w_iz_i\) con \(z_i \le \sum_j a_{ij}x_j\) y \(\sum_j x_j \le p\). Es el modelo que se usa realmente cuando cubrir todo es inviable.<br>
-    <strong>Cobertura con niveles de servicio:</strong> distintos radios de cobertura según tipo de emergencia, lo que genera varias matrices \(a_{ij}\) simultáneas.</p>
+    <p><strong>Cobertura múltiple:</strong> \(\sum_{j\in J_i} x_j \ge k_i\ \ \forall i \in I\), exigiendo que las zonas críticas queden cubiertas por al menos \(k_i\) estaciones (redundancia ante fallas).</p>
+    <p><strong>Cobertura máxima (MCLP).</strong> Si el presupuesto solo alcanza para \(p\) estaciones, cubrir todo deja de ser posible y el objetivo pasa a ser cubrir <em>lo más importante</em>. Aparecen dos elementos nuevos:</p>
+    <p style="margin:6px 0">· un parámetro \(w_i\) = <strong>población del elemento \(i\)</strong>: cuánta gente vive en ese vecindario, o más en general cuánta demanda representa;<br>
+    · una variable \(z_i = 1\) si el elemento \(i\) <strong>queda</strong> cubierto por la solución; 0, en otro caso.</p>
+    <p style="text-align:center;margin:12px 0">\(\max \displaystyle\sum_{i\in I} w_i z_i \qquad\) s.a. \(\qquad z_i \le \displaystyle\sum_{j\in J_i} x_j\ \ \forall i \in I, \qquad \displaystyle\sum_{j\in J} x_j \le p\)</p>
+    <p>Note la diferencia entre \(x_j\) y \(z_i\): la primera es una <em>decisión</em> (dónde instalar), la segunda es una <em>consecuencia</em> (quién queda cubierto). La restricción de acoplamiento impide que \(z_i\) valga 1 si ningún candidato que cubre a \(i\) fue seleccionado; y como el objetivo maximiza \(\sum_{i\in I} w_i z_i\), el modelo activará \(z_i\) siempre que le sea posible. Este es el modelo que se usa realmente cuando cubrir todo es inviable.</p>
+    <p style="margin-bottom:0"><strong>Cobertura con niveles de servicio:</strong> distintos radios según el tipo de emergencia, lo que genera varios conjuntos \(J_i\) simultáneos — uno por nivel de servicio.</p>
   </div>
 </section>
 
-<section class="lamina" id="l5" data-titulo="Packing y partitioning">
+<section class="lamina" id="l5" data-titulo="Caso: tripulaciones de vuelo">
+  <div class="eyebrow">Caso de aplicación</div>
+  <h2>Tripulaciones: un covering de alto vuelo</h2>
+  <p class="lead">Una aerolínea regional debe cubrir los ocho vuelos de mañana. No asigna tripulaciones a vuelos sueltos: arma <strong>pairings</strong>, secuencias legales de vuelos que salen de una base y vuelven a ella respetando descansos, conexiones y máximo de horas. Cada pairing tiene un costo — sueldos, hoteles, viáticos — y cubre un subconjunto de vuelos.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Elige los pairings que cubren los ocho vuelos</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Haz clic en un pairing para incluirlo o quitarlo. Abajo se muestra cuántas veces queda cubierto cada vuelo.</p>
+      <div class="tabla-scroll">
+        <table id="t-crew">
+          <thead><tr><th>Pairing</th><th>Vuelos que cubre</th><th class="num">Costo (UF)</th><th>Elegido</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="crew-cob" style="display:grid;gap:7px;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));margin:16px 0"></div>
+      <div class="marcador">
+        <div><span>Costo de tu solución</span><b id="crew-c">0</b></div>
+        <div><span>Vuelos sin cubrir</span><b id="crew-falta">8</b></div>
+        <div><span>Óptimo covering \(\ge 1\)</span><b class="ok" id="crew-cov">—</b></div>
+        <div><span>Óptimo partitioning \(= 1\)</span><b id="crew-part">—</b></div>
+      </div>
+      <div class="botonera" style="margin-top:14px">
+        <button class="btn ghost" id="crew-limpiar">Limpiar</button>
+        <button class="btn" id="crew-optcov">Óptimo covering</button>
+        <button class="btn ghost" id="crew-optpart">Óptimo partitioning</button>
+      </div>
+      <p id="crew-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="modelo">
+    <span class="et">El modelo</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.8);font-size:.94rem;margin-bottom:10px">Sea \(V\) el conjunto de vuelos y \(P\) el conjunto de pairings legales. Para cada vuelo \(f \in V\) se define \(P_f = \{\, p \in P \;:\; \text{el pairing } p \text{ cubre el vuelo } f \,\}\), el conjunto de pairings que lo cubren.</p>
+    \[
+    \begin{aligned}
+    \min\;\; & z=\sum_{p\in P} c_p\,x_p\\
+    \text{s.a.}\;\; & \sum_{p\in P_f} x_p = 1 && \forall f \in V\\
+    & x_p \in\{0,1\} && \forall p \in P
+    \end{aligned}
+    \]
+    <p class="glosa">\(x_p=1\) si se usa el pairing \(p\); 0, en otro caso. \(c_p\) es su costo. Note que aquí el conjunto \(P_f\) —los pairings que cubren el vuelo \(f\)— es mucho más natural que una matriz \(a_{fp}\): con millones de pairings, esa matriz sería imposible de escribir, mientras que \(P_f\) se construye recorriendo solo los pairings que contienen ese vuelo.</p>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Por qué esto se vuelve enorme</span>
+    <p>Con ocho vuelos hay diez pairings y el problema cabe en una tabla. Pero un pairing es una <em>secuencia</em> legal de vuelos, y el número de secuencias crece combinatoriamente: en una aerolínea real, con miles de vuelos diarios, los pairings posibles se cuentan en <strong>millones o miles de millones</strong>. La matriz de incidencia no se puede ni almacenar.</p>
+    <p style="margin-bottom:0">La salida es no generarlos todos. Se resuelve el modelo con un subconjunto pequeño de columnas, y luego se le pregunta al problema: <em>de todos los pairings que no están, ¿existe alguno que convenga agregar?</em> Esa pregunta se responde resolviendo un problema auxiliar de ruta más corta sobre el grafo de vuelos. Si la respuesta es no, la solución actual ya es óptima aunque nunca se hayan enumerado todas las columnas. La técnica se llama <strong>generación de columnas</strong>, y es lo que hace resolubles estos modelos.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Packing y partitioning">
   <div class="eyebrow">La familia completa</div>
   <h2>Tres primos que se distinguen por un signo</h2>
 
   <div class="rejilla r3">
     <div class="tarjeta" style="border-color:var(--teal)">
       <span class="icono" style="color:var(--teal)">COVERING</span>
-      <h4>\(\sum_j a_{ij}x_j \ge 1\)</h4>
+      <h4>\(\sum_{j\in J_i} x_j \ge 1\)</h4>
       <p><strong>Cubrir todo, al menos una vez.</strong> Se permite el traslape. Objetivo típico: minimizar costo o cantidad.<br><em>Ejemplo:</em> estaciones de bomberos, turnos de personal.</p>
     </div>
     <div class="tarjeta" style="border-color:var(--gold)">
       <span class="icono" style="color:var(--gold)">PACKING</span>
-      <h4>\(\sum_j a_{ij}x_j \le 1\)</h4>
+      <h4>\(\sum_{j\in J_i} x_j \le 1\)</h4>
       <p><strong>Sin traslape, sin obligación de cubrir.</strong> Objetivo típico: maximizar valor de lo seleccionado.<br><em>Ejemplo:</em> reservar salas sin choques de horario, seleccionar avisos publicitarios compatibles.</p>
     </div>
     <div class="tarjeta" style="border-color:var(--amber)">
       <span class="icono" style="color:var(--amber)">PARTITIONING</span>
-      <h4>\(\sum_j a_{ij}x_j = 1\)</h4>
+      <h4>\(\sum_{j\in J_i} x_j = 1\)</h4>
       <p><strong>Cubrir todo, exactamente una vez.</strong> Ni traslape ni omisión.<br><em>Ejemplo:</em> asignación (caso particular), ruteo de vehículos con visita única, crew pairing exacto.</p>
     </div>
   </div>
@@ -573,39 +640,69 @@ body.editando .aviso-edicion{display:flex}
     <span class="et">Chequeo de comprensión</span>
     <p class="preg">En el problema de asignación de tripulaciones a vuelos, cada vuelo debe ser cubierto por exactamente una tripulación. ¿Qué estructura es?</p>
     <div class="opciones">
-      <button><span class="k">A</span><span>Set covering: \(\sum_j a_{ij}x_j \ge 1\)</span></button>
-      <button><span class="k">B</span><span>Set partitioning: \(\sum_j a_{ij}x_j = 1\)</span></button>
-      <button><span class="k">C</span><span>Set packing: \(\sum_j a_{ij}x_j \le 1\)</span></button>
-      <button><span class="k">D</span><span>Mochila: \(\sum_j w_jx_j \le W\)</span></button>
+      <button><span class="k">A</span><span>Set covering: \(\sum_{j\in J_i} x_j \ge 1\)</span></button>
+      <button><span class="k">B</span><span>Set partitioning: \(\sum_{j\in J_i} x_j = 1\)</span></button>
+      <button><span class="k">C</span><span>Set packing: \(\sum_{j\in J_i} x_j \le 1\)</span></button>
+      <button><span class="k">D</span><span>Mochila: \(\sum_{j\in J} w_j x_j \le W\)</span></button>
     </div>
     <div class="retro"></div>
   </div>
 </section>
 
-<section class="lamina" id="l6" data-titulo="Desafío: las 8 reinas">
+<section class="lamina" id="l7" data-titulo="Desafío: las 8 reinas">
   <div class="eyebrow">Desafío</div>
   <h2>Las 8 reinas: un clásico de 1848</h2>
   <div class="widget">
     <header><span class="tag caso">Desafío</span><h4>Ocho reinas que no se amenacen</h4></header>
     <div class="cuerpo">
-      <p>El problema de las 8 reinas consiste en poner ocho reinas en un tablero de ajedrez sin que se amenacen entre sí. Fue propuesto por el ajedrecista alemán Max Bezzel en 1848. La reina ataca en horizontal, vertical y diagonal, sin límite de distancia.</p>
-      <p>Haz clic para poner o quitar reinas. Las casillas amenazadas se marcan automáticamente.</p>
-      <svg id="g-reinas" viewBox="0 0 320 320" style="width:100%;height:auto;max-width:380px;display:block;margin:14px auto"></svg>
+      <p>Poner ocho reinas en un tablero de ajedrez sin que se amenacen entre sí. Lo propuso el ajedrecista alemán Max Bezzel en 1848. La reina ataca en horizontal, vertical y diagonal, sin límite de distancia.</p>
+      <p style="font-size:.94rem">Haz clic en una casilla libre para poner una reina. Las casillas que quedan bajo amenaza se <strong>bloquean automáticamente</strong>: no puedes usarlas. Para retirar una reina, haz clic sobre ella.</p>
+      <svg id="g-reinas" viewBox="0 0 460 460" style="width:100%;height:auto;max-width:460px;display:block;margin:14px auto"></svg>
       <div class="marcador">
         <div><span>Reinas puestas</span><b id="q-n">0 / 8</b></div>
-        <div><span>Conflictos</span><b id="q-c">0</b></div>
+        <div><span>Casillas disponibles</span><b id="q-libres">64</b></div>
+        <div><span>Casillas bloqueadas</span><b id="q-bloq">0</b></div>
         <div><span>Soluciones existentes</span><b id="q-s">92</b></div>
       </div>
       <div class="botonera" style="margin-top:14px">
         <button class="btn ghost" id="q-limpiar">Limpiar</button>
+        <button class="btn ghost" id="q-atras">Deshacer</button>
         <button class="btn" id="q-resolver">Mostrar una solución</button>
       </div>
       <p id="q-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)">Pon 8 reinas sin que ninguna amenace a otra.</p>
     </div>
   </div>
+
+  <div class="nota ojo">
+    <span class="et">Del tablero al modelo</span>
+    <p>Este problema es distinto a todos los que hemos visto: <strong>no tiene función objetivo</strong>. No se busca el mejor tablero, se busca <em>cualquier</em> tablero que cumpla las reglas. Se le llama un <strong>problema de satisfacción de restricciones</strong>: lo único que importa es la factibilidad.</p>
+    <p>Si de todas formas se quiere resolver con un solver de programación lineal entera, que siempre espera algo que optimizar, se define una <strong>función objetivo ficticia</strong> — por ejemplo \(\min 0\), o \(\max \sum_{i\in F}\sum_{j\in C} x_{ij}\), cuyo valor óptimo será 8. El solver entrega la primera solución factible que encuentre, que es exactamente lo que se pedía.</p>
+  </div>
+
+  <div class="modelo">
+    <span class="et">La única pista</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.8);font-size:.94rem;margin-bottom:10px">Sean \(F = \{1,\dots,8\}\) el conjunto de filas y \(C = \{1,\dots,8\}\) el conjunto de columnas.</p>
+    \[
+    x_{ij}=\begin{cases}1 & \text{si hay una reina en la fila } i \text{, columna } j\\ 0 & \text{en otro caso}\end{cases}
+    \qquad \forall i \in F,\ \forall j \in C
+    \]
+    <p class="glosa">Son 64 binarias. El desafío es escribir las restricciones: ¿cuántas familias necesita, y de qué tipo es cada una? Pista: las filas y las columnas no se comportan igual que las diagonales.</p>
+  </div>
+
+  <div class="quiz" data-correcta="1" data-retro='["Esa es la condición de las filas y columnas, pero no la de las diagonales: en una diagonal puede no haber ninguna reina.","Correcto. Filas y columnas exigen <em>exactamente una</em> reina, porque con ocho reinas en ocho filas no queda alternativa. Las diagonales, en cambio, solo exigen <em>a lo más una</em>: hay 30 diagonales y solo 8 reinas, así que la mayoría quedará vacía. Es partitioning en un caso y packing en el otro.","Al revés: si las diagonales exigieran exactamente una reina el problema sería infactible, porque hay muchas más diagonales que reinas.","Todas con \\(\\le 1\\) permitiría dejar filas vacías, y entonces no habría forma de garantizar que se pongan las ocho reinas."]'>
+    <span class="et">Antes de escribir el modelo</span>
+    <p class="preg">¿Qué sentido debe tener la restricción en cada caso?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Filas, columnas y diagonales: todas \(= 1\)</span></button>
+      <button><span class="k">B</span><span>Filas y columnas \(= 1\); diagonales \(\le 1\)</span></button>
+      <button><span class="k">C</span><span>Filas y columnas \(\le 1\); diagonales \(= 1\)</span></button>
+      <button><span class="k">D</span><span>Todas \(\le 1\)</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
 </section>
 
-<section class="lamina" id="l7" data-titulo="Resumen y take away">
+<section class="lamina" id="l8" data-titulo="Resumen y take away">
   <div class="eyebrow">Cierre</div>
   <h2>Lo esencial en cinco líneas</h2>
   <ul class="resumen">
@@ -622,7 +719,7 @@ body.editando .aviso-edicion{display:flex}
   </div>
 </section>
 
-<section class="lamina" id="l8" data-titulo="Ejercicios propuestos">
+<section class="lamina" id="l9" data-titulo="Ejercicios propuestos">
   <div class="eyebrow">Ejercicios</div>
   <h2>Para trabajar</h2>
 
@@ -644,9 +741,10 @@ body.editando .aviso-edicion{display:flex}
         </tbody>
       </table></div>
       <p><strong>a)</strong> Escriba la matriz de cobertura \(a_{ij}\) y formule el modelo de mínimo número de instalaciones.<br>
-      <strong>b)</strong> Resuelva: ¿cuál es el mínimo número de SAPU que cubre las 8 comunas?<br>
-      <strong>c)</strong> Formule y resuelva ahora la versión de mínimo costo. ¿Coincide con la de (b)?<br>
-      <strong>d)</strong> Si el presupuesto es de MM$ 250, ¿cuál es la máxima cantidad de comunas que se puede cubrir? Formule el modelo MCLP correspondiente.</p>
+      <strong>b)</strong> Reescriba la restricción de cobertura usando el conjunto \(J_i\) en vez de la matriz \(a_{ij}\). Escriba explícitamente \(J_1\) y \(J_5\) a partir de la tabla.<br>
+      <strong>c)</strong> Formule ahora la versión de <em>mínimo costo</em>. ¿Qué cambia respecto de (a): la función objetivo, las restricciones, o ambas?<br>
+      <strong>d)</strong> Si el presupuesto es de MM$ 250 y ya no se puede cubrir todo, formule el modelo de cobertura máxima (MCLP). Defina con precisión la variable nueva que aparece y explique por qué necesita una restricción de acoplamiento.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem"><strong>Ejercicio extra, opcional.</strong> Resuelva los tres modelos: el de mínimo número de SAPU, el de mínimo costo y el de cobertura máxima con MM$ 250. Compare las tres soluciones y discuta si coinciden.</p>
     </div>
   </div>
 
@@ -664,9 +762,10 @@ body.editando .aviso-edicion{display:flex}
         </tbody>
       </table></div>
       <p><strong>a)</strong> Note que aquí las variables <em>no</em> son binarias sino enteras (cuántos agentes en cada turno). Formule el modelo.<br>
-      <strong>b)</strong> Resuelva y determine la dotación óptima y su costo.<br>
-      <strong>c)</strong> ¿Cuántos agentes quedan "de más" en cada bloque? Interprete ese exceso.<br>
-      <strong>d)</strong> Explique por qué este problema, pese a llamarse de cobertura, no es un set covering binario puro. ¿Qué nombre recibe esta variante?</p>
+      <strong>b)</strong> Defina el conjunto \(T_\beta\) de turnos que cubren el bloque \(\beta\) y reescriba la restricción de demanda usándolo. Escriba explícitamente \(T_{B3}\).<br>
+      <strong>c)</strong> Explique por qué este problema, pese a llamarse de cobertura, no es un set covering binario puro. ¿Qué nombre recibe esta variante?<br>
+      <strong>d)</strong> La estructura de turnos obliga a cubrir tres bloques consecutivos, de modo que en algunos bloques sobrará personal. Sin calcular nada: ¿ese exceso es un defecto del modelo o una consecuencia de los datos? Justifique.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem"><strong>Ejercicio extra, opcional.</strong> Resuelva el modelo y determine la dotación óptima y su costo. Después calcule cuántos agentes quedan de más en cada bloque y contraste con lo que respondió en (d).</p>
     </div>
   </div>
 
@@ -691,6 +790,31 @@ body.editando .aviso-edicion{display:flex}
       <strong>c)</strong> Investigue y describa la técnica de <strong>generación de columnas</strong>: qué es el problema maestro restringido, qué es el subproblema de <em>pricing</em>, y qué papel juegan las variables duales.<br>
       <strong>d)</strong> Explique por qué en este caso el subproblema de pricing suele ser un problema de ruta más corta con restricciones de recursos, y conéctelo con lo que veremos en la Clase 16.<br>
       <strong>e)</strong> Discuta: si la relajación lineal del maestro entrega una solución fraccionaria, ¿qué se hace? Nombre y describa brevemente el esquema resultante.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E5 · El problema de corte</h4></div>
+    <div class="enunciado">
+      <p>Una maestranza compra barras de acero de un largo estándar de <strong>6 metros</strong> y debe producir, para un pedido:</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Pieza</th><th class="num">Largo requerido</th><th class="num">Cantidad demandada</th></tr></thead>
+          <tbody>
+            <tr><td>A</td><td class="num">2,4 m</td><td class="num">45</td></tr>
+            <tr><td>B</td><td class="num">1,8 m</td><td class="num">60</td></tr>
+            <tr><td>C</td><td class="num">1,2 m</td><td class="num">80</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Cada barra se corta según un <strong>patrón</strong>: una combinación de piezas cuya suma de largos no supera los 6 m. Lo que queda sin usar en cada barra es merma.</p>
+      <p><strong>a)</strong> Un patrón es <em>maximal</em> si ya no cabe ninguna pieza más en el resto de la barra. Enumere todos los patrones maximales y calcule la merma de cada uno. Explique por qué basta considerar los maximales y se pueden descartar los demás.<br>
+      <strong>b)</strong> Defina el conjunto de patrones y el de tipos de pieza, defina la variable de decisión, y formule el modelo que minimiza la <strong>cantidad de barras utilizadas</strong>.<br>
+      <strong>c)</strong> Demuestre que, para un largo de barra fijo, minimizar la cantidad de barras es <strong>equivalente</strong> a minimizar el desperdicio total. Escriba el desperdicio como expresión y muestre de qué depende.<br>
+      <strong>d)</strong> ¿Qué estructura de esta clase reconoce en la restricción de demanda? ¿Por qué conviene escribirla con \(\ge\) y no con \(=\)?<br>
+      <strong>e)</strong> Con tres largos de pieza los patrones se cuentan con los dedos. Con veinte largos son millones. ¿Qué técnica de esta clase permite trabajar sin enumerarlos todos? Y una pregunta más fina: el subproblema que decide qué patrón conviene agregar resulta ser un problema que ya conocemos. ¿Cuál?</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Resuelva el modelo y reporte cuántas barras se necesitan y cuánto material se desperdicia. Después vuelva a resolverlo suponiendo que el proveedor solo vende barras de <strong>6,5 m</strong> y compare: ¿barras más largas significan menos desperdicio?</p>
     </div>
   </div>
 </section>
@@ -1228,7 +1352,7 @@ function aviso(txt,color){
     var msg=document.getElementById('cv-msg');
     if(c<N){
       var falt=[];cub.forEach(function(v,i){if(!v)falt.push(i+1);});
-      msg.innerHTML='Quedan <b>'+(N-c)+'</b> vecindarios sin cobertura: '+falt.join(', ')+'. La restricción \\(\\sum_j a_{ij}x_j \\ge 1\\) no se cumple para ellos.';
+      msg.innerHTML='Quedan <b>'+(N-c)+'</b> vecindarios sin cobertura: '+falt.join(', ')+'. La restricción \\(\\sum_{j\\in J_i} x_j \\ge 1\\) no se cumple para ellos.';
       msg.style.borderLeftColor='var(--amber)';
     }else if(n===OPT.n){
       msg.innerHTML='<b>Solución óptima.</b> Cubres los 11 vecindarios con '+n+' estaciones, y no existe cobertura con menos.';
@@ -1248,57 +1372,196 @@ function aviso(txt,color){
 /* ============ 8 reinas ============ */
 (function(){
   var svg=document.getElementById('g-reinas'); if(!svg)return;
-  var S=40, tab=[];
-  for(var i=0;i<8;i++)tab.push(new Array(8).fill(false));
-  function conflictos(){
-    var q=[];
-    for(var i=0;i<8;i++)for(var j=0;j<8;j++)if(tab[i][j])q.push([i,j]);
-    var c=0;
-    for(var a=0;a<q.length;a++)for(var b=a+1;b<q.length;b++){
-      if(q[a][0]===q[b][0]||q[a][1]===q[b][1]||Math.abs(q[a][0]-q[b][0])===Math.abs(q[a][1]-q[b][1]))c++;
-    }
-    return {n:q.length,c:c,q:q};
-  }
+  var N=8, S=54, M=14;                 /* casilla de 54 px, margen de 14 */
+  var tab=[], hist=[];
+  for(var i=0;i<N;i++)tab.push(new Array(N).fill(false));
+
   function amenazada(i,j){
-    for(var a=0;a<8;a++)for(var b=0;b<8;b++){
+    for(var a=0;a<N;a++)for(var b=0;b<N;b++){
       if(!tab[a][b])continue;
       if(a===i&&b===j)continue;
       if(a===i||b===j||Math.abs(a-i)===Math.abs(b-j))return true;
     }
     return false;
   }
+  function reinas(){
+    var q=[];
+    for(var i=0;i<N;i++)for(var j=0;j<N;j++)if(tab[i][j])q.push([i,j]);
+    return q;
+  }
+
   function dib(){
     while(svg.firstChild)svg.removeChild(svg.firstChild);
-    for(var i=0;i<8;i++)for(var j=0;j<8;j++){
+    var libres=0, bloq=0;
+    for(var i=0;i<N;i++)for(var j=0;j<N;j++){
       var claro=(i+j)%2===0;
-      var am=amenazada(i,j);
-      var g=svgEl('g',{style:'cursor:pointer'});
-      g.appendChild(svgEl('rect',{x:j*S,y:i*S,width:S,height:S,
-        fill: tab[i][j]?'#C8551E':(am?'rgba(200,85,30,.13)':(claro?'#F4F1EA':'#EAE5DA'))}));
-      if(tab[i][j]){
-        var t=svgEl('text',{x:j*S+S/2,y:i*S+S/2+7,'text-anchor':'middle','font-size':21,fill:'#fff'});
+      var hay=tab[i][j];
+      var am=!hay&&amenazada(i,j);
+      if(hay){} else if(am)bloq++; else libres++;
+
+      var g=svgEl('g',{});
+      /* tablero con contraste real */
+      g.appendChild(svgEl('rect',{x:M+j*S,y:M+i*S,width:S,height:S,
+        fill: hay ? '#C8551E' : (claro ? '#EFE6D6' : '#B9A88C')}));
+      if(am){
+        /* casilla bloqueada: velo oscuro + aspa */
+        g.appendChild(svgEl('rect',{x:M+j*S,y:M+i*S,width:S,height:S,fill:'rgba(20,24,31,.5)'}));
+        var cx=M+j*S+S/2, cy=M+i*S+S/2, r=7;
+        g.appendChild(svgEl('line',{x1:cx-r,y1:cy-r,x2:cx+r,y2:cy+r,stroke:'rgba(255,255,255,.55)','stroke-width':2,'stroke-linecap':'round'}));
+        g.appendChild(svgEl('line',{x1:cx+r,y1:cy-r,x2:cx-r,y2:cy+r,stroke:'rgba(255,255,255,.55)','stroke-width':2,'stroke-linecap':'round'}));
+      }
+      if(hay){
+        var t=svgEl('text',{x:M+j*S+S/2,y:M+i*S+S/2+13});
+        t.setAttribute('style','font-size:36px;fill:#fff;text-anchor:middle;font-family:Georgia,serif');
         t.textContent='♛'; g.appendChild(t);
       }
-      (function(i,j){g.onclick=function(){tab[i][j]=!tab[i][j];dib();};})(i,j);
+      if(!am){ g.setAttribute('style','cursor:pointer'); }
+      (function(i,j,hay,am){
+        g.onclick=function(){
+          if(hay){ tab[i][j]=false; hist=hist.filter(function(p){return !(p[0]===i&&p[1]===j);}); dib(); }
+          else if(!am){ tab[i][j]=true; hist.push([i,j]); dib(); }
+        };
+      })(i,j,hay,am);
       svg.appendChild(g);
     }
-    svg.appendChild(svgEl('rect',{x:0,y:0,width:8*S,height:8*S,fill:'none',stroke:'#14181F','stroke-width':2}));
-    var r=conflictos();
-    document.getElementById('q-n').textContent=r.n+' / 8';
-    document.getElementById('q-c').textContent=r.c;
-    document.getElementById('q-c').className=r.c>0?'mal':'ok';
+    /* coordenadas del tablero */
+    for(var k=0;k<N;k++){
+      var col=svgEl('text',{x:M+k*S+S/2,y:M+N*S+13});
+      col.setAttribute('style','font-size:11px;fill:#6B7683;text-anchor:middle;font-family:Georgia,serif;font-style:italic');
+      col.textContent=k+1; svg.appendChild(col);
+      var fil=svgEl('text',{x:M-5,y:M+k*S+S/2+4});
+      fil.setAttribute('style','font-size:11px;fill:#6B7683;text-anchor:end;font-family:Georgia,serif;font-style:italic');
+      fil.textContent=k+1; svg.appendChild(fil);
+    }
+    svg.appendChild(svgEl('rect',{x:M,y:M,width:N*S,height:N*S,fill:'none',stroke:'#14181F','stroke-width':2.5}));
+
+    var n=reinas().length;
+    document.getElementById('q-n').textContent=n+' / '+N;
+    document.getElementById('q-libres').textContent=libres;
+    document.getElementById('q-bloq').textContent=bloq;
     var msg=document.getElementById('q-msg');
-    if(r.n===8&&r.c===0){msg.innerHTML='<b>¡Resuelto!</b> Ocho reinas, cero amenazas. Esta es una de las 92 soluciones posibles (12 salvo simetrías).';msg.style.borderLeftColor='var(--teal)';}
-    else if(r.c>0){msg.innerHTML='Hay <b>'+r.c+'</b> par(es) de reinas que se amenazan. Recuerda: fila, columna y ambas diagonales.';msg.style.borderLeftColor='var(--amber)';}
-    else {msg.innerHTML='Van '+r.n+' reinas sin conflictos. Faltan '+(8-r.n)+'.';msg.style.borderLeftColor='var(--gold)';}
+    if(n===N){
+      msg.innerHTML='<b>¡Resuelto!</b> Ocho reinas, ninguna amenazada. Esta es una de las 92 soluciones posibles — 12 si se consideran equivalentes las rotaciones y reflexiones.';
+      msg.style.borderLeftColor='var(--teal)';
+    }else if(libres===0){
+      msg.innerHTML='<b>Callejón sin salida.</b> Van '+n+' reinas y no queda ninguna casilla libre: hay que retroceder. Eso que acabas de hacer a mano —avanzar, quedar atascado y deshacer— es exactamente lo que hace un algoritmo de <em>backtracking</em>.';
+      msg.style.borderLeftColor='var(--amber)';
+    }else{
+      msg.innerHTML='Van <b>'+n+'</b> reinas. Quedan '+libres+' casillas libres y '+bloq+' bloqueadas. Note cómo cada reina que agregas reduce el espacio de búsqueda mucho más rápido de lo que parece.';
+      msg.style.borderLeftColor='var(--gold)';
+    }
   }
-  document.getElementById('q-limpiar').onclick=function(){for(var i=0;i<8;i++)tab[i]=new Array(8).fill(false);dib();};
+  document.getElementById('q-limpiar').onclick=function(){
+    for(var i=0;i<N;i++)tab[i]=new Array(N).fill(false); hist=[]; dib();
+  };
+  document.getElementById('q-atras').onclick=function(){
+    var p=hist.pop(); if(p){tab[p[0]][p[1]]=false; dib();}
+  };
+  /* 16 de las 92 soluciones, para no mostrar siempre la misma */
+  var SOLS=[
+    [0,4,7,5,2,6,1,3],[1,4,6,0,2,7,5,3],[1,6,4,7,0,3,5,2],[2,4,6,0,3,1,7,5],
+    [2,5,3,0,7,4,6,1],[2,6,1,7,4,0,3,5],[3,1,4,7,5,0,2,6],[3,1,7,5,0,2,4,6],
+    [3,6,2,7,1,4,0,5],[3,7,4,2,0,6,1,5],[4,1,3,6,2,7,5,0],[4,2,7,3,6,0,5,1],
+    [4,6,1,5,2,0,7,3],[5,1,6,0,2,4,7,3],[5,2,4,6,0,3,1,7],[5,3,0,4,7,1,6,2]
+  ];
+  var ultima=-1;
   document.getElementById('q-resolver').onclick=function(){
-    var sol=[0,4,7,5,2,6,1,3];
-    for(var i=0;i<8;i++){tab[i]=new Array(8).fill(false);tab[i][sol[i]]=true;}
+    var k;
+    do { k=Math.floor(Math.random()*SOLS.length); } while(SOLS.length>1 && k===ultima);
+    ultima=k;
+    var sol=SOLS[k];
+    hist=[];
+    for(var i=0;i<N;i++){tab[i]=new Array(N).fill(false);tab[i][sol[i]]=true;hist.push([i,sol[i]]);}
     dib();
+    aviso('Solución '+(k+1)+' de las 16 cargadas · hay 92 en total');
   };
   dib();
+})();
+
+/* ============ Crew scheduling ============ */
+(function(){
+  var tabla=document.getElementById('t-crew'); if(!tabla)return;
+  var V=['CC-101','CC-102','CC-215','CC-216','CC-330','CC-331','CC-448','CC-449'];
+  var P=[
+    {n:'P1', v:[0,1],     c:300},
+    {n:'P2', v:[0,2,3],   c:260},
+    {n:'P3', v:[1,4],     c:320},
+    {n:'P4', v:[2,3],     c:300},
+    {n:'P5', v:[4,5],     c:180},
+    {n:'P6', v:[5,6,7],   c:280},
+    {n:'P7', v:[6,7],     c:200},
+    {n:'P8', v:[0,1,4,5], c:430},
+    {n:'P9', v:[2,3,6,7], c:440},
+    {n:'P10',v:[1,2],     c:140}
+  ];
+  var sel=P.map(function(){return false;});
+
+  function optimo(modo){
+    var mejor={c:Infinity,s:null};
+    for(var m=0;m<(1<<P.length);m++){
+      var s=[],cnt=new Array(V.length).fill(0),c=0;
+      for(var k=0;k<P.length;k++) if(m&(1<<k)){s.push(k);c+=P[k].c;P[k].v.forEach(function(f){cnt[f]++;});}
+      var ok = modo==='part' ? cnt.every(function(x){return x===1;}) : cnt.every(function(x){return x>=1;});
+      if(ok&&c<mejor.c)mejor={c:c,s:s};
+    }
+    return mejor;
+  }
+  var OPT_COV=optimo('cov'), OPT_PART=optimo('part');
+
+  function pintar(){
+    var tb=tabla.querySelector('tbody'); tb.innerHTML='';
+    P.forEach(function(p,k){
+      var tr=document.createElement('tr');
+      if(sel[k])tr.className='sel';
+      tr.style.cursor='pointer';
+      tr.innerHTML='<td><b>'+p.n+'</b></td>'+
+        '<td style="font-family:var(--fm);font-size:.8rem">'+p.v.map(function(f){return V[f];}).join(' · ')+'</td>'+
+        '<td class="num">'+p.c+'</td>'+
+        '<td style="font-weight:600;color:'+(sel[k]?'var(--amber)':'var(--ink-3)')+'">'+(sel[k]?'✓':'·')+'</td>';
+      tr.onclick=function(){sel[k]=!sel[k];pintar();};
+      tb.appendChild(tr);
+    });
+
+    var cnt=new Array(V.length).fill(0), costo=0;
+    P.forEach(function(p,k){ if(sel[k]){costo+=p.c; p.v.forEach(function(f){cnt[f]++;});} });
+
+    var cob=document.getElementById('crew-cob'); cob.innerHTML='';
+    V.forEach(function(v,f){
+      var col = cnt[f]===0 ? 'var(--amber-soft)' : (cnt[f]===1 ? 'var(--teal-soft)' : 'var(--plum-soft)');
+      var bor = cnt[f]===0 ? 'var(--amber)'      : (cnt[f]===1 ? 'var(--teal)'      : 'var(--plum)');
+      cob.innerHTML+='<div style="background:'+col+';border:1px solid '+bor+';border-radius:9px;padding:7px 9px;text-align:center">'+
+        '<div style="font-family:var(--fm);font-size:10px;color:var(--ink-3)">'+v+'</div>'+
+        '<div style="font-weight:700;font-size:.95rem">'+cnt[f]+'</div></div>';
+    });
+
+    var falta=cnt.filter(function(x){return x===0;}).length;
+    var dobles=cnt.filter(function(x){return x>1;}).length;
+    document.getElementById('crew-c').textContent=costo;
+    document.getElementById('crew-falta').textContent=falta;
+    document.getElementById('crew-falta').className=falta?'mal':'ok';
+    document.getElementById('crew-cov').textContent=OPT_COV.c;
+    document.getElementById('crew-part').textContent=OPT_PART.c;
+
+    var msg=document.getElementById('crew-msg');
+    if(falta){
+      msg.innerHTML='Quedan <b>'+falta+'</b> vuelo(s) sin tripulación. En covering la restricción es \\(\\sum_{p\\in P_f} x_p \\ge 1\\): ninguno puede quedar en cero.';
+      msg.style.borderLeftColor='var(--amber)';
+    }else if(dobles===0&&costo===OPT_PART.c){
+      msg.innerHTML='<b>Óptimo de partitioning.</b> Cada vuelo queda cubierto exactamente una vez, al menor costo posible bajo esa exigencia ('+OPT_PART.c+' UF). Pero fíjate en el marcador: permitiendo cobertura doble se puede bajar a '+OPT_COV.c+'.';
+      msg.style.borderLeftColor='var(--teal)';
+    }else if(costo===OPT_COV.c){
+      msg.innerHTML='<b>Óptimo de covering.</b> '+OPT_COV.c+' UF, '+(OPT_PART.c-OPT_COV.c)+' menos que la mejor partición. El truco está en que el vuelo con un <b>2</b> lleva dos tripulaciones: una lo opera y la otra viaja como pasajera para quedar posicionada donde se la necesita. En la industria eso se llama <em>deadheading</em>, y es la razón por la que muchas aerolíneas modelan con \\(\\ge 1\\) en vez de \\(= 1\\).';
+      msg.style.borderLeftColor='var(--teal)';
+    }else{
+      msg.innerHTML='Cobertura completa por '+costo+' UF'+(dobles?' con '+dobles+' vuelo(s) cubierto(s) dos veces':'')+'. El óptimo de covering es '+OPT_COV.c+' y el de partitioning '+OPT_PART.c+'.';
+      msg.style.borderLeftColor='var(--gold)';
+    }
+    if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([msg]);
+  }
+  document.getElementById('crew-limpiar').onclick=function(){sel=P.map(function(){return false;});pintar();};
+  document.getElementById('crew-optcov').onclick=function(){sel=P.map(function(p,k){return OPT_COV.s.indexOf(k)>=0;});pintar();};
+  document.getElementById('crew-optpart').onclick=function(){sel=P.map(function(p,k){return OPT_PART.s.indexOf(k)>=0;});pintar();};
+  pintar();
 })();
 
 /* reajuste tras el primer renderizado de fórmulas */
