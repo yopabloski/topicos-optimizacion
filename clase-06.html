@@ -253,16 +253,19 @@ svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
 .ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
 .ejercicio .enunciado{padding:19px 21px}
 .ejercicio .enunciado p:last-child{margin-bottom:0}
-details.pauta{border-top:1px solid var(--line);background:var(--paper-2)}
-details.pauta summary{
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
   cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
   text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
 }
-details.pauta summary::-webkit-details-marker{display:none}
-details.pauta summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
-details.pauta[open] summary::before{transform:rotate(90deg)}
-details.pauta summary:hover{color:var(--ink)}
-details.pauta .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
 
 .pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
 
@@ -395,8 +398,8 @@ body.editando .aviso-edicion{display:flex}
   .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
   .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
   .opciones button:hover{transform:none}
-  details.pauta{background:#f2efe8 !important}
-  details.pauta .contenido{display:block !important}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
   a{color:inherit;text-decoration:none}
 }
 
@@ -480,9 +483,10 @@ body.editando .aviso-edicion{display:flex}
     </div>
   </div>
 
-  <div class="nota ojo">
-    <span class="et">Un resultado clásico que conviene conocer</span>
-    <p>Con <strong>dos máquinas</strong>, el flow shop que minimiza el makespan se resuelve en tiempo polinomial con la <strong>regla de Johnson</strong> (1954): se ponen primero, en orden creciente, los trabajos cuyo menor tiempo está en la máquina 1; y al final, en orden decreciente, aquellos cuyo menor tiempo está en la máquina 2. Con <strong>tres o más máquinas</strong> el problema pasa a ser NP-difícil. Un salto de dificultad provocado por agregar una sola máquina.</p>
+  <div class="nota">
+    <span class="et">Fuera de programa, pero conviene saber que existe</span>
+    <p>Para el caso particular de <strong>dos máquinas</strong> existe una regla que resuelve el makespan de forma exacta y en tiempo polinomial: la <strong>regla de Johnson</strong> (1954). Con <strong>tres o más máquinas</strong> el problema pasa a ser NP-difícil, y por eso hay que modelarlo y resolverlo como programación entera — que es lo que haremos hoy.</p>
+    <p style="margin-bottom:0">No es materia del curso ni entra en evaluaciones. Si te interesa el tema, es un buen punto de partida para leer por tu cuenta: busca "Johnson's rule flow shop scheduling".</p>
   </div>
 </section>
 
@@ -506,7 +510,7 @@ body.editando .aviso-edicion{display:flex}
       </div>
       <p style="font-size:.94rem">Haz clic en un trabajo de la secuencia para moverlo una posición hacia la izquierda.</p>
       <div id="secuencia" style="display:flex;gap:9px;flex-wrap:wrap;margin:12px 0"></div>
-      <svg id="g-gantt" viewBox="0 0 440 190" style="width:100%;height:auto"></svg>
+      <svg id="g-gantt" viewBox="0 0 900 420" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
       <div class="leyenda">
         <span><i style="background:#C8551E"></i>T1</span>
         <span><i style="background:#0F6E63"></i>T2</span>
@@ -516,14 +520,14 @@ body.editando .aviso-edicion{display:flex}
       </div>
       <div class="marcador">
         <div><span>Makespan \(C_{\max}\)</span><b id="fs-cmax">—</b></div>
-        <div><span>Suma de términos \(\sum C_i\)</span><b id="fs-sum">—</b></div>
-        <div><span>Atraso total \(\sum T_i\)</span><b id="fs-tar">—</b></div>
+        <div><span>Suma de términos \(\sum_{i\in I} C_i\)</span><b id="fs-sum">—</b></div>
+        <div><span>Atraso total \(\sum_{i\in I} T_i\)</span><b id="fs-tar">—</b></div>
         <div><span>Ociosidad total</span><b id="fs-idle">—</b></div>
       </div>
       <div class="botonera" style="margin-top:14px">
         <button class="btn" id="fs-cmax-btn">Mejor para \(C_{\max}\)</button>
-        <button class="btn ghost" id="fs-sum-btn">Mejor para \(\sum C_i\)</button>
-        <button class="btn ghost" id="fs-tar-btn">Mejor para \(\sum T_i\)</button>
+        <button class="btn ghost" id="fs-sum-btn">Mejor para \(\sum_{i\in I} C_i\)</button>
+        <button class="btn ghost" id="fs-tar-btn">Mejor para \(\sum_{i\in I} T_i\)</button>
       </div>
       <p id="fs-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
     </div>
@@ -531,7 +535,7 @@ body.editando .aviso-edicion{display:flex}
 
   <div class="nota">
     <span class="et">Lo que debería sorprenderte</span>
-    <p>Las secuencias que optimizan \(C_{\max}\), \(\sum C_i\) y \(\sum T_i\) <strong>no son la misma</strong>. Elegir el objetivo no es un detalle técnico: es una decisión de negocio. \(C_{\max}\) importa si el taller cierra cuando termina el último trabajo (costo de turno). \(\sum C_i\) importa si cada trabajo terminado libera capital o espacio. \(\sum T_i\) importa si hay multas contractuales por retraso. Preguntar "¿qué quieren minimizar?" antes de modelar ahorra rehacer todo.</p>
+    <p>Las secuencias que optimizan \(C_{\max}\), \(\sum_{i\in I} C_i\) y \(\sum_{i\in I} T_i\) <strong>no son la misma</strong>. Elegir el objetivo no es un detalle técnico: es una decisión de negocio. \(C_{\max}\) importa si el taller cierra cuando termina el último trabajo (costo de turno). \(\sum_{i\in I} C_i\) importa si cada trabajo terminado libera capital o espacio. \(\sum_{i\in I} T_i\) importa si hay multas contractuales por retraso. Preguntar "¿qué quieren minimizar?" antes de modelar ahorra rehacer todo.</p>
   </div>
 </section>
 
@@ -540,58 +544,113 @@ body.editando .aviso-edicion{display:flex}
   <h2>El modelo de programación entera</h2>
 
   <div class="modelo">
+    <span class="et">Conjuntos y parámetros</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0 0 10px">
+    \(I = \{1,\dots,N\}\): conjunto de trabajos.<br>
+    \(K = \{1,\dots,M\}\): conjunto de máquinas, en el orden fijo en que se recorren.<br>
+    \(J = \{1,\dots,N\}\): conjunto de posiciones de la secuencia — hay tantas posiciones como trabajos.<br>
+    \(t_{ik}\): tiempo de procesamiento del trabajo \(i \in I\) en la máquina \(k \in K\).<br>
+    \(d_i\): fecha de entrega comprometida del trabajo \(i \in I\).</p>
+    <p class="glosa" style="margin:0">Conviene no confundir \(i\) con \(j\): el primero identifica <em>qué</em> trabajo es, el segundo <em>en qué lugar de la fila</em> va. Son dos cosas distintas y el modelo necesita ambas.</p>
+  </div>
+
+  <div class="modelo">
     <span class="et">Variables de decisión</span>
     \[
     \begin{aligned}
-    x_{ijk} &= \begin{cases}1 & \text{si el trabajo } i \text{ se ejecuta en la máquina } k \text{ en el orden } j\\ 0 & \text{en otro caso}\end{cases}\\[6pt]
-    q_{ijk} &= \text{tiempo de término del trabajo } i \text{ en la máquina } k, \text{ ocupando la posición } j\\[6pt]
-    &\qquad i=1,\dots,N;\quad j=1,\dots,N;\quad k=1,\dots,M
+    x_{ijk} &= \begin{cases}1 & \text{si el trabajo } i \text{ se ejecuta en la máquina } k \text{ en la posición } j\\ 0 & \text{en otro caso}\end{cases} && \forall i \in I,\ \forall j \in J,\ \forall k \in K\\[6pt]
+    q_{ijk} &= \text{tiempo de término del trabajo } i \text{ en la máquina } k \text{ si ocupa la posición } j && \forall i \in I,\ \forall j \in J,\ \forall k \in K
     \end{aligned}
     \]
-    <p class="glosa">La variable de posición \(x_{ijk}\) es la clave: en lugar de decidir "quién va antes que quién" par por par, se decide "qué trabajo ocupa cada casilla de la secuencia".</p>
+    \[
+    x_{ijk} \in \{0,1\}, \qquad q_{ijk} \ge 0 \qquad \forall i \in I,\ \forall j \in J,\ \forall k \in K
+    \]
+    <p class="glosa">La variable de posición \(x_{ijk}\) es la clave: en lugar de decidir "quién va antes que quién" par por par, se decide "qué trabajo ocupa cada casilla de la secuencia". La variable \(q_{ijk}\) es continua y no negativa; vale cero cuando la asignación correspondiente no ocurre.</p>
   </div>
 
   <div class="modelo">
     <span class="et">Restricciones de asignación</span>
     \[
     \begin{aligned}
-    \sum_{i} x_{ijk} &= 1 && \forall j,k && \text{(en cada máquina y posición hay exactamente un trabajo)}\\
-    \sum_{j} x_{ijk} &= 1 && \forall i,k && \text{(cada trabajo ocupa exactamente una posición en cada máquina)}
+    \sum_{i \in I} x_{ijk} &= 1 && \forall j \in J,\ \forall k \in K && \text{(en cada máquina y posición hay exactamente un trabajo)}\\
+    \sum_{j \in J} x_{ijk} &= 1 && \forall i \in I,\ \forall k \in K && \text{(cada trabajo ocupa exactamente una posición en cada máquina)}
     \end{aligned}
     \]
-    <p class="glosa">Es un problema de asignación replicado por máquina. En el <em>permutation flow shop</em> se agrega \(x_{ijk}=x_{ij1}\ \forall k\): la secuencia es la misma en todas las máquinas, lo que reduce enormemente el modelo.</p>
+    <p class="glosa">Es un problema de asignación replicado por máquina. En el <em>permutation flow shop</em> se agrega \(x_{ijk}=x_{ij1}\ \forall k \in K\): la secuencia es la misma en todas las máquinas, lo que reduce enormemente el modelo.</p>
   </div>
 
   <div class="modelo">
     <span class="et">Restricciones de tiempo</span>
     \[
     \begin{aligned}
-    q_{ijk} &\le R\,x_{ijk} && \forall i,j,k && \text{(activación: solo hay tiempo si hay asignación)}\\
-    \sum_j q_{ij,k} &\ge \sum_j q_{ij,k-1} + t_{ik} && \forall i,\ \forall k=2,\dots,M && \text{(no empieza en } k \text{ antes de terminar en } k-1)\\
-    \sum_i q_{ijk} &\ge \sum_i q_{i,j-1,k} + \sum_i t_{ik}x_{ijk} && \forall k,\ \forall j=2,\dots,N && \text{(la posición } j \text{ va tras la } j-1)
+    q_{ijk} &\le R\,x_{ijk} && \forall i \in I,\ \forall j \in J,\ \forall k \in K\\
+    \sum_{j \in J} q_{ijk} &\ge \sum_{j \in J} q_{ij,k-1} + t_{ik} && \forall i \in I,\ \forall k \in K \setminus \{1\}\\
+    \sum_{i \in I} q_{ijk} &\ge \sum_{i \in I} q_{i,j-1,k} + \sum_{i \in I} t_{ik}\,x_{ijk} && \forall k \in K,\ \forall j \in J \setminus \{1\}\\[4pt]
+    x_{ijk} &\in \{0,1\},\quad q_{ijk} \ge 0 && \forall i \in I,\ \forall j \in J,\ \forall k \in K
     \end{aligned}
     \]
-    <p class="glosa">\(R\) es un número suficientemente grande — típicamente \(\sum_i \sum_k t_{ik}\), el horizonte máximo posible. Las dos últimas familias son las que hacen "cuadrar" el Gantt: precedencia vertical (entre máquinas) y horizontal (dentro de una máquina).</p>
+    <p class="glosa" style="margin-top:14px">
+    <b>(1) Activación.</b> Solo hay tiempo de término si existe la asignación. \(R\) es un número suficientemente grande — típicamente \(R = \sum_{i\in I}\sum_{k\in K} t_{ik}\), el horizonte máximo posible.<br>
+    <b>(2) Precedencia vertical</b>, entre máquinas: un trabajo no empieza en la máquina \(k\) antes de haber terminado en la \(k-1\). Por eso el índice recorre \(K \setminus \{1\}\): la primera máquina no tiene anterior.<br>
+    <b>(3) Precedencia horizontal</b>, dentro de una máquina: la posición \(j\) no empieza antes de que termine la \(j-1\). Por eso \(J \setminus \{1\}\): la primera posición no tiene predecesora.<br>
+    Note que \(q_{ijk}\) es continua y no negativa: no hace falta que sea entera, porque los tiempos quedan determinados por los datos una vez fijada la secuencia.</p>
+  </div>
+
+  <div class="widget">
+    <header><span class="tag viz">Visualización</span><h4>Qué hacen las restricciones (2) y (3) sobre el Gantt</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Las dos familias de precedencia son las que impiden que las barras se solapen. Elige un caso y observa qué restricción manda, y qué pasa cuando la binaria vale 0 en vez de 1.</p>
+      <div class="controles">
+        <div class="ctrl">
+          <label style="display:block">Caso</label>
+          <select id="prec-caso">
+            <option value="0">(3) Precedencia horizontal: la máquina encadena sin pausa</option>
+            <option value="1">(2) Precedencia vertical: el encadenado perfecto</option>
+            <option value="2">El trabajo espera a la máquina — por qué la restricción es \(\ge\)</option>
+            <option value="3">La máquina espera al trabajo — el caso espejo</option>
+            <option value="4">Qué pasa si \(x_{ijk}=0\): la restricción se desactiva</option>
+          </select>
+        </div>
+      </div>
+      <svg id="g-prec" viewBox="0 0 900 300" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
+      <div class="leyenda" style="justify-content:center">
+        <span><i style="background:rgba(200,85,30,.14);border:1px dashed var(--amber)"></i>Máquina ociosa: espera material</span>
+        <span><i style="background:rgba(91,58,107,.16);border:1px dashed var(--plum)"></i>Trabajo esperando: la máquina está ocupada</span>
+      </div>
+      <p id="prec-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Un detalle que se presta para confundirse</span>
+    <p>El tiempo de término del trabajo \(i\) en la última máquina se escribe \(C_i = \sum_{j\in J} q_{ijM}\). A primera vista parece que esa suma acumula \(N\) tiempos, pero no: por la asignación \(\sum_{j\in J} x_{ijM}=1\) y la activación \(q_{ijM} \le R\,x_{ijM}\), <strong>solo un término es distinto de cero</strong> — el de la posición que el trabajo \(i\) efectivamente ocupa. La suma es la forma de decir "el tiempo de término, sea cual sea su posición" sin saber de antemano cuál es.</p>
+    <p style="margin-bottom:0">Compare con esta otra expresión, que se parece pero significa algo muy distinto:</p>
+    <p style="text-align:center;margin:10px 0">\(\displaystyle\sum_{i\in I} q_{iNM} \;=\; C_{\max}\)</p>
+    <p style="margin-bottom:0">Aquí la posición está <em>fija</em> en la última, \(N\), y el índice libre es el trabajo. Sobrevive un solo término otra vez, pero ahora es el del trabajo que va último en la última máquina — es decir, el <strong>makespan</strong>, no la suma de tiempos de término. Cambiar cuál índice queda libre cambia por completo lo que mide la expresión.</p>
   </div>
 
   <h3>Objetivos posibles</h3>
   <div class="rejilla r3">
-    <div class="tarjeta"><span class="icono">MAKESPAN</span><h4>\(\min C_{\max}\)</h4><p>Minimizar el instante en que termina el último trabajo. Se modela con \(C_{\max} \ge \sum_j q_{ijM}\ \forall i\) y \(\min C_{\max}\).</p></div>
-    <div class="tarjeta"><span class="icono">FLUJO</span><h4>\(\min \sum_i C_i\)</h4><p>Minimizar la suma de tiempos de término, equivalente a minimizar el tiempo medio de permanencia en el sistema.</p></div>
-    <div class="tarjeta"><span class="icono">ATRASO</span><h4>\(\min \sum_i T_i\)</h4><p>Con \(T_i \ge C_i - d_i\) y \(T_i\ge0\). Es la linealización estándar del máximo entre cero y el atraso.</p></div>
+    <div class="tarjeta"><span class="icono">MAKESPAN</span><h4>\(\min C_{\max}\)</h4><p>Minimizar el instante en que termina el último trabajo. Se agrega la variable \(C_{\max} \ge 0\) y la familia \(C_{\max} \ge \sum_{j\in J} q_{ijM}\ \ \forall i \in I\), donde \(M\) es la última máquina.</p></div>
+    <div class="tarjeta"><span class="icono">FLUJO</span><h4>\(\min \sum_{i\in I} C_i\)</h4><p>Con \(C_i = \sum_{j\in J} q_{ijM}\) el tiempo de término del trabajo \(i\). Equivale a minimizar el tiempo medio de permanencia en el sistema.</p></div>
+    <div class="tarjeta"><span class="icono">ATRASO</span><h4>\(\min \sum_{i\in I} T_i\)</h4><p>Con \(T_i \ge C_i - d_i\) y \(T_i\ge0\ \ \forall i \in I\). Es la linealización estándar del máximo entre cero y el atraso.</p></div>
   </div>
 
   <div class="modelo">
     <span class="et">Extensión: costo de adelanto y atraso (just in time)</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0 0 12px">
+    <strong>Todas las restricciones anteriores se mantienen</strong> — asignación, activación y las dos de precedencia. Lo que se hace es <em>agregar</em> las variables y restricciones de abajo, y <em>reemplazar</em> la función objetivo.</p>
     \[
     \begin{aligned}
-    \min\;\; & \sum_{i=1}^{N} \left(\alpha_i A_i + \beta_i T_i\right)\\
-    \text{s.a.}\;\; & A_i \ge d_i - C_i && \forall i=1,\dots,N\\
-    & T_i \ge C_i - d_i && \forall i=1,\dots,N\\
-    & A_i,\ T_i \ge 0 && \forall i=1,\dots,N
+    \min\;\; & z = \sum_{i \in I} \left(\alpha_i A_i + \beta_i T_i\right) && \text{(reemplaza el objetivo anterior)}\\
+    \text{s.a.}\;\; & \text{(1), (2) y (3) del modelo base} && \\
+    & C_i = \sum_{j \in J} q_{ijM} && \forall i \in I\\
+    & A_i \ge d_i - C_i && \forall i \in I\\
+    & T_i \ge C_i - d_i && \forall i \in I\\
+    & A_i,\ T_i \ge 0 && \forall i \in I
     \end{aligned}
     \]
-    <p class="glosa">\(A_i\) es el adelanto (terminar antes cuesta inventario y almacenamiento), \(T_i\) el atraso (cuesta multas y reputación). Como se minimiza y ambas están acotadas por abajo, en el óptimo toman exactamente los valores correctos. Este es el modelo de la filosofía <em>just in time</em>: ni antes ni después.</p>
+    <p class="glosa">\(A_i\) es el adelanto —terminar antes cuesta inventario y almacenamiento— y \(T_i\) el atraso, que cuesta multas y reputación. Como se minimiza y ambas están acotadas por abajo, en el óptimo toman exactamente los valores correctos: si el trabajo llega a tiempo, ambas valen cero. Este es el modelo de la filosofía <em>just in time</em>: ni antes ni después.</p>
   </div>
 </section>
 
@@ -624,37 +683,13 @@ body.editando .aviso-edicion{display:flex}
   </div>
 </section>
 
-<section class="lamina" id="l6" data-titulo="TeC y desafío">
-  <div class="eyebrow">Trabajo en clases</div>
-  <h2>TeC · Flow shop con adelanto y atraso</h2>
-  <div class="widget">
-    <header><span class="tag caso">En equipos de 3</span><h4>Modificar el modelo</h4></header>
-    <div class="cuerpo">
-      <p><strong>a)</strong> Suponga que se espera terminar cada trabajo \(i\) lo más cerca posible de su fecha de entrega \(d_i\) (en días). Modifique el modelo de modo de minimizar el <strong>costo total de adelanto y atraso</strong> respecto de la fecha de entrega. Suponga que el costo unitario de adelanto es \(\alpha_i\) y el de atraso es \(\beta_i\).<br>
-      <strong>b)</strong> Explique por qué, si \(\alpha_i = 0\) para todo \(i\), el modelo se reduce al de minimización de atrasos.<br>
-      <strong>c)</strong> ¿Qué ocurre si \(\alpha_i\) y \(\beta_i\) son ambos muy grandes respecto de otros costos? Interprete operacionalmente.<br>
-      <strong>d)</strong> Proponga cómo incorporar la posibilidad de <em>rechazar</em> un trabajo (subcontratarlo) pagando un costo \(\gamma_i\).</p>
-    </div>
-  </div>
-
-  <div class="widget">
-    <header><span class="tag caso">Desafío</span><h4>El recorrido del caballo</h4></header>
-    <div class="cuerpo">
-      <p>Considere un tablero de ajedrez de 64 casilleros (8×8). Sin utilizar dos o más veces el mismo casillero, recorra <strong>todos</strong> los casilleros del tablero con el caballo, que se mueve en forma de L (dos casilleros en una dirección y uno en la perpendicular).</p>
-      <p><strong>a)</strong> Modele el problema como uno de programación entera. Pista: piense en el tablero como un grafo donde los nodos son casillas y los arcos son movimientos legales del caballo.<br>
-      <strong>b)</strong> ¿Qué problema clásico de optimización combinatoria es este? ¿Qué dificultad aparece con los subciclos?<br>
-      <strong>c)</strong> Investigue la regla de Warnsdorff y explique por qué es una heurística tan efectiva.</p>
-    </div>
-  </div>
-</section>
-
-<section class="lamina" id="l7" data-titulo="Resumen y take away">
+<section class="lamina" id="l6" data-titulo="Resumen y take away">
   <div class="eyebrow">Cierre</div>
   <h2>Lo esencial en cinco líneas</h2>
   <ul class="resumen">
     <li>Un <strong>flow shop</strong> tiene \(M\) máquinas, \(N\) trabajos, y todos los trabajos siguen el mismo orden de máquinas.</li>
     <li>El modelo usa <strong>variables de posición</strong> \(x_{ijk}\) más variables de tiempo, con precedencia entre máquinas y dentro de cada máquina.</li>
-    <li>Con <strong>dos máquinas</strong> la regla de Johnson resuelve el makespan en tiempo polinomial; con <strong>tres o más</strong> el problema es NP-difícil.</li>
+    <li>Con <strong>tres o más máquinas</strong> el problema es NP-difícil: no hay reglas simples que garanticen el óptimo, y por eso se modela como programación entera.</li>
     <li>El <strong>objetivo elegido cambia la solución</strong>: \(C_{\max}\), \(\sum C_i\) y \(\sum T_i\) suelen tener secuencias óptimas distintas.</li>
     <li>El <strong>diagrama de Gantt</strong> no es decoración: muestra dónde está la ociosidad y qué máquina es el cuello de botella.</li>
   </ul>
@@ -665,12 +700,12 @@ body.editando .aviso-edicion{display:flex}
   </div>
 </section>
 
-<section class="lamina" id="l8" data-titulo="Ejercicios propuestos">
+<section class="lamina" id="l7" data-titulo="Ejercicios propuestos">
   <div class="eyebrow">Ejercicios</div>
   <h2>Para trabajar</h2>
 
   <div class="ejercicio">
-    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Regla de Johnson en dos máquinas</h4></div>
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · De dos máquinas al modelo general</h4></div>
     <div class="enunciado">
       <p>Cinco trabajos deben pasar por dos máquinas en el orden M1 → M2:</p>
       <div class="tabla-scroll"><table>
@@ -680,10 +715,13 @@ body.editando .aviso-edicion{display:flex}
           <tr><td>Tiempo en M2</td><td class="num">3</td><td class="num">6</td><td class="num">4</td><td class="num">8</td><td class="num">2</td></tr>
         </tbody>
       </table></div>
-      <p><strong>a)</strong> Aplique la regla de Johnson paso a paso y obtenga la secuencia óptima.<br>
-      <strong>b)</strong> Construya el diagrama de Gantt y calcule el makespan.<br>
-      <strong>c)</strong> Calcule el makespan de la secuencia alfabética A-B-C-D-E y compare.<br>
-      <strong>d)</strong> Identifique la ociosidad de la máquina 2 en ambas secuencias e interprete.</p>
+      <p><strong>a)</strong> Escriba los conjuntos \(I\), \(J\) y \(K\) para esta instancia, indicando su cardinalidad. ¿Cuántas variables \(x_{ijk}\) tiene el modelo? ¿Y cuántas \(q_{ijk}\)?<br>
+      <strong>b)</strong> Escriba explícitamente las dos restricciones de asignación para la máquina M1, desarrollando las sumatorias. Debería obtener diez ecuaciones.<br>
+      <strong>c)</strong> Justifique un valor de \(R\) para este caso a partir de los datos. ¿Qué pasaría si eligiera \(R=10\)?<br>
+      <strong>d)</strong> Dibuje el diagrama de Gantt de la secuencia B–D–C–A–E e identifique en qué tramos la máquina M2 está ociosa. Para cada tramo de ocio, indique <em>cuál</em> de las dos restricciones de precedencia lo está provocando.<br>
+      <strong>e)</strong> Sin resolver: explique por qué la ociosidad inicial de M2 es inevitable en cualquier secuencia, y de qué depende su duración.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Enumere las 120 secuencias posibles y encuentre la que minimiza el makespan. Compare con la secuencia B–D–C–A–E del enunciado.</p>
     </div>
   </div>
 
@@ -691,27 +729,17 @@ body.editando .aviso-edicion{display:flex}
     <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Cuello de botella y decisión de inversión</h4></div>
     <div class="enunciado">
       <p>Use los datos del simulador (4 trabajos, 3 máquinas). La gerencia evalúa invertir en una segunda máquina de pintura (M3), lo que reduciría a la mitad el tiempo de pintura de todos los trabajos.</p>
-      <p><strong>a)</strong> Calcule la carga total de cada máquina (\(\sum_i t_{ik}\)) e identifique cuál es el cuello de botella por carga.<br>
-      <strong>b)</strong> Determine el makespan óptimo actual y el que se obtendría con los tiempos de M3 reducidos a la mitad.<br>
-      <strong>c)</strong> Repita el análisis suponiendo que en cambio se invierte en reducir a la mitad los tiempos de M2. ¿Cuál inversión conviene?<br>
-      <strong>d)</strong> Explique por qué la máquina con mayor carga total no siempre es la que más limita el makespan en un flow shop.</p>
+      <p><strong>a)</strong> Calcule la carga total de cada máquina (\(\sum_{i\in I} t_{ik}\)) e identifique cuál es el cuello de botella por carga.<br>
+      <strong>b)</strong> Escriba una <strong>cota inferior</strong> del makespan que dependa solo de las cargas: \(C_{\max} \ge \max_{k\in K} \sum_{i\in I} t_{ik}\). Justifíquela en una línea y calcúlela con los datos.<br>
+      <strong>c)</strong> Esa cota es floja porque ignora el llenado y el vaciado de la línea. Complétela: escriba una cota que además considere que, antes de que la máquina \(k\) pueda empezar, algún trabajo debe haber recorrido las máquinas anteriores, y que después de que termine, algún trabajo debe recorrer las siguientes.<br>
+      <strong>d)</strong> Explique por qué la máquina con mayor carga total no siempre es la que más limita el makespan en un flow shop. Use la cota de (c) para sostener el argumento.<br>
+      <strong>e)</strong> Si la gerencia solo puede invertir en acelerar <em>una</em> máquina, ¿qué información necesitaría para decidir cuál, y por qué no basta con mirar la tabla de tiempos?</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem"><strong>Ejercicio extra, opcional.</strong> Determine el makespan óptimo actual y compare con el que se obtendría reduciendo a la mitad los tiempos de M3, y luego los de M2. Contraste el resultado con lo que había anticipado en (d) y (e).</p>
     </div>
   </div>
 
   <div class="ejercicio">
-    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Formulación disyuntiva versus formulación por posiciones</h4></div>
-    <div class="enunciado">
-      <p>Existen dos formulaciones estándar para el flow shop: la de <em>variables de posición</em> (vista en clase) y la <em>disyuntiva</em>, que usa variables \(z_{ii'}\in\{0,1\}\) igual a 1 si el trabajo \(i\) precede al \(i'\), más variables continuas de inicio \(s_{ik}\).</p>
-      <p><strong>a)</strong> Escriba completa la formulación disyuntiva para un flow shop de \(N\) trabajos y \(M\) máquinas.<br>
-      <strong>b)</strong> Cuente el número de variables binarias y de restricciones de cada formulación, en función de \(N\) y \(M\).<br>
-      <strong>c)</strong> Justifique el valor de \(M\) (el <em>big-M</em>, no confundir con el número de máquinas) en las restricciones disyuntivas.<br>
-      <strong>d)</strong> Discuta cuál de las dos formulaciones espera que tenga mejor relajación lineal y por qué.<br>
-      <strong>e)</strong> Explique qué son las <em>restricciones de transitividad</em> \(z_{ii'} + z_{i'i''} - z_{ii''} \le 1\), por qué son válidas y qué aportan.</p>
-    </div>
-  </div>
-
-  <div class="ejercicio">
-    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Programación de pabellones quirúrgicos</h4></div>
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Programación de pabellones quirúrgicos</h4></div>
     <div class="enunciado">
       <p>Un hospital debe programar 12 cirugías electivas en 3 pabellones durante una jornada de 10 horas. Cada cirugía \(i\) tiene una duración estimada \(p_i\), requiere un cirujano específico \(m_i\) (algunos cirujanos tienen varias cirugías), y una prioridad clínica \(w_i\). Además, cada cirugía requiere preparación del pabellón: un tiempo de aseo \(\sigma\) entre cirugías consecutivas en el mismo pabellón, que sube a \(\sigma'\) si la cirugía siguiente es de otra especialidad.</p>
       <p><strong>a)</strong> Identifique qué tipo de problema de scheduling es (no es un flow shop puro) y justifique.<br>
@@ -720,6 +748,26 @@ body.editando .aviso-edicion{display:flex}
       <strong>d)</strong> Formule dos objetivos alternativos y discútalos: (i) maximizar el número ponderado de cirugías realizadas, (ii) minimizar la hora de término del último pabellón. ¿Cuál defendería ante la dirección médica?<br>
       <strong>e)</strong> Las duraciones \(p_i\) son estimaciones con alta varianza. Explique qué riesgo introduce eso en un plan óptimo y nombre dos enfoques para manejarlo.</p>
     </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Adelanto y atraso: el modelo just in time</h4></div>
+    <div class="enunciado">
+      <p>Sobre el modelo de flow shop visto en clase, incorpore las siguientes extensiones. En cada una, indique si se <em>agregan</em> restricciones, si se <em>reemplaza</em> el objetivo, o ambas cosas.</p>
+      <p><strong>a)</strong> Se espera terminar cada trabajo \(i\) lo más cerca posible de su fecha de entrega \(d_i\). El costo unitario de adelanto es \(\alpha_i\) y el de atraso \(\beta_i\). Modifique el modelo para minimizar el costo total de adelanto y atraso.<br>
+      <strong>b)</strong> Explique por qué las variables \(A_i\) y \(T_i\) toman en el óptimo exactamente los valores correctos, sin necesidad de imponer que una de las dos sea cero. ¿Qué pasaría si el objetivo fuera de maximización?<br>
+      <strong>c)</strong> Si \(\alpha_i = 0\) para todo \(i \in I\), ¿a qué modelo se reduce? Justifique mirando qué ocurre con la variable \(A_i\) y su restricción.<br>
+      <strong>d)</strong> Si \(\alpha_i\) y \(\beta_i\) son ambos muy grandes respecto de los demás costos, el óptimo puede incluir <strong>ociosidad deliberada</strong>: dejar una máquina parada aunque haya trabajo esperando. Explique por qué, e interprete operacionalmente.<br>
+      <strong>e)</strong> Incorpore la posibilidad de <em>rechazar</em> un trabajo y subcontratarlo pagando un costo \(\gamma_i\). Defina la variable nueva y ajuste las restricciones de asignación. Atención: al rechazar trabajos quedan posiciones vacías en la secuencia, y eso obliga a cambiar el sentido de una restricción.</p>
+    </div>
+  </div>
+
+  <div class="nota libro" style="margin-top:30px">
+    <span class="et">Para investigar, si el tema te interesa</span>
+    <p><strong>Otra forma de escribir el mismo problema.</strong> El modelo que vimos usa <em>variables de posición</em>: \(x_{ijk}\) decide qué trabajo ocupa cada casilla de la secuencia. Existe una formulación alternativa, llamada <strong>disyuntiva</strong>, que en vez de posiciones usa variables de precedencia: \(w_{ii'}=1\) si el trabajo \(i\) va antes que el \(i'\); 0, en otro caso. Junto con variables continuas de inicio \(s_{ik}\), el no solapamiento en cada máquina se escribe como una elección entre dos restricciones — exactamente la técnica de la Clase 03:</p>
+    <p style="text-align:center;margin:10px 0">\(s_{ik} + t_{ik} \le s_{i'k} + M(1-w_{ii'})\) &nbsp; y &nbsp; \(s_{i'k} + t_{i'k} \le s_{ik} + M\,w_{ii'}\)</p>
+    <p>Las dos formulaciones describen el mismo conjunto de soluciones, pero no se comportan igual. La disyuntiva tiene muchas menos binarias — \(\binom{N}{2}\) en vez de \(N^2M\) — y a cambio arrastra un \(M\) grande en cada restricción, con el costo en la relajación lineal que vimos en la Clase 02.</p>
+    <p style="margin-bottom:0">Si quieres explorarlo por tu cuenta, hay tres preguntas que vale la pena responder: cuántas binarias y restricciones tiene cada formulación en función de \(N\) y \(M\); qué valor de \(M\) es válido y ajustado en la disyuntiva; y qué son las <em>restricciones de transitividad</em> \(w_{ii'} + w_{i'i''} - w_{ii''} \le 1\), por qué son válidas y qué aportan. No es materia del curso ni entra en evaluaciones — es un buen punto de partida si te interesa el modelamiento de scheduling.</p>
   </div>
 </section>
 </main>
@@ -1231,34 +1279,45 @@ function aviso(txt,color){
     best[crit]=b;
   });
 
+  /* lienzo 900x420 -> una unidad del viewBox equivale a un pixel real.
+     OJO: la hoja de estilos define svg text{font-size:10px} y gana sobre los
+     atributos, así que todos los textos llevan style inline. */
+  var SANS="font-family:'Archivo',sans-serif";
+  var MATE="font-family:Georgia,serif;font-style:italic";
+  function texto(a,estilo,cont){
+    var e=svgEl('text',a); e.setAttribute('style',estilo);
+    if(cont!==undefined)e.textContent=cont; return e;
+  }
+
   function dibGantt(r){
     var svg=document.getElementById('g-gantt');
     while(svg.firstChild)svg.removeChild(svg.firstChild);
-    var W=440,ML=54,MR=14,MT=16,H=190;
+    var W=900,ML=112,MR=26,MT=18,H=420;
     var tmax=r.cmax;
-    var alto=34, gap=14;
+    var alto=64, gap=20;
     function sx(t){return ML+t/tmax*(W-ML-MR);}
-    var nombres=['M1 Corte','M2 Suelda','M3 Pintura'];
+    var nombres=['M1 · Corte','M2 · Soldadura','M3 · Pintura'];
     for(var k=0;k<3;k++){
       var y=MT+k*(alto+gap);
-      svg.appendChild(svgEl('rect',{x:ML,y:y,width:W-ML-MR,height:alto,fill:'rgba(20,24,31,.06)',rx:5}));
-      var t=svgEl('text',{x:ML-8,y:y+alto/2+4,'text-anchor':'end','font-size':10});
-      t.textContent=nombres[k];svg.appendChild(t);
+      svg.appendChild(svgEl('rect',{x:ML,y:y,width:W-ML-MR,height:alto,fill:'rgba(20,24,31,.06)',rx:7}));
+      svg.appendChild(texto({x:ML-12,y:y+alto/2+5,'text-anchor':'end'},SANS+";font-size:14px;fill:#3C4551",nombres[k]));
     }
     r.barras.forEach(function(b){
       var y=MT+b.m*(alto+gap);
-      svg.appendChild(svgEl('rect',{x:sx(b.ini),y:y+3,width:Math.max(2,sx(b.fin)-sx(b.ini)),height:alto-6,fill:COL[b.i],rx:4,opacity:.92}));
-      if(sx(b.fin)-sx(b.ini)>18){
-        var tt=svgEl('text',{x:(sx(b.ini)+sx(b.fin))/2,y:y+alto/2+4,'text-anchor':'middle','font-size':10,fill:'#fff','font-weight':600});
-        tt.textContent='T'+(b.i+1);svg.appendChild(tt);
-      }
+      svg.appendChild(svgEl('rect',{x:sx(b.ini),y:y+5,width:Math.max(3,sx(b.fin)-sx(b.ini)),height:alto-10,
+        fill:COL[b.i],rx:6,opacity:.93}));
+      if(sx(b.fin)-sx(b.ini)>26)
+        svg.appendChild(texto({x:(sx(b.ini)+sx(b.fin))/2,y:y+alto/2+5,'text-anchor':'middle'},
+          SANS+";font-size:14px;fill:#fff;font-weight:600",'T'+(b.i+1)));
     });
-    var yb=MT+3*(alto+gap)+4;
-    svg.appendChild(svgEl('line',{x1:ML,y1:yb,x2:sx(tmax),y2:yb,stroke:'#6B7683'}));
-    for(var t2=0;t2<=tmax;t2+=Math.ceil(tmax/10)){
-      svg.appendChild(svgEl('line',{x1:sx(t2),y1:yb,x2:sx(t2),y2:yb+4,stroke:'#6B7683'}));
-      var lb=svgEl('text',{x:sx(t2),y:yb+16,'text-anchor':'middle','font-size':9});lb.textContent=t2;svg.appendChild(lb);
+    var yb=MT+3*(alto+gap)+6;
+    svg.appendChild(svgEl('line',{x1:ML,y1:yb,x2:sx(tmax),y2:yb,stroke:'#6B7683','stroke-width':1.2}));
+    var paso=Math.max(1,Math.ceil(tmax/10));
+    for(var t2=0;t2<=tmax;t2+=paso){
+      svg.appendChild(svgEl('line',{x1:sx(t2),y1:yb,x2:sx(t2),y2:yb+6,stroke:'#6B7683'}));
+      svg.appendChild(texto({x:sx(t2),y:yb+21,'text-anchor':'middle'},SANS+";font-size:12px;fill:#6B7683",t2));
     }
+    svg.appendChild(texto({x:sx(tmax)+14,y:yb+21},MATE+";font-size:14px;fill:#6B7683",'t'));
   }
 
   function pintar(){
@@ -1295,6 +1354,119 @@ function aviso(txt,color){
   document.getElementById('fs-sum-btn').onclick=function(){seq=best.suma.p.slice();pintar();};
   document.getElementById('fs-tar-btn').onclick=function(){seq=best.tar.p.slice();pintar();};
   pintar();
+})();
+
+/* ============ Precedencia: qué hacen (2) y (3) en el Gantt ============ */
+(function(){
+  var sel=document.getElementById('prec-caso'); if(!sel)return;
+  var svg=document.getElementById('g-prec');
+  var W=900,ML=132,MR=30,MT=26,alto=58,gap=26;
+  var SANS="font-family:'Archivo',sans-serif";
+  var MATE="font-family:Georgia,serif;font-style:italic";
+  function tx(a,e,c){var n=svgEl('text',a);n.setAttribute('style',e);if(c!==undefined)n.textContent=c;return n;}
+
+  /* cada caso: filas con etiqueta, barras {ini,fin,col,txt}, flecha y mensaje */
+  /* cada caso: filas, barras, esperas y mensaje */
+  var CASOS=[
+    { fils:['Máquina k'], tmax:14,
+      barras:[{f:0,ini:0,fin:5,col:'#C8551E',txt:'posición j−1'},
+              {f:0,ini:5,fin:10,col:'#5B3A6B',txt:'posición j'}],
+      flecha:{de:[0,5],a:[0,5],horiz:true},
+      msg:'<b>Restricción (3): precedencia horizontal.</b> Dentro de una misma máquina, el trabajo de la posición \\(j\\) no puede empezar antes de que termine el de la posición \\(j-1\\). Aquí el siguiente ya estaba disponible, así que la máquina encadena sin pausa y la restricción se cumple con igualdad.'},
+
+    { fils:['Máquina k−1','Máquina k'], tmax:14,
+      barras:[{f:0,ini:0,fin:5,col:'#C8551E',txt:'trabajo i'},
+              {f:1,ini:5,fin:9,col:'#C8551E',txt:'trabajo i'},
+              {f:1,ini:0,fin:5,col:'#0F6E63',txt:'otro trabajo'}],
+      flecha:{de:[0,5],a:[1,5]},
+      msg:'<b>Restricción (2): precedencia vertical.</b> El trabajo \\(i\\) termina en la máquina \\(k-1\\) en el instante 5 y empieza en la \\(k\\) exactamente ahí, porque esa máquina se desocupó justo a tiempo. Las dos restricciones se cumplen con igualdad simultáneamente: es el encadenado perfecto, y casi nunca ocurre.'},
+
+    { fils:['Máquina k−1','Máquina k'], tmax:16,
+      barras:[{f:0,ini:0,fin:3,col:'#C8551E',txt:'trabajo i'},
+              {f:1,ini:0,fin:8,col:'#0F6E63',txt:'trabajo anterior (pos. j−1)'},
+              {f:1,ini:8,fin:12,col:'#C8551E',txt:'trabajo i'}],
+      espera:[{f:0,ini:3,fin:8,txt:'trabajo i esperando'}],
+      flecha:{de:[0,3],a:[1,3],corta:true},
+      msg:'<b>El trabajo espera a la máquina — y por eso la restricción es una desigualdad.</b> El trabajo \\(i\\) sale de la máquina \\(k-1\\) en el instante 3, pero la \\(k\\) sigue ocupada con el trabajo anterior hasta el 8. La precedencia vertical (2) solo exige empezar <em>después</em> del 3, y se cumple con holgura: \\(12 \\ge 3 + 4\\). Quien fija el valor es la precedencia horizontal (3): \\(12 = 8 + 4\\).<br>Si la restricción (2) fuera una <em>igualdad</em>, el modelo estaría obligando al trabajo a entrar a la máquina apenas sale de la anterior — algo imposible cuando la máquina está ocupada. Con \\(\\ge\\), en cambio, cada restricción impone un piso y el tiempo real es el <b>mayor de los dos</b>. La minimización se encarga de que no sea más que eso.'},
+
+    { fils:['Máquina k−1','Máquina k'], tmax:16,
+      barras:[{f:0,ini:0,fin:3,col:'#B8892B',txt:'trab. de pos. j−1'},
+              {f:0,ini:3,fin:11,col:'#5B3A6B',txt:'trabajo i'},
+              {f:1,ini:3,fin:6,col:'#B8892B',txt:'pos. j−1'},
+              {f:1,ini:11,fin:15,col:'#5B3A6B',txt:'trabajo i'}],
+      ocio:[{f:1,ini:6,fin:11}],
+      flecha:{de:[0,11],a:[1,11]},
+      msg:'<b>La máquina espera al trabajo — el caso espejo del anterior.</b> Ahora la máquina \\(k\\) se desocupa en el instante 6, pero el trabajo \\(i\\) recién sale de la máquina anterior en el 11. La que manda es la precedencia vertical (2): \\(15 = 11 + 4\\); la horizontal (3) queda holgada, porque \\(15 \\ge 6 + 4\\).<br>El tramo rayado es <b>ociosidad de máquina</b>, distinta de la espera del caso anterior: allá el material esperaba a la máquina, acá la máquina espera al material. Este es el ocio que una mejor secuencia puede reducir, y por eso el orden importa.'},
+
+    { fils:['Máquina k'], tmax:14,
+      barras:[{f:0,ini:0,fin:5,col:'#C8551E',txt:'posición j−1'}],
+      fantasma:[{f:0,ini:5,fin:10,txt:'no asignado'}],
+      msg:'<b>Cuando \\(x_{ijk}=0\\).</b> Si el trabajo \\(i\\) no ocupa la posición \\(j\\) en la máquina \\(k\\), la restricción de activación \\(q_{ijk} \\le R\\,x_{ijk}\\) fuerza \\(q_{ijk}=0\\): esa variable de tiempo desaparece del problema. Por eso las restricciones (2) y (3) están escritas con <em>sumatorias</em> sobre \\(i\\) o \\(j\\): de todos los términos, solo sobrevive el de la asignación que efectivamente ocurre, y los demás aportan cero. Es el mismo mecanismo de acoplamiento de la Clase 02, usado aquí para seleccionar términos en vez de habilitar una actividad.'}
+  ];
+
+  function dib(){
+    var c=CASOS[+sel.value];
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    function sx(t){return ML+t/c.tmax*(W-ML-MR);}
+    c.fils.forEach(function(nom,f){
+      var y=MT+f*(alto+gap);
+      svg.appendChild(svgEl('rect',{x:ML,y:y,width:W-ML-MR,height:alto,fill:'rgba(20,24,31,.06)',rx:7}));
+      svg.appendChild(tx({x:ML-12,y:y+alto/2+5,'text-anchor':'end'},SANS+";font-size:14px;fill:#3C4551",nom));
+    });
+    (c.ocio||[]).forEach(function(o){
+      var y=MT+o.f*(alto+gap);
+      svg.appendChild(svgEl('rect',{x:sx(o.ini),y:y+6,width:sx(o.fin)-sx(o.ini),height:alto-12,
+        fill:'rgba(200,85,30,.14)',stroke:'#C8551E','stroke-width':1,'stroke-dasharray':'5 4',rx:5}));
+      svg.appendChild(tx({x:(sx(o.ini)+sx(o.fin))/2,y:y+alto/2+5,'text-anchor':'middle'},
+        SANS+";font-size:13px;fill:#C8551E",'ocio'));
+    });
+    (c.espera||[]).forEach(function(o){
+      var y=MT+o.f*(alto+gap);
+      svg.appendChild(svgEl('rect',{x:sx(o.ini),y:y+6,width:sx(o.fin)-sx(o.ini),height:alto-12,
+        fill:'rgba(91,58,107,.16)',stroke:'#5B3A6B','stroke-width':1,'stroke-dasharray':'2 3',rx:5}));
+      svg.appendChild(tx({x:(sx(o.ini)+sx(o.fin))/2,y:y+alto/2+5,'text-anchor':'middle'},
+        SANS+";font-size:12px;fill:#5B3A6B",o.txt));
+    });
+    (c.fantasma||[]).forEach(function(o){
+      var y=MT+o.f*(alto+gap);
+      svg.appendChild(svgEl('rect',{x:sx(o.ini),y:y+6,width:sx(o.fin)-sx(o.ini),height:alto-12,
+        fill:'none',stroke:'rgba(20,24,31,.3)','stroke-width':1.2,'stroke-dasharray':'3 5',rx:5}));
+      svg.appendChild(tx({x:(sx(o.ini)+sx(o.fin))/2,y:y+alto/2+5,'text-anchor':'middle'},
+        SANS+";font-size:13px;fill:#6B7683",o.txt));
+    });
+    c.barras.forEach(function(b){
+      var y=MT+b.f*(alto+gap);
+      svg.appendChild(svgEl('rect',{x:sx(b.ini),y:y+6,width:sx(b.fin)-sx(b.ini),height:alto-12,fill:b.col,rx:6,opacity:.93}));
+      svg.appendChild(tx({x:(sx(b.ini)+sx(b.fin))/2,y:y+alto/2+5,'text-anchor':'middle'},
+        SANS+";font-size:13px;fill:#fff;font-weight:600",b.txt));
+    });
+    if(c.flecha){
+      var d=c.flecha;
+      if(d.horiz){
+        var y0=MT+d.de[0]*(alto+gap);
+        svg.appendChild(svgEl('line',{x1:sx(d.de[1]),y1:y0+2,x2:sx(d.de[1]),y2:y0+alto-2,
+          stroke:'#14181F','stroke-width':2.5,'stroke-dasharray':'4 3'}));
+      }else{
+        var y1=MT+d.de[0]*(alto+gap)+alto-4, y2=MT+d.a[0]*(alto+gap)+8;
+        svg.appendChild(svgEl('line',{x1:sx(d.de[1]),y1:y1,x2:sx(d.a[1]),y2:y2,
+          stroke:'#14181F','stroke-width':2.5}));
+        svg.appendChild(svgEl('polygon',{points:(sx(d.a[1])-5)+','+(y2-8)+' '+(sx(d.a[1])+5)+','+(y2-8)+' '+sx(d.a[1])+','+y2,fill:'#14181F'}));
+      }
+    }
+    var yb=MT+c.fils.length*(alto+gap)+4;
+    svg.appendChild(svgEl('line',{x1:ML,y1:yb,x2:sx(c.tmax),y2:yb,stroke:'#6B7683','stroke-width':1.2}));
+    for(var t=0;t<=c.tmax;t+=2){
+      svg.appendChild(svgEl('line',{x1:sx(t),y1:yb,x2:sx(t),y2:yb+6,stroke:'#6B7683'}));
+      svg.appendChild(tx({x:sx(t),y:yb+21,'text-anchor':'middle'},SANS+";font-size:12px;fill:#6B7683",t));
+    }
+    svg.appendChild(tx({x:sx(c.tmax)+14,y:yb+21},MATE+";font-size:14px;fill:#6B7683",'t'));
+
+    var msg=document.getElementById('prec-msg');
+    msg.innerHTML=c.msg;
+    msg.style.borderLeftColor=(+sel.value===1||+sel.value===3)?'var(--amber)':'var(--teal)';
+    if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([msg]);
+  }
+  sel.onchange=dib; dib();
 })();
 
 /* reajuste tras el primer renderizado de fórmulas */
