@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ramificación y acotamiento II · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 09</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">09</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Saber cuándo<br><em style="font-style:italic;color:var(--amber)">parar</em></h1>
+  <p class="lead">El árbol de la clase pasada terminaba solo porque era diminuto. Los de verdad no terminan. Hoy aprendemos a leer dónde va la búsqueda y a decidir, con un número en la mano, si vale la pena seguir.</p>
+  <div class="meta">
+    <span class="chip on">Cotas e incumbente</span>
+    <span class="chip">Gap absoluto y relativo</span>
+    <span class="chip">Estrategias de exploración</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>El algoritmo no cambia; cambian las decisiones alrededor</h2>
+  <p class="lead">Ramificación y acotamiento ya está completo desde la Clase 08. Lo que falta es todo lo que un ingeniero decide mientras corre: qué nodo abrir, cuándo conformarse, y cómo saber cuánto se está dejando sobre la mesa.</p>
+  <p>En la clase anterior el árbol tenía cinco nodos y se agotaba en un minuto. Un modelo real de asignación o de planificación tiene miles de variables binarias, y el árbol no se agota en toda una noche. El algoritmo igual sirve, pero deja de usarse como "correr hasta terminar" y pasa a usarse como <strong>un proceso que se observa y se interrumpe</strong>.</p>
+  <p>Para poder interrumpirlo hace falta un número que diga cuánto se arriesga al hacerlo. Ese número es el <strong>gap relativo</strong>: expresa como porcentaje la distancia entre las dos cotas que el algoritmo ya venía llevando sin que les diéramos importancia, la mejor solución encontrada y la mejor que aún podría existir. Cuando las dos cotas se tocan, el problema está resuelto; mientras no se toquen, ese porcentaje acota el error de parar ahora.</p>
+  <p>La otra mitad de la clase es sobre el orden. En qué orden se abren los nodos no cambia cuál es el óptimo —eso ya quedó claro— pero cambia cuánto cuesta encontrarlo y, sobre todo, cambia qué tan rápido el gap relativo se hace pequeño. Ahí aparecen las estrategias de exploración, la elección de la variable de ramificación y el redondeo como forma de conseguir una incumbente temprana.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Identificar</strong> cuál cota es superior y cuál inferior según el problema sea de maximización o de minimización.</li>
+    <li><strong>Calcular</strong> el gap absoluto y el gap relativo en cualquier punto de la ejecución, y decir qué garantiza cada uno.</li>
+    <li><strong>Comparar</strong> las estrategias de profundidad primero, mejor primero e híbrida en términos de nodos resueltos y de velocidad de cierre del gap.</li>
+    <li><strong>Justificar</strong> una decisión de parada temprana con la garantía que entrega el gap, y expresarla como una afirmación defendible.</li>
+    <li><strong>Evaluar</strong> el uso del redondeo dentro del árbol como forma de obtener una incumbente, distinguiéndolo del redondeo como método de solución.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Cotas, incumbente y gap">
+  <div class="eyebrow">Primer bloque · el gap</div>
+  <h2>Dos números que se persiguen</h2>
+  <p class="lead">Todo el estado de una búsqueda se resume en dos valores. Uno solo puede mejorar, el otro solo puede empeorar, y el algoritmo termina cuando se encuentran.</p>
+
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <span class="icono">MAXIMIZACIÓN</span>
+      <h4>Incumbente abajo, relajación arriba</h4>
+      <p>La incumbente \(\hat z\) es una solución entera factible: \(\underline z=\hat z\). La mejor cota superior es \(\overline z=\max_{i\in A}z_{\mathrm{PL}i}^*\). Por tanto, \(\underline z\le z^*\le\overline z\).</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">MINIMIZACIÓN</span>
+      <h4>Relajación abajo, incumbente arriba</h4>
+      <p>La mejor cota inferior es \(\underline z=\min_{i\in A}z_{\mathrm{PL}i}^*\). La incumbente \(\hat z\) es una solución entera factible: \(\overline z=\hat z\). Por tanto, \(\underline z\le z^*\le\overline z\).</p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Qué representan los símbolos</span>
+    <p style="margin-bottom:0">\(A\) es el conjunto de nodos abiertos y \(z_{\mathrm{PL}i}^*\) es el óptimo de la relajación en el nodo \(i\in A\). La incumbente \(\hat z\) siempre es la mejor solución entera factible encontrada. La relajación es optimista; la incumbente es ejecutable.</p>
+  </div>
+
+  <div class="tarjeta" style="max-width:760px;margin:20px auto;text-align:center">
+    <span class="icono">GAP RELATIVO · PORCENTAJE DE CIERRE PENDIENTE</span>
+    <h4>Siempre se divide por el valor absoluto de la incumbente</h4>
+    \[
+    g_{\mathrm{abs}}=\left|\overline z-\underline z\right|,
+    \qquad
+    g_{\mathrm{rel}}=\frac{\left|\overline z-\underline z\right|}{\left|\hat z\right|}\times100\%.
+    \]
+    <p style="margin-bottom:0">El valor absoluto evita que un objetivo negativo cambie el signo del porcentaje. Sin incumbente el gap relativo no está definido. Si \(\hat z=0\), el caso especial es: si ambas cotas son cero, el gap es 0%; si la otra cota es distinta de cero, no hay un porcentaje relativo finito y se reporta el gap absoluto.</p>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Un porcentaje que puede superar 100%</span>
+    <p style="margin-bottom:0">El gap relativo <strong>no es una probabilidad</strong>. Puede ser mayor que 100% cuando la separación entre cotas supera en magnitud a la incumbente; por ejemplo, \(\underline z=4\), \(\overline z=10\) y \(\hat z=4\) dan \(g_{\mathrm{rel}}=150\%\). Solo mide cuán lejos siguen estando las cotas según esta convención.</p>
+  </div>
+
+  <div class="rejilla r3">
+    <div class="tarjeta"><span class="icono">GAP = 0</span><h4>Óptimo certificado</h4><p>Las dos cotas coinciden. No queda ningún nodo activo que pueda contener algo mejor. La incumbente <em>es</em> el óptimo, y hay prueba de ello.</p></div>
+    <div class="tarjeta"><span class="icono">GAP &gt; 0</span><h4>Solución con garantía</h4><p>Hay una solución en la mano y una cota sobre cuánto podría faltarle. Es menos que un óptimo y mucho más que una corazonada.</p></div>
+    <div class="tarjeta"><span class="icono">SIN INCUMBENTE</span><h4>Gap indefinido</h4><p>Mientras no aparezca la primera solución entera no hay gap que calcular, y tampoco hay con qué podar por cota. Por eso conseguir una incumbente temprano vale tanto.</p></div>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Simulador: el gap en vivo">
+  <div class="eyebrow">Primer bloque · simulador</div>
+  <h2>River Power: cuatro generadores, un árbol y dos cotas</h2>
+  <p class="lead">Una central debe cubrir 700 MW de punta eligiendo qué generadores arrancar. Es minimización, así que todo lo de la clase pasada va dado vuelta. Abre los nodos tú y mira cómo se cierran las cotas.</p>
+
+  <div class="modelo">
+    <span class="et">Instancia · River Power</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0 0 12px">
+      La central debe cubrir 700 MW durante una hora de punta. \(u_j=1\) si se enciende el generador \(j\); \(u_j=0\), en otro caso, para \(j\in\{1,2,3,4\}\). Los costos están en miles de US$ por hora y las potencias en MW.
+    </p>
+    \[
+    \begin{aligned}
+    \min\;\; & z=7u_1+12u_2+5u_3+14u_4\\
+    \text{s.a.}\;\; & 300u_1+600u_2+500u_3+1600u_4\ge700\\
+    & u_1,u_2,u_3,u_4\in\{0,1\}.
+    \end{aligned}
+    \]
+  </div>
+
+  <div class="nota">
+    <span class="et">Por qué aquí basta rankear · y cuándo deja de bastar</span>
+    <p>\(\mathrm{PL}_0\) reemplaza la última línea por \(0\le u_j\le1\) para \(j\in\{1,2,3,4\}\). Como hay <strong>una sola</strong> restricción de cobertura \((\ge)\), se ordena de menor a mayor costo por MW:</p>
+    <div class="tabla-scroll"><table style="font-size:.82rem;margin:10px 0 13px">
+      <thead><tr><th>Generador \(j\)</th><th class="num">Costo</th><th class="num">Potencia</th><th class="num">Costo / MW</th><th class="num">Ranking</th></tr></thead>
+      <tbody>
+        <tr><td>4</td><td class="num">14</td><td class="num">1.600 MW</td><td class="num">0,00875</td><td class="num">1.º</td></tr>
+        <tr><td>3</td><td class="num">5</td><td class="num">500 MW</td><td class="num">0,01000</td><td class="num">2.º</td></tr>
+        <tr><td>2</td><td class="num">12</td><td class="num">600 MW</td><td class="num">0,02000</td><td class="num">3.º</td></tr>
+        <tr><td>1</td><td class="num">7</td><td class="num">300 MW</td><td class="num">0,02333</td><td class="num">4.º</td></tr>
+      </tbody>
+    </table></div>
+    <p>Se cubre la demanda en ese orden y solo el último generador usado puede quedar fraccional. Aquí basta \(u_4=700/1600=0{,}4375\), así que \(z_{\mathrm{PL}0}^*=6{,}125\).</p>
+    <p>Es el caso espejo de la <strong>mochila continua</strong>: al <em>maximizar</em> con una única capacidad \((\le)\), se ordena de mayor a menor beneficio por unidad de recurso y se llena en ese orden. El ranking deja de resolver el PL si se agregan dos o más recursos, restricciones de calidad, precedencias u otras relaciones: ya no existe un único orden que satisfaga todo. En esos casos, cada PL del árbol se resuelve con símplex —o símplex dual, más adelante.</p>
+  </div>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Abre los nodos y observa las dos cotas</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Puedes construir el árbol <b>manualmente</b>: una rama gris fue abierta pero su PL aún no se ha resuelto; selecciónala y pulsa <b>Resolver PL seleccionado</b>. Para observar una estrategia completa, usa uno de los dos botones de ejecución: reinician el árbol y muestran su recorrido, sus cotas y su tabla.</p>
+      <div class="botonera">
+        <button class="btn" id="rp-resolver">Resolver PL seleccionado</button>
+        <button class="btn" id="rp-abrir">Abrir el nodo seleccionado</button>
+        <button class="btn ghost" id="rp-mejor">Resolver por mejor primero</button>
+        <button class="btn ghost" id="rp-prof">Resolver por profundidad primero</button>
+        <button class="btn ghost" id="rp-reset">Reiniciar</button>
+      </div>
+      <svg id="g-rp-arbol" viewBox="0 0 900 400" style="width:100%;max-width:900px;height:auto;display:block;margin:24px auto 0"></svg>
+      <div class="leyenda">
+        <span><i style="background:#14181F"></i>Activo</span>
+        <span><i style="background:#6B7683"></i>Rama pendiente de resolver</span>
+        <span><i style="background:#5B3A6B"></i>Ramificado</span>
+        <span><i style="background:#0F6E63"></i>Sondeado por factibilidad</span>
+        <span><i style="background:#C8551E"></i>Sondeado por cota</span>
+        <span><i style="background:#B8892B"></i>Infactible</span>
+      </div>
+      <div class="marcador">
+        <div><span>PL resueltos</span><b id="rp-n">1</b></div>
+        <div><span>Cota inferior \(\underline{z}\)</span><b id="rp-ci">—</b></div>
+        <div><span>Incumbente \(\overline{z}\)</span><b class="ok" id="rp-cs">—</b></div>
+        <div><span>Gap absoluto</span><b id="rp-gabs">—</b></div>
+        <div><span>Gap relativo</span><b id="rp-grel">—</b></div>
+      </div>
+      <h3>Cómo se cierran las cotas</h3>
+      <p style="font-size:.93rem">Cada punto es un PL resuelto. Pasa el cursor sobre un punto para leer sus valores; la tabla registra el mismo estado después de cada resolución.</p>
+      <div class="rejilla r2" style="align-items:start;margin:12px 0 0">
+        <div>
+          <svg id="g-rp-conv" viewBox="0 0 900 300" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
+          <div class="leyenda">
+            <span><i style="background:#0F6E63"></i>Cota inferior</span>
+            <span><i style="background:#C8551E"></i>Incumbente · cota superior</span>
+          </div>
+          <p id="rp-hover" style="margin:10px 0 0;font-size:.84rem;padding:9px 12px;border-radius:8px;background:var(--paper-2);color:var(--ink-2)">Pasa el cursor sobre un punto del gráfico para inspeccionar esa iteración.</p>
+        </div>
+        <div class="tabla-scroll" style="max-height:270px;overflow:auto;margin:0">
+          <table style="font-size:.78rem"><thead><tr><th>ITE.</th><th class="num">Inf.</th><th class="num">Sup.</th><th class="num">Gap rel.</th></tr></thead><tbody id="rp-tabla"></tbody></table>
+        </div>
+      </div>
+      <p id="rp-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+      <h3 id="rp-tit">El PL del nodo seleccionado</h3>
+      <p id="rp-restr" style="font-size:.92rem;color:var(--ink-2)"></p>
+    </div>
+  </div>
+
+</section>
+
+<section class="lamina" id="l4" data-titulo="Pausa 1">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre cotas y gap.</p>
+
+  <div class="quiz" data-correcta="2" data-retro='["Esa es la situación de un problema de maximización, no la de este.","No necesariamente: PL₀ puede ser fraccional. La incumbente aparece recién cuando se encuentra una solución entera factible.","Correcto. Minimizando, la incumbente es una solución real y por lo tanto el óptimo no puede costar más que ella: es la cota superior. La relajación, que promete de más, queda como cota inferior.","Ambas acotan a \\(z^*\\): la relajación por abajo y la incumbente por arriba. Si fueran del mismo lado el gap no tendría sentido."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">En un problema de <strong>minimización</strong>, ¿qué papel juega la incumbente?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Es la cota inferior de \(z^*\).</span></button>
+      <button><span class="k">B</span><span>Es la primera solución encontrada al resolver \(\mathrm{PL}_0\).</span></button>
+      <button><span class="k">C</span><span>Es la cota superior de \(z^*\).</span></button>
+      <button><span class="k">D</span><span>No acota a \(z^*\): solo sirve para podar.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="1" data-retro='["Ese sería el gap absoluto dividido por la cota inferior, otra convención posible, pero no la que definimos ni la más usada.","Correcto. Gap absoluto \\(=14-11=3\\); gap relativo \\(=3/14\\approx21{,}43\\%\\).", "El gap se calcula entre las dos cotas vigentes, no entre la incumbente y la relajación de la raíz, que ya quedó atrás.","El 3 es el gap absoluto; al expresarlo como porcentaje hay que dividirlo por el valor absoluto de la incumbente."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">Minimizando, la incumbente vale 14 y la mejor cota de los nodos abiertos vale 11. ¿Cuál es el gap relativo?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>\(3/11 \approx 27{,}3\%\)</span></button>
+      <button><span class="k">B</span><span>\(3/14 \approx 21{,}4\%\)</span></button>
+      <button><span class="k">C</span><span>\((14-6{,}125)/14 \approx 56{,}3\%\)</span></button>
+      <button><span class="k">D</span><span>\(14-11=3\%\)</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Estrategias de exploración">
+  <div class="eyebrow">Segundo bloque · el orden</div>
+  <h2>El orden no cambia el óptimo, cambia la factura</h2>
+  <p class="lead">Con varios nodos activos hay que elegir uno. Esa elección no puede hacer que el algoritmo se equivoque, pero decide cuántos PL se resuelven y qué tan rápido baja el gap.</p>
+
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <span class="icono">PROFUNDIDAD PRIMERO</span>
+      <h4>Bajar hasta el fondo</h4>
+      <p>Se abre siempre el nodo más profundo. Llega rápido a una hoja, o sea a una <strong>incumbente temprana</strong>, que es lo que habilita la poda por cota. A cambio puede hundirse en una rama mala y gastar nodos ahí. Usa poca memoria: basta recordar el camino.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">MEJOR PRIMERO</span>
+      <h4>Ir donde la promesa es mayor</h4>
+      <p>Se abre el nodo de mejor cota. Es el que <strong>cierra el gap más rápido</strong>, porque ataca siempre la cota que manda. A cambio tarda en encontrar la primera solución entera y hay que mantener todos los nodos abiertos en memoria.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">HÍBRIDA</span>
+      <h4>Lo que hacen los solvers</h4>
+      <p>Profundidad hasta cerrar una rama, y ahí saltar al mejor nodo activo. Consigue la incumbente temprana de la primera y la convergencia de la segunda. Es la estrategia del ejercicio de NASA de las diapositivas originales.</p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">La otra decisión: qué variable ramificar</span>
+    <p>Cuando hay más de una variable fraccional hay que elegir. La regla clásica es tomar la <strong>más próxima a un entero</strong>: es la que tiene más probabilidad de fijarse sin perder mucho valor, y la que hace que un hijo se vuelva rápidamente entero. La regla opuesta —la más fraccional, la más "indecisa"— también se usa, con el argumento de que resolver primero la decisión más ambigua parte el problema por la mitad. Los solvers modernos no usan ninguna de las dos: estiman cuánto empeora la cota al fijar cada variable y eligen la que más la mueve.</p>
+    <p style="margin-bottom:0">En River Power esta decisión no existe: la relajación de una mochila continua tiene <strong>a lo más una variable fraccional</strong>, porque el llenado codicioso solo parte el último ítem que entra. Por eso el simulador de arriba solo te deja elegir nodo.</p>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Redondear, otra vez, pero para otra cosa</span>
+    <p>En la Clase 08 quedó establecido que redondear no es un método de solución. Dentro del árbol cumple un papel distinto y legítimo: es una <strong>heurística primal</strong> para conseguir una incumbente antes de que el árbol la encuentre por su cuenta. Se toma la solución relajada del nodo, se redondea de la manera que preserve la factibilidad —en River Power, hacia <em>arriba</em>, porque la restricción es \(\ge\)—, se verifica que el punto cumpla todo, y si cumple se guarda como incumbente.</p>
+    <p style="margin-bottom:0">La diferencia con la Clase 08 es qué se afirma del resultado. Allá el error era presentar el redondeo <em>como si fuera la respuesta</em>. Acá se usa sabiendo que probablemente no lo es, y su valor está en que una incumbente mala sigue siendo mejor que ninguna: habilita la poda por cota y define un gap. Si después el árbol encuentra algo mejor, la reemplaza sin drama.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Simulador: torneo de estrategias">
+  <div class="eyebrow">Segundo bloque · simulador</div>
+  <h2>Las cotas no siempre mejoran a cada iteración</h2>
+  <p class="lead">Esta instancia más larga tiene el mismo óptimo bajo ambas estrategias. Lo que cambia es el orden de los nodos, el momento en que aparece una incumbente y, por tanto, cuándo una tolerancia permite parar.</p>
+
+  <div class="widget">
+    <header><span class="tag viz">Visualización</span><h4>Traza de ramificación y acotamiento · minimización</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.92rem">Se eligen intervenciones binarias de confiabilidad para una planta. La ejecución completa certifica un costo óptimo de <strong>100</strong> unidades monetarias. Cada fila resume el estado tras resolver un PL; algunas resoluciones no cambian ninguna cota.</p>
+      <div class="controles" style="margin-top:12px;margin-bottom:8px">
+        <div class="ctrl">
+          <label>Tolerancia de parada <b id="tol-v">10%</b></label>
+          <input type="range" id="tol" min="0" max="25" step="0.5" value="10">
+        </div>
+      </div>
+      <div class="botonera" aria-label="Estrategia cuya traza se muestra en la tabla">
+        <button class="btn" id="torneo-mejor">Ver mejor primero</button>
+        <button class="btn ghost" id="torneo-prof">Ver profundidad primero</button>
+      </div>
+      <svg id="g-torneo" viewBox="0 0 900 270" style="width:100%;max-width:900px;height:auto;display:block;margin:12px auto 0"></svg>
+      <div class="leyenda">
+        <span><i style="background:#0F6E63"></i>Mejor primero</span>
+        <span><i style="background:#5B3A6B"></i>Profundidad primero</span>
+        <span><i style="background:var(--amber)"></i>Tolerancia</span>
+      </div>
+      <div class="tabla-scroll" style="max-height:185px;overflow:auto;margin-top:12px"><table style="font-size:.76rem;margin:0">
+        <thead><tr><th>ITE.</th><th>Estado</th><th class="num">Inf.</th><th class="num">Sup.</th><th class="num">Gap rel.</th></tr></thead>
+        <tbody id="torneo-tbody"></tbody>
+      </table></div>
+      <p id="torneo-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Qué conviene probar</span>
+    <p>Prueba <strong>10%</strong>: evita 6 PL en ambas trazas, aun sin usar una tolerancia extrema. Después cambia de estrategia y observa los tramos planos: resolver un PL puede cerrar una rama sin mejorar la incumbente ni la mejor cota activa. Una tolerancia no obliga a que aparezca una incumbente ni garantiza que se alcance dentro de un límite de tiempo; si eso ocurre, el gap relativo sigue indefinido. Por eso los solvers combinan estrategias con heurísticas, cortes y preprocesamiento, que veremos a continuación.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Pausa 2">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre estrategias y parada temprana.</p>
+
+  <div class="quiz" data-correcta="3" data-retro='["El óptimo no depende del orden: las dos estrategias son exactas y certifican el mismo valor.","La poda por cota existe en ambas; lo que cambia es cuándo aparece la incumbente que la habilita.","Mejor primero no garantiza encontrar antes la primera solución entera; suele tardar más, porque se queda arriba del árbol.","Correcto. Ambas certifican el mismo óptimo. Lo que cambia es cuántos PL hay que resolver para llegar y qué tan rápido baja el gap por el camino."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">¿Qué diferencia produce elegir profundidad primero en lugar de mejor primero?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Puede llevar a un óptimo distinto.</span></button>
+      <button><span class="k">B</span><span>Elimina la poda por cota.</span></button>
+      <button><span class="k">C</span><span>Garantiza encontrar antes la primera solución entera.</span></button>
+      <button><span class="k">D</span><span>Ninguna en el óptimo; sí en el esfuerzo y en la velocidad de cierre del gap.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. El gap acota el error por arriba: garantiza que no es mayor que 21,43%. El error efectivo puede ser cualquier valor entre cero y eso, y solo se conoce después de resolver hasta el final.","El gap no mide el error cometido: para medirlo habría que conocer el óptimo, y si se conociera no habría razón para parar.","Al revés: el error real nunca supera al gap, porque el gap se construye justamente como cota de ese error.","El gap sería exacto solo si la cota inferior coincidiera con el óptimo, lo que no se puede saber mientras queden nodos abiertos."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">Se detiene la búsqueda con un gap relativo de 21,43%. ¿Qué se puede afirmar del error de la solución entregada?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Que es a lo más 21,43%, y podría ser mucho menor.</span></button>
+      <button><span class="k">B</span><span>Que es exactamente 21,43%.</span></button>
+      <button><span class="k">C</span><span>Que es al menos 21,43%.</span></button>
+      <button><span class="k">D</span><span>Que la solución está a 21,43% del óptimo, con precisión.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Caso de aplicación">
+  <div class="eyebrow">Aplicación · Chile</div>
+  <h2>El 1% que la forestal decide no buscar</h2>
+
+  <div class="widget">
+    <header><span class="tag caso">Caso</span><h4>Programación semanal de cosecha en el Biobío</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Una empresa forestal de la Región del Biobío programa cada semana qué rodales cosechar, con qué cuadrilla, en qué orden y hacia qué destino —aserradero, planta de celulosa o exportación—. El modelo tiene miles de binarias: cosechar o no cada rodal en cada período, asignar o no cada cuadrilla a cada faena, habilitar o no cada camino de acceso. Se resuelve todos los viernes y el plan tiene que estar listo el lunes a primera hora.</p>
+
+      <div class="rejilla r3">
+        <div class="tarjeta"><span class="icono">RESTRICCIÓN REAL</span><h4>La ventana es el viernes</h4><p>El solver tiene unas horas, no las que quiera. Si el lunes no hay plan, las cuadrillas se quedan paradas y ese costo es inmediato y visible.</p></div>
+        <div class="tarjeta"><span class="icono">DECISIÓN</span><h4><code>MIPGap = 0,01</code></h4><p>Se configura el solver para detenerse cuando el gap relativo baje del 1%. Llega a esa tolerancia en menos de una hora; cerrar el último 1% puede tomar toda la noche o no terminar nunca.</p></div>
+        <div class="tarjeta"><span class="icono">CONSECUENCIA</span><h4>Un plan con garantía</h4><p>El plan entregado puede costar hasta un 1% más que el mejor plan posible. Sobre el presupuesto semanal de cosecha eso es una cifra acotada y conocida, no una incógnita.</p></div>
+      </div>
+
+      <p style="font-size:.94rem">Lo interesante es cómo se defiende esa decisión hacia arriba. El gerente no pregunta por el gap: pregunta si el plan es bueno. La respuesta que el gap permite dar es específica y se puede auditar: <em>"este plan cuesta a lo más un 1% más que el mejor plan que existe, y esa afirmación es una garantía matemática, no una estimación"</em>. Sin gap la respuesta sería "el software dijo que esto", que no es una respuesta.</p>
+
+      <div class="nota" style="margin-bottom:0">
+        <span class="et">Y la otra mitad del argumento</span>
+        <p style="margin-bottom:0">Ese 1% de gap convive con supuestos mucho más gruesos: los rendimientos por hectárea son estimaciones, la disponibilidad de cuadrillas cambia, y si llueve tres días la programación se rehace igual. Perseguir el 0,0% de gap sobre datos con 5% de incertidumbre es optimizar el decimal equivocado. <strong>La tolerancia razonable no sale del solver: sale de compararla con el ruido de los datos.</strong></p>
+      </div>
+
+      <details class="explica">
+        <summary>Cómo se ve esto en la práctica, en el log del solver</summary>
+        <div class="contenido">
+          <p>Cualquier solver comercial —CPLEX, Gurobi, o CBC, que es libre— imprime mientras trabaja una tabla con exactamente las columnas de esta clase: nodos explorados, mejor solución entera encontrada (la incumbente), mejor cota de los nodos abiertos, y gap. La línea final dice algo como <code>Gap: 0.87%</code> y ahí el solver se detuvo porque alcanzó la tolerancia configurada.</p>
+          <p style="margin-bottom:0">Los parámetros se llaman distinto en cada uno pero hacen lo mismo: <code>MIPGap</code> en Gurobi, <code>epgap</code> en CPLEX, <code>ratioGap</code> en CBC. Junto a ellos está siempre un límite de tiempo, y conviene fijar los dos: el primero dice cuándo la respuesta es suficientemente buena, el segundo cuándo hay que entregar igual. Aprender a leer ese log es, en la práctica profesional, tan importante como saber formular el modelo. En la Clase 13 vamos a leer uno línea por línea.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l9" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>La <strong>incumbente</strong> es la mejor solución entera en mano; la <strong>mejor cota abierta</strong> es la mejor promesa pendiente. La relajación siempre está del lado optimista.</li>
+    <li>El <strong>gap absoluto</strong> es la distancia entre ambas; el <strong>relativo</strong> la divide por la incumbente y es el que se usa para fijar tolerancias.</li>
+    <li>El gap es una <strong>cota del error</strong>, no una medición: parar con 21% de gap puede significar un error real de 16% o de cero.</li>
+    <li>Las <strong>estrategias de exploración</strong> no cambian el óptimo, cambian cuántos PL cuesta llegar y qué tan rápido baja el gap.</li>
+    <li>El <strong>redondeo dentro del árbol</strong> es una heurística para conseguir incumbente, no un método de solución: sirve porque habilita la poda por cota.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>Un óptimo que llega el martes no sirve para un plan que empieza el lunes. Lo que convierte a la programación entera en una herramienta de gestión no es que encuentre el óptimo, sino que sepa decir exactamente cuánto le falta para encontrarlo — y deje esa decisión en manos de quien conoce el costo de esperar.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l10" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Leer el árbol de River Power con cotas y gap</h4></div>
+    <div class="enunciado">
+      <p>El árbol de River Power se exploró en este orden, ramificando en \(u_4\), luego \(u_2\), luego \(u_3\) y luego \(u_1\):</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Nodo</th><th>Variables fijadas</th><th class="num">\(z_{\mathrm{PL}i}^*\)</th><th>Solución de la relajación</th></tr></thead>
+        <tbody>
+          <tr><td>PL₀</td><td>—</td><td class="num">6,125</td><td>(0; 0; 0; 0,4375)</td></tr>
+          <tr><td>PL₁</td><td>\(u_4=1\)</td><td class="num">14</td><td>(0; 0; 0; 1)</td></tr>
+          <tr><td>PL₂</td><td>\(u_4=0\)</td><td class="num">9</td><td>(0; 1/3; 1; 0)</td></tr>
+          <tr><td>PL₃</td><td>\(u_4=0,\ u_2=1\)</td><td class="num">13</td><td>(0; 1; 0,2; 0)</td></tr>
+          <tr><td>PL₄</td><td>\(u_4=0,\ u_2=1,\ u_3=1\)</td><td class="num">17</td><td>(0; 1; 1; 0)</td></tr>
+          <tr><td>PL₅</td><td>\(u_4=0,\ u_2=1,\ u_3=0\)</td><td class="num">14,333</td><td>(1/3; 1; 0; 0)</td></tr>
+          <tr><td>PL₆</td><td>\(u_4=0,\ u_2=0\)</td><td class="num">9,667</td><td>(2/3; 0; 1; 0)</td></tr>
+          <tr><td>PL₇</td><td>\(u_4=0,\ u_2=0,\ u_1=1\)</td><td class="num">11</td><td>(1; 0; 0,8; 0)</td></tr>
+          <tr><td>PL₈</td><td>\(u_4=0,\ u_2=0,\ u_1=1,\ u_3=1\)</td><td class="num">12</td><td>(1; 0; 1; 0)</td></tr>
+          <tr><td>PL₉</td><td>\(u_4=0,\ u_2=0,\ u_1=1,\ u_3=0\)</td><td class="num">—</td><td>infactible</td></tr>
+          <tr><td>PL₁₀</td><td>\(u_4=0,\ u_2=0,\ u_1=0\)</td><td class="num">—</td><td>infactible</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Confeccione una tabla que muestre, después de cada nodo resuelto, la cota superior, la cota inferior y el gap relativo.<br>
+      <strong>b)</strong> Indique el estado final de cada nodo: ramificado, sondeado por factibilidad, por cota o por infactibilidad.<br>
+      <strong>c)</strong> ¿Cuál es el gap relativo en el momento en que se resuelve PL₅ y qué indica ese valor? Justifique. Cuidado: la pregunta no es sobre la calidad de PL₅.<br>
+      <strong>d)</strong> ¿Qué tolerancia podría haberse definido para que la búsqueda se detuviera justo después de PL₇? ¿Qué solución se habría entregado y con qué sobrecosto real?<br>
+      <strong>e)</strong> PL₄ entrega una solución entera de costo 17 y aun así no cambia nada. Explique por qué se sondea igual y qué habría pasado si se hubiera encontrado antes que PL₁.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Cartera de proyectos con mejor primero</h4></div>
+    <div class="enunciado">
+      <p>Hay cuatro proyectos disponibles y seis millones de dólares para invertir ahora. Cada proyecto se toma completo o no se toma.</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Proyecto</th><th class="num">Inversión (MM US$)</th><th class="num">VAN (MM US$)</th><th class="num">VAN por MM invertido</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td class="num">3</td><td class="num">5</td><td class="num">1,67</td></tr>
+          <tr><td>2</td><td class="num">5</td><td class="num">8</td><td class="num">1,60</td></tr>
+          <tr><td>3</td><td class="num">2</td><td class="num">3</td><td class="num">1,50</td></tr>
+          <tr><td>4</td><td class="num">4</td><td class="num">7</td><td class="num">1,75</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Formule el modelo de programación lineal entera declarando conjunto, parámetros, variable binaria con su complemento y dominio. Escriba además su relajación lineal.<br>
+      <strong>b)</strong> Resuelva la relajación de la raíz. ¿Por qué el orden de llenado sigue la última columna de la tabla y no la del VAN?<br>
+      <strong>c)</strong> Ejecute ramificación y acotamiento con la estrategia de <strong>mejor primero</strong>. Reporte cada nodo con sus variables fijadas, su cota y su estado final.<br>
+      <strong>d)</strong> Lleve la cota superior, la inferior y el gap relativo después de cada nodo. ¿Cuál es el plan de inversión óptimo?<br>
+      <strong>e)</strong> El proyecto 4 es el mejor por unidad invertida y aun así hay que discutirlo. ¿Aparece en la cartera óptima? Explique qué le dice eso a alguien que rankea proyectos por rentabilidad y toma los primeros hasta agotar el presupuesto.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Fijar la tolerancia es una decisión de negocio</h4></div>
+    <div class="enunciado">
+      <p>Una distribuidora de Concepción resuelve cada noche un modelo de ruteo con 1.200 binarias para el reparto del día siguiente. El equipo midió cómo avanza el solver sobre una instancia típica:</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th class="num">Tiempo</th><th class="num">Incumbente (MM$)</th><th class="num">Cota inferior (MM$)</th><th class="num">Gap relativo</th></tr></thead>
+        <tbody>
+          <tr><td class="num">30 s</td><td class="num">48,0</td><td class="num">39,6</td><td class="num">17,5%</td></tr>
+          <tr><td class="num">2 min</td><td class="num">44,5</td><td class="num">41,2</td><td class="num">7,4%</td></tr>
+          <tr><td class="num">10 min</td><td class="num">43,1</td><td class="num">41,9</td><td class="num">2,8%</td></tr>
+          <tr><td class="num">45 min</td><td class="num">42,6</td><td class="num">42,1</td><td class="num">1,2%</td></tr>
+          <tr><td class="num">4 h</td><td class="num">42,5</td><td class="num">42,3</td><td class="num">0,5%</td></tr>
+          <tr><td class="num">18 h</td><td class="num">42,5</td><td class="num">42,5</td><td class="num">0%</td></tr>
+        </tbody>
+      </table></div>
+      <p>El costo de reparto es de unos 42 millones diarios. Las demandas de los clientes se conocen con un error estimado del 4%.</p>
+      <p><strong>a)</strong> Calcule, para cada fila, cuánto dinero diario separa a la incumbente del óptimo verdadero, sabiendo ahora que el óptimo es 42,5. Compare esa columna con la del gap y comente la diferencia.<br>
+      <strong>b)</strong> ¿En qué punto de la tabla recomendaría detener el solver? Defienda la recomendación con un argumento que no mencione el gap, sino pesos y minutos.<br>
+      <strong>c)</strong> El jefe de operaciones pide gap 0% "porque para eso se compró el software". Prepare una respuesta de tres frases que use el dato del 4% de error en las demandas.<br>
+      <strong>d)</strong> Note que entre los 45 minutos y las 4 horas la incumbente baja apenas 0,1 mientras la cota inferior sube 0,2. Explique qué está haciendo el algoritmo en ese tramo y por qué el gap baja aunque casi no se encuentren soluciones mejores.<br>
+      <strong>e)</strong> Proponga una configuración de parada para la corrida nocturna, especificando tolerancia <em>y</em> límite de tiempo, y explique qué rol cumple cada uno de los dos y qué pasaría si se fijara solo uno.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Dos productos: estrategia, cotas y parada</h4></div>
+    <div class="enunciado">
+      <p>Una planta decide lotes completos de dos productos. (x_1) y (x_2) son los lotes enteros de los productos 1 y 2, respectivamente; la contribución por lote es 5 y 4 millones de pesos.</p>
+      \[
+      \begin{aligned}
+      \max\;\; & z=5x_1+4x_2\\
+      \text{s.a.}\;\; & 6x_1+7x_2\le30\\
+      & x_1+7x_2\le23\\
+      & 2x_1+6x_2\le20\\
+      & 5x_1+x_2\le17\\
+      & x_1,x_2\in\mathbb{Z}_0^+.
+      \end{aligned}
+      \]
+      <p>Resuelva por ramificación y acotamiento con <strong>mejor primero</strong>. En cada empate, resuelva primero la rama con la desigualdad \(\le\). Ramifique primero en \(x_1\).</p>
+      <p><strong>a)</strong> Resuelva gráficamente \(\mathrm{PL}_0\), identifique la variable fraccional y abra sus dos ramas.<br>
+      <strong>b)</strong> Continúe con la estrategia indicada. Para cada PL resuelto reporte las restricciones acumuladas, \(z_{\mathrm{PL}i}^*\), la solución relajada y la razón de sondeo o ramificación.<br>
+      <strong>c)</strong> Después de cada PL, reporte la incumbente —cota inferior—, la mejor cota superior abierta y el gap relativo porcentual.<br>
+      <strong>d)</strong> Tras resolver PL₆, suponga que la planta acepta detenerse con tolerancia de 7%. ¿Puede parar? Redacte una frase para gerencia que interprete la cota y el gap en millones de pesos, sin afirmar que ya se conoce el óptimo.<br>
+      <strong>e)</strong> Termine el árbol y compare la decisión de parada con el óptimo certificado.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E5 · Activar líneas antes de contar lotes</h4></div>
+    <div class="enunciado">
+      <p>Una microplanta puede fabricar lotes enteros de A y B. \(x_1,x_2\) son los lotes de A y B; \(y_1,y_2\) indican si se activa la línea respectiva.</p>
+      \[
+      y_1=\begin{cases}1&\text{si se activa la línea de A}\\0&\text{en otro caso}\end{cases}\qquad
+      y_2=\begin{cases}1&\text{si se activa la línea de B}\\0&\text{en otro caso}\end{cases}
+      \]
+      \[
+      \begin{aligned}
+      \max\;\; & z=5x_1+12x_2-4y_1-6y_2\\
+      \text{s.a.}\;\; &2x_1+3x_2\le8\\
+      &x_1\le4y_1\\
+      &x_2\le3y_2\\
+      &y_2\le y_1\\
+      &x_1,x_2\in\mathbb{Z}_0^+,\qquad y_1,y_2\in\{0,1\}.
+      \end{aligned}
+      \]
+      <p>La relajación \(\mathrm{PL}_0\) entrega \(x=(0;8/3)\), \(y=(8/9;8/9)\), con \(z_{\mathrm{PL}0}^*=208/9\approx23{,}111\).</p>
+      <p><strong>a)</strong> Verifique que la solución dada satisface la relajación y explique por qué no es factible en el PLE.<br>
+      <strong>b)</strong> Ramifique <strong>primero en la binaria \(y_2\)</strong>. Describa en palabras qué restricciones y qué rango de \(x_2\) quedan en cada hijo antes de escribir símbolos.<br>
+      <strong>c)</strong> Resuelva gráficamente los PL de los dos hijos. Indique cuál se sondea y cuál requiere continuar.<br>
+      <strong>d)</strong> En el hijo \(y_2=1\), ramifique en la variable entera fraccional y complete el árbol. Reporte el óptimo entero.<br>
+      <strong>e)</strong> Explique por qué ramificar primero en \(y_2\) es informativo aquí: ¿cómo limita inmediatamente los valores posibles de \(x_2\) y qué papel cumple la dependencia \(y_2\le y_1\)?</p>
+    </div>
+  </div>
+
+  <div class="nota libro" style="margin-top:30px">
+    <span class="et">Para leer, si el tema te interesa</span>
+    <p><strong>Dónde está esto en el libro.</strong> La sección <strong>11.6</strong> de Hillier &amp; Lieberman desarrolla ramificación y acotamiento sobre programación binaria y es la que más se parece al ejemplo de hoy; la <strong>11.5</strong> discute, antes de todo eso, por qué unos problemas enteros resultan fáciles y otros imposibles, que es el trasfondo de por qué el gap a veces se cierra en segundos y a veces nunca.</p>
+    <p style="margin-bottom:0">Si quieres explorar por tu cuenta, hay dos preguntas que valen la pena. La primera: qué es el <em>feasibility pump</em>, una heurística primal que va y vuelve entre la solución relajada y el punto entero más cercano hasta que uno de los dos se vuelve factible. La segunda: qué son las <em>reglas de pseudo-costo</em> para elegir variable de ramificación, que es lo que realmente usan los solvers en vez de "la más próxima a un entero". No es materia del curso ni entra en evaluaciones.</p>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ==================================================================
+   Clase 09 · motor compartido: River Power.
+   La relajación de este modelo es una mochila continua de cobertura,
+   así que se resuelve exactamente con llenado codicioso por costo
+   por MW. No hace falta símplex: el óptimo del PL de cada nodo se
+   calcula en microsegundos y el árbol es real, no una animación.
+   ================================================================== */
+var C9 = (function(){
+  var F = [7,12,5,14];        /* costo de operación, miles de US$/h */
+  var P = [300,600,500,1600]; /* potencia de salida, MW             */
+  var D = 700;                /* demanda de punta, MW               */
+
+  /* fix: objeto {indice: 0|1}. Devuelve {z, x} o null si es infactible. */
+  function relajacion(fix){
+    var z = 0, req = D, x = [0,0,0,0], libres = [], g;
+    for(g=0; g<4; g++){
+      if(fix.hasOwnProperty(g)){
+        x[g] = fix[g];
+        if(fix[g] === 1){ z += F[g]; req -= P[g]; }
+      } else {
+        libres.push(g);
+      }
+    }
+    if(req <= 1e-9) return {z:z, x:x};
+    var capacidad = 0;
+    libres.forEach(function(g2){ capacidad += P[g2]; });
+    if(capacidad < req - 1e-9) return null;
+    libres.sort(function(a,b){ return F[a]/P[a] - F[b]/P[b]; });
+    for(var i=0; i<libres.length && req > 1e-9; i++){
+      g = libres[i];
+      var t = Math.min(1, req/P[g]);
+      x[g] = t; z += F[g]*t; req -= P[g]*t;
+    }
+    return {z:z, x:x};
+  }
+
+  function entera(x){
+    for(var i=0;i<4;i++){ if(Math.abs(x[i]-Math.round(x[i])) > 1e-9) return false; }
+    return true;
+  }
+  function fraccional(x){
+    for(var i=0;i<4;i++){ if(Math.abs(x[i]-Math.round(x[i])) > 1e-9) return i; }
+    return -1;
+  }
+
+  /* ---------- árbol ---------- */
+  function nuevoArbol(){
+    var A = {nodos:[], inc:null, incX:null, resueltos:0, historia:[]};
+    var raiz = crearNodo(A, null, {}, 'raíz');
+    resolverNodo(A, raiz);
+    return A;
+  }
+
+  function crearNodo(A, padre, fix, etq){
+    var n = {id:A.nodos.length, fix:fix, sol:null, resuelto:false, plId:null,
+             prof:padre === null ? 0 : A.nodos[padre].prof+1, padre:padre,
+             hijos:[], etq:etq, estado:'pendiente',
+             cotaHerencia:padre === null ? null : (A.nodos[padre].sol ? A.nodos[padre].sol.z : A.nodos[padre].cotaHerencia),
+             motivo:'Rama abierta; su PL aún no se resuelve.'};
+    A.nodos.push(n);
+    if(padre !== null) A.nodos[padre].hijos.push(n.id);
+    return n;
+  }
+
+  function clasificar(A, n){
+    if(!n.sol){
+      n.estado = 'infactible';
+      n.motivo = 'Sin ese generador, la potencia disponible del resto no alcanza los 700 MW. Sondeado por infactibilidad.';
+      return;
+    }
+    if(entera(n.sol.x)){
+      n.estado = 'entera';
+      if(A.inc === null || n.sol.z < A.inc - 1e-9){
+        A.inc = n.sol.z;
+        A.incX = n.sol.x.map(function(v){ return Math.round(v); });
+        n.motivo = 'La relajación resultó entera y cuesta ' + fmt(n.sol.z,2) +
+                   ': se sondea por factibilidad y es la nueva incumbente.';
+      } else {
+        n.motivo = 'La relajación resultó entera, pero cuesta ' + fmt(n.sol.z,2) +
+                   ' y no mejora la incumbente. Se sondea por factibilidad igual.';
+      }
+      return;
+    }
+    if(A.inc !== null && n.sol.z >= A.inc - 1e-9){
+      n.estado = 'cota';
+      n.motivo = 'Su cota ' + fmt(n.sol.z,2) + ' no es mejor que la incumbente ' +
+                 fmt(A.inc,2) + ': minimizando, nada de esta rama puede costar menos. Sondeado por cota.';
+      return;
+    }
+    n.estado = 'activo';
+    n.motivo = 'Relajación fraccional con cota ' + fmt(n.sol.z,2) +
+               ', por debajo de la incumbente. Queda activo.';
+  }
+
+  function activos(A){
+    return A.nodos.filter(function(n){ return n.estado === 'activo'; });
+  }
+  function pendientes(A){
+    return A.nodos.filter(function(n){ return n.estado === 'pendiente'; });
+  }
+  function cotaInferior(A){
+    var cotas = activos(A).map(function(n){ return n.sol.z; });
+    pendientes(A).forEach(function(n){ if(n.cotaHerencia !== null) cotas.push(n.cotaHerencia); });
+    if(!cotas.length) return A.inc;
+    return Math.min.apply(null,cotas);
+  }
+  function repodar(A){
+    A.nodos.forEach(function(n){
+      if(n.estado === 'activo' && A.inc !== null && n.sol.z >= A.inc - 1e-9){
+        n.estado = 'cota';
+        n.motivo = 'Quedó sondeado por cota al aparecer una solución de ' + fmt(A.inc,2) +
+                   ' en otra rama: su cota ' + fmt(n.sol.z,2) + ' ya no puede mejorarla.';
+      }
+    });
+  }
+
+  function registrar(A, n){
+    A.historia.push({pl:n.plId, n:A.resueltos, ci:cotaInferior(A), cs:A.inc});
+  }
+
+  function resolverNodo(A, n){
+    if(!n || n.resuelto || n.estado !== 'pendiente') return false;
+    n.sol = relajacion(n.fix);
+    n.resuelto = true;
+    n.plId = A.resueltos++;
+    n.estado = 'activo';
+    clasificar(A, n);
+    repodar(A);
+    registrar(A, n);
+    return true;
+  }
+
+  function ramificar(A, n){
+    if(n.estado !== 'activo') return false;
+    var g = fraccional(n.sol.x);
+    if(g < 0) return false;
+    n.estado = 'ramificado';
+    n.motivo = 'Ramificado en u' + (g+1) + ', que valía ' + fmt(n.sol.x[g],3) + '.';
+    [1,0].forEach(function(v){
+      var f = {}, k;
+      for(k in n.fix){ if(n.fix.hasOwnProperty(k)) f[k] = n.fix[k]; }
+      f[g] = v;
+      crearNodo(A, n.id, f, 'u'+(g+1)+' = '+v);
+    });
+    return true;
+  }
+
+  function elegir(A, estrategia){
+    var frente = activos(A).concat(pendientes(A));
+    if(!frente.length) return null;
+    if(estrategia === 'mejor'){
+      return frente.reduce(function(m,n){
+        var cn = n.sol ? n.sol.z : n.cotaHerencia;
+        var cm = m.sol ? m.sol.z : m.cotaHerencia;
+        return (cn < cm - 1e-9 || (Math.abs(cn-cm)<1e-9 && n.id < m.id)) ? n : m;
+      }, frente[0]);
+    }
+    return frente.reduce(function(m,n){
+      if(n.prof !== m.prof) return n.prof > m.prof ? n : m;
+      if(n.estado !== m.estado) return n.estado === 'activo' ? n : m;
+      return n.id < m.id ? n : m;
+    }, frente[0]);
+  }
+
+  function paso(A, estrategia){
+    var n = elegir(A, estrategia);
+    if(!n) return false;
+    if(n.estado === 'pendiente') return resolverNodo(A, n);
+    if(!ramificar(A, n)) return false;
+    return resolverNodo(A, A.nodos[n.hijos[0]]);
+  }
+
+  /* corrida completa bajo una estrategia; devuelve la historia de cotas */
+  function correr(estrategia, tolerancia){
+    var A = nuevoArbol(), guardia = 0;
+    while(guardia++ < 200){
+      if(!paso(A, estrategia)) break;
+      if(tolerancia !== undefined && A.inc !== null){
+        var ci = cotaInferior(A);
+        if(ci !== null && (A.inc - ci)/Math.abs(A.inc) <= tolerancia + 1e-12) break;
+      }
+    }
+    return A;
+  }
+
+  /* etiqueta legible del PL de un nodo */
+  function descripcion(n){
+    var partes = [], k;
+    for(k in n.fix){
+      if(n.fix.hasOwnProperty(k)) partes.push('u' + (+k+1) + ' = ' + n.fix[k]);
+    }
+    return partes;
+  }
+
+  var SANS = "font-family:'Archivo',sans-serif";
+  var MATE = "font-family:Georgia,serif;font-style:italic";
+  function texto(svg, a, estilo, contenido){
+    var e = svgEl('text', a);
+    e.setAttribute('style', estilo);
+    if(contenido !== undefined) e.textContent = contenido;
+    svg.appendChild(e);
+    return e;
+  }
+
+  return {
+    F:F, P:P, D:D, relajacion:relajacion, entera:entera, fraccional:fraccional,
+    nuevoArbol:nuevoArbol, ramificar:ramificar, resolverNodo:resolverNodo,
+    activos:activos, pendientes:pendientes, cotaInferior:cotaInferior,
+    elegir:elegir, paso:paso, correr:correr,
+    descripcion:descripcion, texto:texto, SANS:SANS, MATE:MATE
+  };
+})();
+
+/* ==================================================================
+   Simulador 1 · el árbol de River Power y sus dos cotas
+   ================================================================== */
+(function(){
+  var svgA = document.getElementById('g-rp-arbol');
+  var svgC = document.getElementById('g-rp-conv');
+  if(!svgA || !svgC) return;
+
+  var A, sel;
+  var COLOR = {pendiente:'#6B7683', activo:'#14181F', ramificado:'#5B3A6B', entera:'#0F6E63',
+               cota:'#C8551E', infactible:'#B8892B'};
+
+  function reiniciar(){ A = C9.nuevoArbol(); sel = 0; pintar(); }
+
+  function posiciones(){
+    var pos = {}, siguiente = 0;
+    function rec(id){
+      var n = A.nodos[id];
+      if(!n.hijos.length){ pos[id] = siguiente++; return pos[id]; }
+      var xs = n.hijos.map(rec);
+      pos[id] = (xs[0] + xs[xs.length-1]) / 2;
+      return pos[id];
+    }
+    rec(0);
+    return {pos:pos, hojas:Math.max(1, siguiente)};
+  }
+
+  function pintarArbol(){
+    while(svgA.firstChild) svgA.removeChild(svgA.firstChild);
+    var W = 900, alto = 66;
+    var Q = posiciones();
+    var profMax = A.nodos.reduce(function(m,n){ return Math.max(m, n.prof); }, 0);
+    /* Cada nivel necesita espacio para caja, etiqueta de rama y caja hija.
+       El lienzo crece solo cuando el árbol realmente gana profundidad. */
+    var H = Math.max(400, 140 + profMax*105);
+    svgA.setAttribute('viewBox','0 0 900 '+H);
+    var ancho = Math.max(92, Math.min(180, (W-40)/Q.hojas - 10));
+    function X(i){ return 30 + (Q.pos[i] + 0.5) * (W-60)/Q.hojas; }
+    function Y(p){ return 48 + p * (profMax > 0 ? (H-112)/profMax : 0); }
+
+    A.nodos.forEach(function(n){
+      if(n.padre === null) return;
+      svgA.appendChild(svgEl('line',{
+        x1:X(n.padre), y1:Y(A.nodos[n.padre].prof)+alto/2,
+        x2:X(n.id), y2:Y(n.prof)-alto/2, stroke:'#6B7683','stroke-width':1.4}));
+      var tx=(X(n.padre)+X(n.id))/2, ty=(Y(A.nodos[n.padre].prof)+Y(n.prof))/2-2;
+      var anchoEtq=Math.max(48,n.etq.length*7.1+16);
+      svgA.appendChild(svgEl('rect',{x:tx-anchoEtq/2,y:ty-14,width:anchoEtq,height:22,rx:6,
+        fill:'#F4F1EA',stroke:'rgba(91,58,107,.45)','stroke-width':1}));
+      C9.texto(svgA,{x:tx,y:ty+1,'text-anchor':'middle'},
+        C9.SANS+';font-size:12px;fill:#3C4551;font-weight:700',n.etq);
+    });
+
+    A.nodos.forEach(function(n){
+      var g = svgEl('g', {style:'cursor:pointer'});
+      g.appendChild(svgEl('rect',{x:X(n.id)-ancho/2, y:Y(n.prof)-alto/2, width:ancho, height:alto, rx:9,
+        fill:COLOR[n.estado], stroke: n.id === sel ? '#B8892B' : 'rgba(0,0,0,0)','stroke-width':3}));
+      var t1 = svgEl('text',{x:X(n.id), y:Y(n.prof)-18,'text-anchor':'middle'});
+      t1.setAttribute('style', C9.SANS+';font-size:13px;fill:#fff;font-weight:700');
+      t1.textContent = n.resuelto ? 'PL' + n.plId : 'pendiente';
+      g.appendChild(t1);
+      var t2 = svgEl('text',{x:X(n.id), y:Y(n.prof)+1,'text-anchor':'middle'});
+      t2.setAttribute('style', C9.SANS+';font-size:11px;fill:rgba(255,255,255,.8)');
+      if(n.resuelto && n.sol){
+        t2.appendChild(document.createTextNode('z'));
+        var sup=svgEl('tspan',{'baseline-shift':'super','font-size':'8'});sup.textContent='*';t2.appendChild(sup);
+        var ind=svgEl('tspan',{'baseline-shift':'sub','font-size':'8'});ind.textContent='PL'+n.plId;t2.appendChild(ind);
+        t2.appendChild(document.createTextNode(' = '+fmt(n.sol.z,2)));
+      } else if(n.resuelto) t2.textContent='problema infactible';
+      g.appendChild(t2);
+      var t3=svgEl('text',{x:X(n.id),y:Y(n.prof)+20,'text-anchor':'middle'});
+      t3.setAttribute('style',C9.SANS+';font-size:11px;fill:rgba(255,255,255,.8)');
+      t3.textContent=n.resuelto && n.sol ? 'u = ('+n.sol.x.map(function(v){return fmt(v,2);}).join('; ')+')' : '';
+      g.appendChild(t3);
+      g.onclick = function(){ sel = n.id; pintar(); };
+      svgA.appendChild(g);
+    });
+  }
+
+  function pintarConvergencia(){
+    while(svgC.firstChild) svgC.removeChild(svgC.firstChild);
+    var W = 900, H = 300, ML = 62, MR = 30, MT = 20, MB = 44;
+    var puntos = A.historia;
+    var nmax = Math.max(1, puntos[puntos.length-1].pl);
+    var zmin = 5, zmax = 18;
+    function X(pl){ return ML + pl*(W-ML-MR)/nmax; }
+    function Y(z){ return H - MB - (z-zmin)*(H-MB-MT)/(zmax-zmin); }
+
+    for(var z=6; z<=18; z+=3){
+      svgC.appendChild(svgEl('line',{x1:ML,y1:Y(z),x2:W-MR,y2:Y(z),stroke:'rgba(20,24,31,.10)'}));
+      C9.texto(svgC,{x:ML-12,y:Y(z)+5,'text-anchor':'end'}, C9.SANS+';font-size:12px;fill:#6B7683', z);
+    }
+    svgC.appendChild(svgEl('line',{x1:ML,y1:Y(zmin),x2:W-MR,y2:Y(zmin),stroke:'#14181F','stroke-width':1.5}));
+    svgC.appendChild(svgEl('line',{x1:ML,y1:Y(zmin),x2:ML,y2:Y(zmax),stroke:'#14181F','stroke-width':1.5}));
+    C9.texto(svgC,{x:(ML+W-MR)/2, y:H-10,'text-anchor':'middle'},
+      C9.SANS+';font-size:13px;fill:#3C4551','PL resueltos');
+    C9.texto(svgC,{x:ML-46, y:Y(zmax)-2}, C9.MATE+';font-size:14px;fill:#3C4551','z');
+
+    for(var k=0; k<=nmax; k++){
+      C9.texto(svgC,{x:X(k), y:Y(zmin)+20,'text-anchor':'middle'},
+        C9.SANS+';font-size:11px;fill:#6B7683', 'PL'+k);
+    }
+
+    function mostrarHover(p){
+      var caja=document.getElementById('rp-hover');
+      if(!p){
+        caja.innerHTML='Pasa el cursor sobre un punto del gráfico para inspeccionar esa iteración.';
+        return;
+      }
+      var gr=p.cs===null?'indefinido':fmt((p.cs-p.ci)/Math.abs(p.cs)*100,2)+' %';
+      caja.innerHTML='<strong>ITE. PL'+p.pl+'</strong> · cota inferior: <strong>'+fmt(p.ci,3)+'</strong> · cota superior: <strong>'+
+        (p.cs===null?'sin incumbente':fmt(p.cs,3))+'</strong> · gap relativo: <strong>'+gr+'</strong>';
+    }
+
+    function escalera(clave, color){
+      var d = '', previo = null;
+      puntos.forEach(function(p){
+        var v = p[clave];
+        if(v === null || v === undefined) return;
+        if(previo === null){ d = 'M' + X(p.pl) + ',' + Y(v); }
+        else { d += ' L' + X(p.pl) + ',' + Y(previo) + ' L' + X(p.pl) + ',' + Y(v); }
+        previo = v;
+      });
+      if(!d) return;
+      d += ' L' + X(nmax) + ',' + Y(previo);
+      svgC.appendChild(svgEl('path',{d:d, fill:'none', stroke:color,'stroke-width':2.6,
+        'stroke-linejoin':'round'}));
+      puntos.forEach(function(p){
+        if(p[clave] === null || p[clave] === undefined) return;
+        var punto=svgEl('circle',{cx:X(p.pl),cy:Y(p[clave]),r:5.5,fill:color,
+          stroke:'#fff','stroke-width':1.6,style:'cursor:help'});
+        var tip=svgEl('title',{});
+        tip.textContent='Tras PL'+p.pl+' · cota inferior = '+fmt(p.ci,3)+
+          ' · cota superior = '+(p.cs===null?'sin incumbente':fmt(p.cs,3))+
+          ' · gap relativo = '+(p.cs===null?'indefinido':fmt((p.cs-p.ci)/Math.abs(p.cs)*100,2)+' %');
+        punto.appendChild(tip);
+        punto.addEventListener('mouseenter',function(){ mostrarHover(p); });
+        punto.addEventListener('mouseleave',function(){ mostrarHover(null); });
+        punto.addEventListener('click',function(){ mostrarHover(p); });
+        svgC.appendChild(punto);
+      });
+    }
+    escalera('ci', '#0F6E63');
+    escalera('cs', '#C8551E');
+  }
+
+  function pintarTabla(){
+    var cuerpo=document.getElementById('rp-tabla');
+    cuerpo.innerHTML='';
+    A.historia.forEach(function(h){
+      var tr=document.createElement('tr');
+      var gr=h.cs===null?'indef.':fmt((h.cs-h.ci)/Math.abs(h.cs)*100,2)+' %';
+      tr.innerHTML='<td>PL'+h.pl+'</td><td class="num">'+fmt(h.ci,3)+'</td><td class="num">'+
+        (h.cs===null?'—':fmt(h.cs,3))+'</td><td class="num">'+gr+'</td>';
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  function pintar(){
+    pintarArbol();
+    pintarConvergencia();
+    pintarTabla();
+    var n = A.nodos[sel];
+    var ci = C9.cotaInferior(A);
+    var act = C9.activos(A);
+    var pend = C9.pendientes(A);
+    document.getElementById('rp-n').textContent = A.resueltos;
+    document.getElementById('rp-ci').textContent = ci === null ? '—' : fmt(ci,3);
+    document.getElementById('rp-cs').textContent = A.inc === null ? 'sin incumbente' : fmt(A.inc,2);
+    var gabs = document.getElementById('rp-gabs'), grel = document.getElementById('rp-grel');
+    if(A.inc === null || ci === null){
+      gabs.textContent = 'indefinido'; grel.textContent = 'indefinido';
+      gabs.className = ''; grel.className = '';
+    } else {
+      var ga = A.inc - ci, gr = ga/Math.abs(A.inc)*100;
+      gabs.textContent = fmt(ga,3);
+      grel.textContent = fmt(gr,2) + ' %';
+      var cerrado = !act.length && !pend.length;
+      gabs.className = cerrado ? 'ok' : '';
+      grel.className = cerrado ? 'ok' : '';
+      if(cerrado) grel.textContent = '0 % · óptimo certificado';
+    }
+
+    document.getElementById('rp-tit').textContent = n.resuelto
+      ? 'PL' + n.plId + ' · el problema resuelto en este nodo'
+      : 'Rama pendiente · el PL aún no se resuelve';
+    var fijadas = C9.descripcion(n);
+    document.getElementById('rp-restr').innerHTML =
+      '<b>min 7u₁ + 12u₂ + 5u₃ + 14u₄</b> sujeto a 300u₁ + 600u₂ + 500u₃ + 1600u₄ ≥ 700, ' +
+      '0 ≤ u<sub>g</sub> ≤ 1 <em>sin exigir integridad</em>' +
+      (fijadas.length ? ', y con ' + fijadas.join(', ') + ' fijadas por las ramificaciones del camino desde la raíz.'
+                      : '. Es la relajación original: todavía no hay variables fijadas.');
+
+    var m = document.getElementById('rp-msg');
+    var extra = (act.length || pend.length) ? '' :
+      ' <b>No quedan nodos activos: el óptimo queda certificado en ' + fmt(A.inc,2) +
+      ' con ' + A.resueltos + ' PL resueltos.</b>';
+    m.innerHTML = '<b>' + (n.resuelto ? 'PL'+n.plId : 'Rama pendiente') + '.</b> ' + n.motivo + extra;
+    m.style.borderLeftColor = (n.estado === 'cota' || n.estado === 'infactible') ? 'var(--amber)'
+      : n.estado === 'entera' ? 'var(--teal)' : 'var(--ink-3)';
+  }
+
+  document.getElementById('rp-resolver').onclick = function(){
+    var n=A.nodos[sel];
+    if(n.estado !== 'pendiente'){
+      aviso('Selecciona una rama gris para resolver exactamente un PL nuevo.', 'var(--amber)');
+      return;
+    }
+    C9.resolverNodo(A,n); pintar();
+  };
+  document.getElementById('rp-abrir').onclick = function(){
+    var n = A.nodos[sel];
+    if(n.estado !== 'activo'){
+      aviso('Solo se puede abrir un nodo activo. Elige uno oscuro con solución fraccional.', 'var(--amber)');
+      return;
+    }
+    C9.ramificar(A, n);
+    sel=n.hijos[0];
+    pintar();
+  };
+  function ejecutarEstrategia(estrategia, nombre){
+    A=C9.correr(estrategia);
+    var ultimo=A.historia[A.historia.length-1];
+    sel=A.nodos.filter(function(q){return q.resuelto && q.plId===ultimo.pl;})[0].id;
+    pintar();
+    aviso(nombre+' completó el árbol con '+A.resueltos+' PL resueltos.');
+  }
+  document.getElementById('rp-mejor').onclick=function(){
+    ejecutarEstrategia('mejor','Mejor primero');
+  };
+  document.getElementById('rp-prof').onclick=function(){
+    ejecutarEstrategia('prof','Profundidad primero');
+  };
+  document.getElementById('rp-reset').onclick = function(){
+    reiniciar(); aviso('Árbol reiniciado.');
+  };
+
+  reiniciar();
+})();
+
+/* ==================================================================
+   Simulador 2 · torneo de estrategias y tolerancia de parada
+   ================================================================== */
+(function(){
+  var svg = document.getElementById('g-torneo');
+  var slider = document.getElementById('tol');
+  if(!svg || !slider) return;
+
+  var OPT = 100;   /* óptimo certificado al completar ambas ejecuciones */
+  var ESTR = [
+    {clave:'mejor', nombre:'Mejor primero', color:'#0F6E63', datos:[
+      [80,null,'La relajación fija la primera cota inferior'],
+      [80,null,'Se resuelve un nodo, pero ninguna cota cambia'],
+      [82,null,'La mejor cota activa sube'],
+      [82,128,'Primera incumbente entera'],
+      [82,128,'Se cierra un nodo; las cotas quedan iguales'],
+      [85,128,'La cota inferior sube'],
+      [85,120,'Aparece una incumbente mejor'],
+      [86,120,'La cota inferior sube'],
+      [86,120,'Otra resolución sin movimiento de cotas'],
+      [90,120,'La mejor cota activa sube'],
+      [90,112,'La incumbente baja'],
+      [92,112,'La cota inferior sube'],
+      [94,112,'La cota inferior sube'],
+      [94,108,'La incumbente baja'],
+      [97,108,'La cota inferior sube'],
+      [97,104,'La incumbente baja'],
+      [98,104,'La cota inferior sube'],
+      [98,104,'Se cierra un nodo; las cotas quedan iguales'],
+      [99,104,'La cota inferior sube'],
+      [99,102,'La incumbente baja'],
+      [100,102,'La cota inferior alcanza 100'],
+      [100,100,'Se certifica el óptimo']
+    ]},
+    {clave:'prof', nombre:'Profundidad primero', color:'#5B3A6B', datos:[
+      [80,null,'La relajación fija la primera cota inferior'],
+      [80,null,'Se resuelve un nodo, pero ninguna cota cambia'],
+      [80,140,'Primera incumbente entera, de costo alto'],
+      [81,140,'La cota inferior sube'],
+      [81,140,'Se cierra un nodo; las cotas quedan iguales'],
+      [81,130,'La incumbente baja'],
+      [85,130,'La cota inferior sube'],
+      [85,125,'La incumbente baja'],
+      [86,125,'La cota inferior sube'],
+      [86,125,'Otra resolución sin movimiento de cotas'],
+      [90,125,'La mejor cota activa sube'],
+      [90,116,'La incumbente baja'],
+      [92,116,'La cota inferior sube'],
+      [92,110,'La incumbente baja'],
+      [94,110,'La cota inferior sube'],
+      [94,106,'La incumbente baja'],
+      [95,106,'La cota inferior sube'],
+      [95,106,'Se cierra un nodo; las cotas quedan iguales'],
+      [97,106,'La cota inferior sube'],
+      [97,103,'La incumbente baja'],
+      [98,103,'La cota inferior sube'],
+      [98,102,'La incumbente baja'],
+      [99,102,'La cota inferior sube'],
+      [100,102,'La cota inferior alcanza 100'],
+      [100,100,'Se certifica el óptimo']
+    ]}
+  ];
+
+  ESTR.forEach(function(E){
+    E.curva = E.datos.map(function(d,i){
+      return {n:i+1, ci:d[0], cs:d[1], evento:d[2],
+        gap:d[1]===null?null:(d[1]-d[0])/Math.abs(d[1])*100};
+    });
+    E.total = E.curva.length;
+  });
+
+  var NMAX = ESTR.reduce(function(m,E){ return Math.max(m, E.total); }, 0);
+  var GMAX = 45, seleccion = 0;
+
+  function dibujar(tol){
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    var W = 900, H = 270, ML = 66, MR = 142, MT = 20, MB = 40;
+    function X(n){ return ML + (n-1)*(W-ML-MR)/(NMAX-1); }
+    function Y(g){ return H - MB - g*(H-MB-MT)/GMAX; }
+
+    for(var g=0; g<=GMAX; g+=5){
+      svg.appendChild(svgEl('line',{x1:ML,y1:Y(g),x2:W-MR,y2:Y(g),stroke:'rgba(20,24,31,.10)'}));
+      C9.texto(svg,{x:ML-12,y:Y(g)+5,'text-anchor':'end'}, C9.SANS+';font-size:12px;fill:#6B7683', g+'%');
+    }
+    svg.appendChild(svgEl('line',{x1:ML,y1:Y(0),x2:W-MR,y2:Y(0),stroke:'#14181F','stroke-width':1.5}));
+    svg.appendChild(svgEl('line',{x1:ML,y1:Y(0),x2:ML,y2:Y(GMAX),stroke:'#14181F','stroke-width':1.5}));
+    C9.texto(svg,{x:(ML+W-MR)/2,y:H-10,'text-anchor':'middle'},
+      C9.SANS+';font-size:13px;fill:#3C4551','PL resueltos');
+    for(var k=1; k<=NMAX; k+=2){
+      C9.texto(svg,{x:X(k),y:Y(0)+20,'text-anchor':'middle'}, C9.SANS+';font-size:12px;fill:#6B7683', k);
+    }
+
+    /* línea de tolerancia */
+    svg.appendChild(svgEl('line',{x1:ML,y1:Y(tol),x2:W-MR,y2:Y(tol),
+      stroke:'#C8551E','stroke-width':2,'stroke-dasharray':'7 5'}));
+    C9.texto(svg,{x:W-MR+8,y:Y(tol)+5}, C9.SANS+';font-size:12px;fill:#C8551E;font-weight:700',
+      'tolerancia ' + fmt(tol,1) + '%');
+
+    ESTR.forEach(function(E, idx){
+      var d = '', prev = null;
+      E.curva.forEach(function(p){
+        if(p.gap === null) return;
+        if(prev === null) d = 'M' + X(p.n) + ',' + Y(p.gap);
+        else d += ' L' + X(p.n) + ',' + Y(prev) + ' L' + X(p.n) + ',' + Y(p.gap);
+        prev = p.gap;
+      });
+      if(!d) return;
+      svg.appendChild(svgEl('path',{d:d, fill:'none', stroke:E.color,'stroke-width':2.6,
+        'stroke-linejoin':'round'}));
+      E.curva.forEach(function(p){
+        if(p.gap === null) return;
+        var punto=svgEl('circle',{cx:X(p.n),cy:Y(p.gap),r:4.5,fill:E.color,
+          stroke:'#fff','stroke-width':1.6});
+        var tip=svgEl('title',{});
+        tip.textContent=E.nombre+' · ITE. '+p.n+' · cota inf. '+p.ci+' · incumbente '+p.cs+' · gap '+fmt(p.gap,2)+'%';
+        punto.appendChild(tip); svg.appendChild(punto);
+      });
+      C9.texto(svg,{x:W-MR+8, y:MT+18+idx*20}, C9.SANS+';font-size:12.5px;fill:'+E.color+';font-weight:700',
+        E.nombre);
+    });
+  }
+
+  function parada(E, tol){
+    for(var i=0; i<E.curva.length; i++){
+      var p = E.curva[i];
+      if(p.gap !== null && p.gap <= tol + 1e-9) return p;
+    }
+    return E.curva[E.curva.length-1];
+  }
+
+  function pintarTraza(tol){
+    var E=ESTR[seleccion], pStop=parada(E,tol);
+    var tb=document.getElementById('torneo-tbody');
+    tb.innerHTML='';
+    E.curva.forEach(function(p){
+      var tr=document.createElement('tr');
+      if(p.n===pStop.n) tr.className='sel';
+      tr.innerHTML='<td>PL'+p.n+'</td><td>'+p.evento+'</td><td class="num">'+p.ci+'</td><td class="num">'+
+        (p.cs===null?'—':p.cs)+'</td><td class="num">'+(p.gap===null?'indef.':fmt(p.gap,2)+'%')+'</td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  function pintarResumen(tol){
+    var tb=document.getElementById('torneo-resumen');
+    tb.innerHTML='';
+    ESTR.forEach(function(E){
+      var p=parada(E,tol), ahorro=E.total-p.n;
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+E.nombre+'</td><td class="num">'+E.total+'</td><td class="num">'+p.n+'</td><td class="num">'+p.cs+'</td><td class="num">'+ahorro+'</td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  function actualizar(){
+    var tol = parseFloat(slider.value);
+    document.getElementById('tol-v').textContent = fmt(tol,1) + '%';
+    dibujar(tol);
+    pintarTraza(tol);
+    pintarResumen(tol);
+
+    var m = document.getElementById('torneo-msg');
+    var E=ESTR[seleccion], p=parada(E,tol), ahorro=E.total-p.n;
+    if(tol < 1e-9){
+      m.innerHTML = '<b>Sin tolerancia, las dos trazas corren hasta certificar el óptimo.</b> Mejor primero resuelve ' +
+        ESTR[0].total + ' PL y profundidad primero ' + ESTR[1].total + '. El orden no cambia el costo óptimo, pero sí el trabajo necesario para demostrarlo.';
+      m.style.borderLeftColor = 'var(--teal)';
+    } else if(p.cs>OPT){
+      m.innerHTML = '<b>'+E.nombre+' se detiene en PL'+p.n+'.</b> Entrega una incumbente de costo '+p.cs+
+        ' con gap relativo '+fmt(p.gap,2)+'% y evita '+ahorro+' PL. El costo óptimo aún no está certificado: la tolerancia permite terminar con una solución factible cuyo posible sobrecosto está acotado por el gap reportado.';
+      m.style.borderLeftColor = 'var(--amber)';
+    } else {
+      m.innerHTML = '<b>Con esta tolerancia '+E.nombre+' aún llega al óptimo.</b> El umbral se alcanza recién al cerrar el gap; aquí la parada temprana no ahorra PL. Sube la tolerancia y observa en qué iteración se detiene antes.';
+      m.style.borderLeftColor = 'var(--teal)';
+    }
+  }
+
+  slider.oninput = actualizar;
+  document.getElementById('torneo-mejor').onclick=function(){
+    seleccion=0; this.className='btn'; document.getElementById('torneo-prof').className='btn ghost'; actualizar();
+  };
+  document.getElementById('torneo-prof').onclick=function(){
+    seleccion=1; this.className='btn'; document.getElementById('torneo-mejor').className='btn ghost'; actualizar();
+  };
+  actualizar();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>

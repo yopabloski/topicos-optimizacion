@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ramificación y acotamiento I · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 08</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">08</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Relajar para<br><em style="font-style:italic;color:var(--amber)">acotar</em></h1>
+  <p class="lead">La relajación lineal no resuelve una PLE, pero dice hasta dónde se podría llegar. Ramificación y acotamiento convierte esa promesa continua en una búsqueda exacta que no enumera todo.</p>
+  <div class="meta">
+    <span class="chip on">Relajación lineal</span>
+    <span class="chip">Cotas y sondeo</span>
+    <span class="chip">Branch and bound</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>Empieza la segunda unidad: ahora resolvemos</h2>
+  <p class="lead">Durante siete clases escribimos modelos. Nunca preguntamos cómo se resuelven. Desde hoy esa es la pregunta, y la respuesta cambia lo que consideras un buen modelo.</p>
+  <p>Un PLE con región acotada tiene un número <em>finito</em> de soluciones. Eso suena tranquilizador hasta que uno cuenta: con 100 variables binarias hay \(2^{100}\approx 10^{30}\) combinaciones, y un computador que evalúe \(10^{18}\) por segundo tardaría unos cuatro mil siglos. La enumeración no falla por incorrecta sino por lenta, y todo el resto de la unidad es la búsqueda de algo mejor.</p>
+  <p>La idea que lo hace posible es vieja conocida: si quitamos la condición de integridad queda un PL, y ese PL sabemos resolverlo rápido con símplex. Su óptimo no sirve como respuesta —casi nunca es entero— pero sirve como <strong>cota</strong>: ningún plan entero puede superarlo. Ramificación y acotamiento organiza muchas de esas cotas en un árbol y usa cada una para descartar regiones completas sin mirarlas por dentro.</p>
+  <p>La otra mitad de la clase es una advertencia. La tentación de redondear el óptimo relajado es enorme y casi siempre está mal: a veces el punto redondeado es infactible, a veces es factible pero malo, y a veces el óptimo entero ni siquiera es vecino del relajado. Lo veremos con instancias concretas antes de construir el algoritmo.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Definir</strong> relajación en general y relajación lineal de un PLE en particular, e interpretar su óptimo como cota.</li>
+    <li><strong>Demostrar</strong> con un contraejemplo por qué redondear la solución relajada no es un método de solución.</li>
+    <li><strong>Ramificar</strong> sobre una variable entera fraccional escribiendo los dos subproblemas y justificando que no se pierde ninguna solución entera.</li>
+    <li><strong>Sondear</strong> un nodo por factibilidad, por cota o por infactibilidad, distinguiendo cuál corresponde en cada caso.</li>
+    <li><strong>Ejecutar</strong> un árbol completo de ramificación y acotamiento y evaluar cómo cambia su tamaño según las decisiones que uno tome.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Relajación: definición y cota">
+  <div class="eyebrow">Primer bloque · la cota</div>
+  <h2>Quitamos la integridad, no el problema</h2>
+  <p class="lead">Relajar es agrandar el conjunto factible. Sirve porque el problema agrandado es fácil, y porque su óptimo dice algo cierto sobre el problema original.</p>
+
+  <div class="nota libro">
+    <span class="et">Definición</span>
+    <p>Sean \(P_1:\ \max\{f(x): x\in S\}\) y \(P_2:\ \max\{f(x): x\in S'\}\). Se dice que \(P_2\) es una <strong>relajación</strong> de \(P_1\) si \(S\subseteq S'\). Toda solución factible de \(P_1\) lo es también de \(P_2\), y \(P_2\) admite además puntos que \(P_1\) no acepta.</p>
+    <p style="margin-bottom:0">La <strong>relajación lineal</strong> de un PLE con variables no negativas es el caso particular en que \(S'\) se obtiene reemplazando \(x_j\in\mathbb{Z}_0^+\) por \(x_j\in\mathbb{R}_+\). No se elimina ninguna otra restricción: el objetivo y las desigualdades quedan intactos.</p>
+  </div>
+
+  <div class="widget">
+    <header><span class="tag viz">Visualización</span><h4>La misma instancia: \(P_1\) como PLE y \(P_2\) como \(\mathrm{PL}_0\)</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Selecciona el problema. Las dos vistas comparten objetivo y restricciones; cambia solo el dominio. Así se ve, sobre la instancia de trabajo, que los puntos factibles de \(P_1\) están contenidos en la región de \(P_2\).</p>
+      <div class="botonera">
+        <button class="btn" id="rel-p1">Ver \(P_1\): PLE</button>
+        <button class="btn ghost" id="rel-p2">Ver \(P_2\): \(\mathrm{PL}_0\)</button>
+      </div>
+      <div class="rejilla r2" style="align-items:start;margin-top:14px">
+        <div>
+          <svg id="g-relacion" viewBox="0 0 900 390" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
+          <div class="leyenda">
+            <span><i style="background:rgba(15,110,99,.18);border:1px solid var(--teal)"></i>Región factible de \(\mathrm{PL}_0\)</span>
+            <span><i style="background:#14181F"></i>Punto entero factible de \(P_1\)</span>
+            <span><i style="background:var(--amber)"></i>Óptimo de la vista seleccionada</span>
+          </div>
+        </div>
+        <div class="modelo" id="rel-modelo"></div>
+      </div>
+      <p id="rel-exp" style="margin:14px 0 0;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <span class="icono">HECHO 1</span>
+      <h4>Es una cota superior</h4>
+      <p>Como todo plan entero factible sobrevive al relajar, el mejor del conjunto grande es al menos tan bueno como el mejor del conjunto chico: \(z_{\mathrm{PL}0}^* \ge z^*\). En minimización el sentido se invierte y la relajación entrega una cota inferior.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">HECHO 2</span>
+      <h4>Si sale entera, terminamos</h4>
+      <p>Si el óptimo de la relajación resulta ser entero, es factible en el problema original y ningún punto original puede superarlo. Es óptimo del PLE, sin más trabajo. Ocurre poco, pero cuando ocurre cierra el problema.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">HECHO 3</span>
+      <h4>Si es infactible, el PLE también</h4>
+      <p>Si el conjunto grande está vacío, el chico también. Por eso un nodo con relajación infactible se puede abandonar sin mirar nada más: no es que sea malo, es que no hay nada ahí.</p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">La pregunta que abre el método</span>
+    <p>La relajación de nuestra instancia da \((x_1,x_2)=(3{,}75;\,1{,}25)\) con \(z_{\mathrm{PL}0}^*=23{,}75\). No es una respuesta: no se fabrican tres cuartos de unidad. Pero ya sabemos algo fuerte — <strong>ningún plan entero puede rendir más de 23,75</strong>. Esa es toda la materia prima del algoritmo que construiremos en la segunda mitad.</p>
+  </div>
+
+  <div class="nota">
+    <span class="et">No confundas integridad de variables con integridad de \(z\)</span>
+    <p>La condición del PLE exige que las <strong>variables de decisión</strong> declaradas enteras tomen valores enteros. El valor objetivo \(z\) no recibe una restricción de integridad por esa razón. En esta instancia, \(z\) resulta entero para todo punto entero porque 5 y 4 son enteros; es una coincidencia útil para acotar en 23, no una regla del método. Con un coeficiente como 4,2, un óptimo con \(x\) entero puede tener \(z\) fraccional.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Simulador: por qué no se redondea">
+  <div class="eyebrow">Primer bloque · simulador</div>
+  <h2>El redondeo y sus cuatro vecinos</h2>
+  <p class="lead">Si el óptimo relajado cae entre enteros, lo natural es mirar los puntos enteros de al lado. Prueba esa idea en dos instancias y observa de cuántas maneras distintas puede fallar.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Redondear, truncar, o resolver de verdad</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl">
+          <label style="display:block">Instancia</label>
+          <select id="vec-inst">
+            <option value="0">A · la instancia de la clase: \(\max 5x_1+4x_2\)</option>
+            <option value="1">B · otra instancia igual de inocente: \(\max 6x_1+7x_2\)</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label style="display:block">Qué punto evaluamos</label>
+          <select id="vec-punto">
+            <option value="rel">Óptimo de la relajación lineal</option>
+            <option value="trunc">Truncar: bajar las dos coordenadas</option>
+            <option value="cerca">Redondear al entero más cercano</option>
+            <option value="mejor">El mejor de los cuatro vecinos que sea factible</option>
+            <option value="opt">El óptimo entero verdadero</option>
+          </select>
+        </div>
+      </div>
+      <svg id="g-vecinos" viewBox="0 0 900 400" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
+      <div class="leyenda">
+        <span><i style="background:rgba(15,110,99,.18);border:1px solid var(--teal)"></i>Región factible de la relajación</span>
+        <span><i style="background:#14181F"></i>Punto entero factible</span>
+        <span><i style="background:var(--amber)"></i>Punto evaluado</span>
+        <span><i style="background:#fff;border:1.5px dashed var(--ink-3)"></i>Vecino entero del óptimo relajado</span>
+        <span><i style="height:0;border-top:2px dashed var(--plum);border-radius:0"></i>Curva de nivel del óptimo seleccionado</span>
+      </div>
+      <div class="marcador">
+        <div><span>Cota superior \(z_{\mathrm{PL}0}^*\)</span><b id="vec-cota">—</b></div>
+        <div><span>Punto evaluado</span><b id="vec-pt" style="font-size:1.15rem">—</b></div>
+        <div><span>Valor \(z\)</span><b id="vec-z">—</b></div>
+        <div><span>¿Factible?</span><b id="vec-fact" style="font-size:1.15rem">—</b></div>
+        <div><span>Óptimo entero \(z^*\)</span><b class="ok" id="vec-opt">—</b></div>
+      </div>
+      <p id="vec-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Las tres formas de fallar</span>
+    <p><strong>Uno.</strong> El punto redondeado viola una restricción. En la instancia A, \((3{,}75;\,1{,}25)\) redondeado al entero más cercano es \((4,1)\), que consume \(10(4)+6(1)=46\) del segundo recurso cuando solo hay 45. Da \(z=24\), un valor <em>superior</em> a la cota de 23,75 — y eso mismo delata que no es factible, porque ningún punto de la región relajada puede superarla.</p>
+    <p><strong>Dos.</strong> El punto truncado sí es factible pero es malo. En A, truncar da \((3,1)\) con \(z=19\) contra un óptimo de 23: un error del 17% por una operación que parecía inofensiva.</p>
+    <p style="margin-bottom:0"><strong>Tres.</strong> El óptimo entero no está entre los vecinos. En la instancia B, de los cuatro vecinos de \((3{,}35;\,2{,}57)\) solo \((3,2)\) es factible, con \(z=32\); el óptimo entero es \((2,3)\) con \(z=33\), y está a más de una unidad del relajado en \(x_1\). Ningún redondeo lo encuentra, porque no se llega ahí redondeando.</p>
+  </div>
+
+  <div class="nota">
+    <span class="et">Y aunque funcionara, no escalaría</span>
+    <p>Examinar los vecinos enteros de un punto fraccional cuesta \(2^n\) evaluaciones con \(n\) variables fraccionales: 4 con dos variables, 8 con tres, 1.024 con diez, y del orden de \(10^{30}\) con cien. Revisar vecinos es <strong>eficaz</strong> a veces y <strong>eficiente</strong> nunca. Necesitamos un método que descarte regiones completas en lugar de puntos uno a uno.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Pausa 1">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre relajación y redondeo. Nada de lo que viene después hace falta para responderlas.</p>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. La relajación amplía el espacio factible: todo plan entero sigue disponible y aparecen planes fraccionales. Al maximizar sobre un conjunto más amplio, el mejor valor puede ser mayor o igual, nunca menor.","La continuidad no mejora por sí sola el valor del objetivo; la razón es la inclusión entre los conjuntos factibles.","No: una solución relajada puede ser fraccional y, justamente por eso, no ser factible en el PLE.","La brecha puede ser cero si el óptimo de la relajación ya es entero."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">En un problema de maximización, ¿qué argumento permite concluir que \(z_{\mathrm{PL}0}^*\ge z^*\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>La relajación amplía el espacio factible; al maximizar sobre ese conjunto mayor, el valor óptimo solo puede mantenerse o aumentar.</span></button>
+      <button><span class="k">B</span><span>Las variables continuas toman valores más grandes que las variables enteras.</span></button>
+      <button><span class="k">C</span><span>Toda solución óptima de la relajación se vuelve entera al terminar el algoritmo.</span></button>
+      <button><span class="k">D</span><span>La brecha entre ambos óptimos siempre es estrictamente positiva.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="3" data-retro='["Ser entero no es ser factible: hay que verificar todas las restricciones antes de llamarlo solución.","La cota superior está bien calculada; lo que está mal es suponer que el punto redondeado pertenece a la región.","La relajación está correctamente formulada: es el redondeo posterior el que sale de la región factible.","Correcto. Ningún punto de la región relajada puede dar más que la cota, así que un valor mayor solo puede venir de un punto que está fuera de ella. Al verificar, \\(10(4)+6(1)=46>45\\)."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">En un problema de <strong>maximización</strong>, con cota superior \(z_{\mathrm{PL}0}^* = 23{,}75\), alguien redondea y obtiene un punto entero con \(z = 24\). ¿Qué se concluye <em>antes</em> de revisar las restricciones?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Que encontró una solución mejor que la relajación.</span></button>
+      <button><span class="k">B</span><span>Que la cota superior estaba mal calculada.</span></button>
+      <button><span class="k">C</span><span>Que la relajación fue mal formulada.</span></button>
+      <button><span class="k">D</span><span>Que el punto no puede ser factible, porque superaría la cota.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Ramificar y sondear">
+  <div class="eyebrow">Segundo bloque · el algoritmo</div>
+  <h2>Partir en dos sin perder ningún entero</h2>
+  <p class="lead">Si la relajación entrega \(x_k^*=3{,}75\), entre 3 y 4 no hay enteros. Prohibir esa franja no elimina ninguna solución del PLE, y sí elimina el punto fraccional que nos estorbaba.</p>
+
+  <div class="modelo">
+    <span class="et">Regla de ramificación</span>
+    \[
+    x_k^* = v \notin \mathbb{Z}_0^+
+    \quad\Longrightarrow\quad
+    \begin{cases}
+      \text{hijo izquierdo:} & x_k \le \lfloor v \rfloor\\[3pt]
+      \text{hijo derecho:} & x_k \ge \lfloor v \rfloor + 1
+    \end{cases}
+    \qquad k \in J
+    \]
+    <p class="glosa">Aquí \(J\) es el conjunto de índices de las variables declaradas en \(\mathbb{Z}_0^+\). Cada hijo hereda todas las restricciones del padre y agrega una. La unión de los dos hijos contiene todos los puntos enteros del padre y ninguno queda afuera, porque el intervalo abierto \((\lfloor v\rfloor,\ \lfloor v\rfloor+1)\) no contiene enteros. La intersección de los dos hijos, en cambio, es vacía en la variable ramificada: no se duplica trabajo.</p>
+  </div>
+
+  <div class="widget">
+    <header><span class="tag viz">Visualización</span><h4>La franja eliminada no contiene enteros</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Sobre la instancia de trabajo, la ramificación en \(x_1\) deja dos regiones verdes y elimina la franja roja. El punto fraccional \((3{,}75;1{,}25)\) desaparece; los puntos enteros factibles no.</p>
+      <svg viewBox="0 0 900 330" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto">
+        <defs><clipPath id="clip-franja"><path d="M100,270 L100,50 L550,215 L640,270 Z"/></clipPath></defs>
+        <g stroke="rgba(20,24,31,.10)" stroke-width="1"><path d="M100 270H800M100 226H800M100 182H800M100 138H800M100 94H800M100 50H800"/><path d="M100 50V270M220 50V270M340 50V270M460 50V270M580 50V270M700 50V270"/></g>
+        <path d="M100,270 L100,50 L550,215 L640,270 Z" fill="rgba(15,110,99,.17)" stroke="#0F6E63" stroke-width="2"/>
+        <rect x="460" y="45" width="120" height="230" fill="rgba(200,85,30,.26)" clip-path="url(#clip-franja)"/>
+        <path d="M100,270 L100,50 M100,270 L700,270" stroke="#14181F" stroke-width="1.6"/>
+        <path d="M100,50 L700,270 M280,50 L640,270" stroke="#5B3A6B" stroke-width="1.25" stroke-dasharray="5 4"/>
+        <path d="M460,48 V270 M580,48 V270" stroke="#C8551E" stroke-width="2" stroke-dasharray="6 4"/>
+        <circle cx="100" cy="270" r="4" fill="#14181F"/><circle cx="100" cy="226" r="4" fill="#14181F"/><circle cx="100" cy="182" r="4" fill="#14181F"/><circle cx="100" cy="138" r="4" fill="#14181F"/><circle cx="100" cy="94" r="4" fill="#14181F"/><circle cx="100" cy="50" r="4" fill="#14181F"/>
+        <circle cx="220" cy="270" r="4" fill="#14181F"/><circle cx="220" cy="226" r="4" fill="#14181F"/><circle cx="220" cy="182" r="4" fill="#14181F"/><circle cx="220" cy="138" r="4" fill="#14181F"/><circle cx="220" cy="94" r="4" fill="#14181F"/>
+        <circle cx="340" cy="270" r="4" fill="#14181F"/><circle cx="340" cy="226" r="4" fill="#14181F"/><circle cx="340" cy="182" r="4" fill="#14181F"/><circle cx="340" cy="138" r="4" fill="#14181F"/>
+        <circle cx="460" cy="270" r="4" fill="#14181F"/><circle cx="460" cy="226" r="4" fill="#14181F"/><circle cx="460" cy="182" r="4" fill="#14181F"/><circle cx="580" cy="270" r="4" fill="#14181F"/>
+        <circle cx="550" cy="215" r="8" fill="#C8551E" stroke="#fff" stroke-width="3"/>
+        <text x="550" y="197" text-anchor="middle" style="font-family:'Archivo',sans-serif;font-size:13px;fill:#C8551E;font-weight:700">(3,75; 1,25)</text>
+        <text x="280" y="75" text-anchor="middle" style="font-family:'Archivo',sans-serif;font-size:14px;fill:#0F6E63;font-weight:700">hijo izquierdo: x₁ ≤ 3</text>
+        <text x="685" y="75" text-anchor="middle" style="font-family:'Archivo',sans-serif;font-size:14px;fill:#0F6E63;font-weight:700">hijo derecho: x₁ ≥ 4</text>
+        <text x="520" y="112" text-anchor="middle" style="font-family:'Archivo',sans-serif;font-size:13px;fill:#C8551E;font-weight:700">franja eliminada</text>
+        <text x="520" y="130" text-anchor="middle" style="font-family:'Archivo',sans-serif;font-size:12px;fill:#C8551E">3 &lt; x₁ &lt; 4</text>
+        <text x="160" y="87" style="font-family:'Archivo',sans-serif;font-size:12px;fill:#5B3A6B">x₁ + x₂ = 5</text><text x="460" y="157" style="font-family:'Archivo',sans-serif;font-size:12px;fill:#5B3A6B">10x₁ + 6x₂ = 45</text>
+        <text x="704" y="292" style="font-family:Georgia,serif;font-size:15px;fill:#3C4551;font-style:italic">x₁</text><text x="75" y="58" style="font-family:Georgia,serif;font-size:15px;fill:#3C4551;font-style:italic">x₂</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Qué problema se resuelve en cada nodo</span>
+    <p>Esto se olvida rápido y conviene decirlo explícito: en cada nodo del árbol se resuelve <strong>un PL, no un PLE</strong>. Es la relajación lineal del subproblema, es decir la instancia original sin condición de integridad, más las restricciones de ramificación acumuladas en el camino desde la raíz hasta ese nodo.</p>
+    <p style="margin-bottom:0">En problemas de pocas variables —o que pueden reducirse rigurosamente a pocas variables— podemos obtener el óptimo de cada PL por solución gráfica o mediante análisis de sus restricciones activas. En aplicaciones reales, cada PL se resuelve con símplex; al agregar restricciones, el símplex dual permite reoptimizar eficientemente y lo veremos más adelante. Las dos variables de esta clase son una simplificación pedagógica: el método funciona del mismo modo con muchas variables.</p>
+  </div>
+
+  <h3>Sondear un nodo: las tres razones para dejar de mirar</h3>
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <span class="icono">POR FACTIBILIDAD</span>
+      <h4>El óptimo del nodo ya es entero</h4>
+      <p>Nada dentro de esa región puede superar a su propio óptimo relajado, y ese óptimo resultó ser una solución entera. Se guarda como candidata y la rama termina. Si además mejora la mejor conocida, pasa a ser la nueva <strong>incumbente</strong>.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">POR COTA</span>
+      <h4>Ni en el mejor caso alcanza</h4>
+      <p>En maximización, si la cota del nodo no supera a la incumbente, ninguna solución entera de esa rama puede ganarle. Se abandona sin explorar. Esta es la poda que hace eficiente al método, y la única que depende de tener una buena incumbente temprano.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">POR INFACTIBILIDAD</span>
+      <h4>Ahí no hay nada</h4>
+      <p>Si la relajación del nodo no tiene solución, tampoco la tiene el PLE correspondiente: exigir integridad solo puede quitar puntos, nunca agregarlos. La rama muere sin candidatas.</p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Dos números que hay que llevar siempre</span>
+    <p>La <strong>incumbente</strong> es la mejor solución entera encontrada hasta ahora: en maximización es una cota <em>inferior</em> sobre \(z^*\), porque ya la tenemos en la mano. La <strong>mejor cota abierta</strong> es el máximo de las cotas de los nodos todavía activos: es una cota <em>superior</em>, porque nada de lo que queda por explorar puede superarla. El algoritmo termina cuando no quedan nodos activos, y en ese momento las dos coinciden. En la Clase 09 esa distancia tendrá nombre propio, se llamará <em>gap</em>, y decidiremos cuándo vale la pena cerrarla.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Simulador: construye tu árbol">
+  <div class="eyebrow">Segundo bloque · simulador</div>
+  <h2>Construye el árbol y mira lo que cuestan tus decisiones</h2>
+  <p class="lead">Cada PL se resuelve de verdad al momento: el árbol que salga es el tuyo. Elige qué nodo abrir y por qué variable ramificar, y compara cuántos nodos te costó certificar el óptimo.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Ramificación y acotamiento paso a paso sobre \(\max 5x_1+4x_2\)</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Haz clic en un nodo para seleccionarlo. Una rama gris existe, pero su PL aún no se ha resuelto: selecciónala y pulsa <b>Resolver PL seleccionado</b>. Solo después de resolver un nodo fraccional se puede ramificar.</p>
+      <div class="botonera">
+        <button class="btn" id="bb-resolver">Resolver PL seleccionado</button>
+        <button class="btn" id="bb-rx1">Ramificar en \(x_1\)</button>
+        <button class="btn" id="bb-rx2">Ramificar en \(x_2\)</button>
+        <button class="btn ghost" id="bb-reset">Reiniciar</button>
+      </div>
+      <svg id="g-arbol" viewBox="0 0 900 400" style="width:100%;max-width:900px;height:auto;display:block;margin:24px auto 0"></svg>
+      <div class="leyenda">
+        <span><i style="background:#14181F"></i>Activo</span>
+        <span><i style="background:#6B7683"></i>Rama pendiente de resolver</span>
+        <span><i style="background:#5B3A6B"></i>Ya ramificado</span>
+        <span><i style="background:#0F6E63"></i>Sondeado por factibilidad</span>
+        <span><i style="background:#C8551E"></i>Sondeado por cota</span>
+        <span><i style="background:#B8892B"></i>Sondeado por infactibilidad</span>
+      </div>
+      <div class="marcador">
+        <div><span>PL resueltos</span><b id="bb-n">1</b></div>
+        <div><span>Incumbente (cota inferior)</span><b class="ok" id="bb-inc">—</b></div>
+        <div><span>Mejor cota abierta</span><b id="bb-cota">—</b></div>
+        <div><span>Brecha</span><b id="bb-brecha">—</b></div>
+      </div>
+      <p id="bb-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+
+      <h3 id="bb-tit">El PL del nodo seleccionado</h3>
+      <p id="bb-restr" style="font-size:.92rem;color:var(--ink-2)"></p>
+      <svg id="g-nodo" viewBox="0 0 900 380" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
+      <div class="leyenda">
+        <span><i style="background:rgba(15,110,99,.18);border:1px solid var(--teal)"></i>Región factible del nodo</span>
+        <span><i style="background:var(--plum)"></i>Restricción agregada al ramificar</span>
+        <span><i style="background:var(--amber)"></i>Óptimo del PL del nodo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Qué conviene probar</span>
+    <p>Ramifica primero en \(x_1\): verás dos ramas grises. Resuelve primero \(x_1\le3\), luego \(x_1\ge4\), y cuenta los PL efectivamente resueltos. Reinicia, ramifica primero en \(x_2\), resuelve \(x_2\le1\) y continúa por su hijo izquierdo: ahora los rótulos PL siguen exactamente el orden de exploración. Las dos rutas certifican el mismo óptimo \((3,2)\) con \(z^*=23\); lo que cambia es cuánto trabajo costó.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Pausa 2">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre ramificación y sondeo.</p>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. No hay enteros estrictamente entre 3 y 4, así que los dos hijos juntos conservan todos los valores enteros admisibles de \\(x_k\\) y descartan solo la franja fraccional.","Fijar dos valores puntuales elimina los enteros menores que 3 y los mayores que 4, que pueden ser factibles.","Esa partición deja fuera el valor entero 4, que podría pertenecer al óptimo.","Los hijos heredan las restricciones del padre: ramificar agrega una desigualdad, no reemplaza el problema."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">En un nodo, la relajación entrega \(x_k^*=3{,}75\). ¿Qué par de restricciones constituye una ramificación válida?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>\(x_k \le 3\) y \(x_k \ge 4\)</span></button>
+      <button><span class="k">B</span><span>\(x_k = 3\) y \(x_k = 4\)</span></button>
+      <button><span class="k">C</span><span>\(x_k \le 4\) y \(x_k \ge 5\)</span></button>
+      <button><span class="k">D</span><span>Borrar las restricciones del padre y fijar \(x_k = 4\)</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="2" data-retro='["Por infactibilidad se sondea cuando la relajación del nodo no tiene solución; aquí sí la tiene, vale 22,5.","Por factibilidad se sondea cuando el óptimo del nodo resulta entero; 22,5 no lo es.","Correcto. Ninguna solución entera de esa rama puede superar su propia cota de 22,5, y 22,5 no mejora la incumbente de 23. Se abandona sin explorar.","Sí se puede: justamente para eso sirve llevar una incumbente."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">Maximizando, un nodo activo tiene cota 22,5 y la incumbente vale 23. ¿Cómo se sondea ese nodo?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Por infactibilidad.</span></button>
+      <button><span class="k">B</span><span>Por factibilidad.</span></button>
+      <button><span class="k">C</span><span>Por cota.</span></button>
+      <button><span class="k">D</span><span>No se puede sondear todavía.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Caso de aplicación">
+  <div class="eyebrow">Aplicación · Chile</div>
+  <h2>El rajo: pagar estéril para llegar al mineral</h2>
+
+  <div class="widget">
+    <header><span class="tag caso">Caso</span><h4>Secuenciamiento de bloques en minería a rajo abierto</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Un rajo se modela como una grilla de bloques con valor conocido. Un bloque con mineral vale; uno con estéril cuesta. La regla física es dura: para extraer un bloque hay que haber extraído antes los que están encima. En Chile esto define los planes mineros de Chuquicamata, Escondida y El Teniente, y los modelos reales tienen millones de bloques. Aquí van seis.</p>
+
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Bloque</th><th class="num">Nivel</th><th>Contenido</th><th class="num">Valor \(v_i\) (MUS$)</th><th>Debe extraerse antes</th></tr></thead>
+        <tbody>
+          <tr><td>b1</td><td class="num">superficie</td><td>Estéril</td><td class="num">−3</td><td>—</td></tr>
+          <tr><td>b2</td><td class="num">superficie</td><td>Estéril</td><td class="num">−2</td><td>—</td></tr>
+          <tr><td>b3</td><td class="num">superficie</td><td>Estéril</td><td class="num">−4</td><td>—</td></tr>
+          <tr class="sel"><td>b4</td><td class="num">profundo</td><td>Mineral rico</td><td class="num">+9</td><td>b1 y b2</td></tr>
+          <tr><td>b5</td><td class="num">profundo</td><td>Baja ley</td><td class="num">−1</td><td>b2 y b3</td></tr>
+          <tr class="sel"><td>b6</td><td class="num">profundo</td><td>Mineral</td><td class="num">+7</td><td>b3</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="modelo">
+        <span class="et">Modelo del período · datos numéricos</span>
+        <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0 0 10px">
+          Variable de decisión: \(y_i=1\) si se extrae el bloque \(b_i\) en este período; \(y_i=0\), en otro caso, para \(i\in\{1,\ldots,6\}\). Los valores de la tabla ya incorporan ingreso, costo de extracción y procesamiento, en MUS$.
+        </p>
+        \[
+        \begin{aligned}
+        \max\;\; & z=-3y_1-2y_2-4y_3+9y_4-y_5+7y_6\\
+        \text{s.a.}\;\; & y_4\le y_1,\qquad y_4\le y_2\\
+        & y_5\le y_2,\qquad y_5\le y_3\\
+        & y_6\le y_3\\
+        & y_1+y_2+y_3+y_4+y_5+y_6\le4\\
+        & y_i\in\{0,1\} && \forall i\in\{1,\ldots,6\}
+        \end{aligned}
+        \]
+        <p class="glosa">Cada desigualdad de precedencia dice: “si extraigo el bloque profundo, también debo haber extraído el bloque que lo cubre”. La binaria se llama \(y\), no \(z\): \(z\) queda reservado para el valor objetivo.</p>
+      </div>
+
+      <div class="marcador">
+        <div style="flex:1.8;min-width:290px"><span>Solución de \(\mathrm{PL}_0\)</span><b style="font-size:.98rem;letter-spacing:-.035em">\(\mathbf{y}_{\mathrm{PL}0}^*=(0{,}67;0{,}67;1;0{,}67;0;1)\)</b></div>
+        <div><span>Valor de \(\mathrm{PL}_0\)</span><b>5,67</b></div>
+        <div><span>Plan entero factible</span><b style="font-size:1.05rem">b1, b2, b4</b></div>
+        <div><span>Valor de ese plan</span><b class="ok">4</b></div>
+      </div>
+
+      <div class="nota ojo" style="margin-top:16px">
+        <span class="et">Para discutir · evidencia, no pauta</span>
+        <p>¿Qué parte del plan de \(\mathrm{PL}_0\) no puede ejecutarse físicamente? ¿Qué intervalo pueden afirmar para \(z^*\) a partir del valor 5,67 y del plan entero de valor 4? Finalmente, ¿qué faltaría demostrar para afirmar que ese plan entero es óptimo?</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l9" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li><strong>Relajar</strong> es agrandar el conjunto factible; la relajación lineal solo quita la condición de integridad y deja todo lo demás.</li>
+    <li>Su óptimo es una <strong>cota superior</strong> en maximización; si resulta entero es el óptimo del PLE, y si es infactible el PLE también lo es.</li>
+    <li><strong>Redondear no es un método</strong>: puede ser infactible, puede ser factible y malo, y el óptimo entero puede no ser vecino del relajado.</li>
+    <li><strong>Ramificar</strong> en \(x_k^*=v\) crea \(x_k \le \lfloor v\rfloor\) y \(x_k \ge \lfloor v\rfloor+1\); en cada nodo se resuelve un PL, no un PLE.</li>
+    <li>Un nodo se <strong>sondea</strong> por factibilidad, por cota o por infactibilidad, y el método termina cuando la incumbente iguala a la mejor cota abierta.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>La relajación no es una aproximación fallida del problema entero: es la única forma de saber algo cierto sobre soluciones que todavía no hemos visto. Cada cota es una promesa sobre una región completa, y el algoritmo no es más que el arte de creerle a esas promesas para no tener que visitarlas todas.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l10" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Ejecutar el árbol ramificando primero en \(x_2\)</h4></div>
+    <div class="enunciado">
+      <p>Sobre la instancia de la clase:</p>
+      \[
+      \begin{aligned}
+      \max\;\; & z = 5x_1+4x_2\\
+      \text{s.a.}\;\; & x_1+x_2 \le 5\\
+      & 10x_1+6x_2 \le 45\\
+      & x_j \in \mathbb{Z}_0^+ \quad \forall j \in J=\{1,2\}
+      \end{aligned}
+      \]
+      <p>Resuelva por ramificación y acotamiento <strong>ramificando primero en \(x_2\)</strong> y explorando siempre antes el hijo de la desigualdad \(\le\).</p>
+      <p><strong>a)</strong> Resuelva gráficamente cada PL que aparezca y anote, para cada nodo, las restricciones acumuladas, su óptimo y su cota.<br>
+      <strong>b)</strong> Dibuje el árbol indicando, en cada hoja, la razón de sondeo.<br>
+      <strong>c)</strong> Registre el valor de la incumbente y de la mejor cota abierta después de cada nodo resuelto.<br>
+      <strong>d)</strong> Compare la cantidad de PL resueltos con el árbol que ramifica primero en \(x_1\). ¿Ambos certifican el mismo óptimo? ¿Por qué el método sigue siendo exacto aunque el árbol cambie?<br>
+      <strong>e)</strong> Suponga que en el nodo \(x_2\le1,\ x_1\le3\) alguien decide seguir ramificando en vez de sondear. Explique por qué es trabajo perdido y a qué razón de sondeo correspondía ese nodo.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · El contraejemplo del redondeo</h4></div>
+    <div class="enunciado">
+      <p>Considere la instancia B del simulador:</p>
+      \[
+      \begin{aligned}
+      \max\;\; & z = 6x_1+7x_2\\
+      \text{s.a.}\;\; & 5x_1+4x_2 \le 27\\
+      & 3x_1+7x_2 \le 28\\
+      & x_j \in \mathbb{Z}_0^+ \quad \forall j \in J=\{1,2\}
+      \end{aligned}
+      \]
+      <p><strong>a)</strong> Resuelva gráficamente la relajación lineal y reporte su óptimo y su cota.<br>
+      <strong>b)</strong> Liste los cuatro vecinos enteros del óptimo relajado. Para cada uno, verifique las dos restricciones y calcule \(z\) si corresponde.<br>
+      <strong>c)</strong> Encuentre el óptimo entero. Verifique que no pertenece a la lista de (b) y explique por qué eso no es una casualidad rara sino algo esperable.<br>
+      <strong>d)</strong> Calcule el error relativo que habría cometido quien entrega el mejor vecino factible como si fuera la solución.<br>
+      <strong>e)</strong> Un compañero propone esta regla: "si el redondeo resulta factible, entonces es óptimo". Constrúyale un contraejemplo con esta misma instancia y explique en una frase qué confunde esa regla.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Programación entera mixta: ramificar solo donde corresponde</h4></div>
+    <div class="enunciado">
+      <p>Una planta decide cuántos turnos completos abrir, \(x_1\), y cuántas toneladas procesar en régimen continuo, \(x_2\). Los turnos son indivisibles; las toneladas no.</p>
+      \[
+      \begin{aligned}
+      \max\;\; & z = 9x_1+4x_2\\
+      \text{s.a.}\;\; & 7x_1+3x_2 \le 40\\
+      & 2x_1+5x_2 \le 23\\
+      & x_1 \in \mathbb{Z}_0^+,\quad x_2 \ge 0
+      \end{aligned}
+      \]
+      <p><strong>a)</strong> Resuelva la relajación lineal. ¿Cuál de las dos variables obliga a ramificar y por qué la otra no?<br>
+      <strong>b)</strong> Ejecute ramificación y acotamiento. Escriba el PL de cada nodo y su óptimo, y explique en cada hoja cuál es la razón de sondeo.<br>
+      <strong>c)</strong> ¿Cuántos PL resolvió? Compare con lo que habría costado el árbol si <em>ambas</em> variables fueran enteras, y explique de dónde viene la diferencia.<br>
+      <strong>d)</strong> Resuelva también la versión con \(x_1,x_2\in\mathbb{Z}_0^+\) y compare los tres valores óptimos: relajado, mixto y entero puro. Ordénelos y justifique el orden sin calcular nada, solo con el argumento de inclusión de conjuntos.<br>
+      <strong>e)</strong> La gerencia pregunta cuánto cuesta la indivisibilidad de los turnos. Responda con un número tomado de (d) y explique qué significa operacionalmente.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Repita (b) forzando la primera ramificación al hijo \(x_1 \le 4\) y explorándolo completo antes de abrir el otro. ¿Cambia el número de PL resueltos? ¿Cambia el óptimo?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Minimización: una rama no tiene por qué quedar activa</h4></div>
+    <div class="enunciado">
+      <p>Considere el siguiente PLE de <strong>minimización</strong>. Las dos restricciones representan requerimientos mínimos de cobertura.</p>
+      \[
+      \begin{aligned}
+      \min\;\; & z=8x_1+8x_2\\
+      \text{s.a.}\;\; & 2x_1+2x_2\ge11\\
+      & 2x_1+6x_2\ge18\\
+      & x_1,x_2\in\mathbb{Z}_0^+
+      \end{aligned}
+      \]
+      <p>Una solución óptima de \(\mathrm{PL}_0\) es \((3{,}75;\,1{,}75)\), con \(z_{\mathrm{PL}0}^*=44\). <strong>Parta ramificando en \(x_1\)</strong>.</p>
+      <p><strong>a)</strong> Grafique \(\mathrm{PL}_0\). Determine todas sus soluciones óptimas y explique por qué, al ser minimización, 44 es una cota <em>inferior</em> sobre \(z^*\).<br>
+      <strong>b)</strong> Resuelva gráficamente los dos hijos \(x_1\le3\) y \(x_1\ge4\). Para cada uno reporte una solución óptima y su cota.<br>
+      <strong>c)</strong> En el hijo \(x_1\le3\), entregue una solución óptima con \(x_1&lt;3\). ¿Contradice eso la regla de ramificación? Argumente usando el conjunto de óptimos, no solo un punto.<br>
+      <strong>d)</strong> Enumere los puntos enteros necesarios para obtener el óptimo entero. Compare su valor con las cotas de los hijos e indique qué sentido tiene la poda por cota en un problema de minimización.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E5 · Cartera: describir, relajar y ramificar</h4></div>
+    <div class="enunciado">
+      <p>Una planta chilena evalúa cuatro iniciativas de eficiencia energética. Cada una se ejecuta completa o no se ejecuta; no hay medias implementaciones. Se busca <strong>maximizar el beneficio neto</strong> sujeto a un <strong>presupuesto de inversión de 28 MM$</strong>.</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Iniciativa</th><th class="num">Inversión (MM$)</th><th class="num">Beneficio (MM$)</th></tr></thead>
+        <tbody>
+          <tr><td>Planta solar</td><td class="num">18</td><td class="num">30</td></tr>
+          <tr><td>Banco de baterías</td><td class="num">12</td><td class="num">21</td></tr>
+          <tr><td>Eficiencia de motores</td><td class="num">8</td><td class="num">14</td></tr>
+          <tr><td>Flota eléctrica</td><td class="num">9</td><td class="num">15</td></tr>
+        </tbody>
+      </table></div>
+      <p>Defina antes del modelo: \(x_1=1\) si se ejecuta la planta solar; \(x_2=1\) si se ejecuta el banco de baterías; \(x_3=1\) si se implementa eficiencia de motores; \(x_4=1\) si se incorpora la flota eléctrica; en cada caso, 0 en otro caso.</p>
+      <p><strong>a)</strong> Formule el PLE con los números de la tabla. Escriba solo la naturaleza binaria de las variables como restricción de dominio; no repita su definición dentro del sistema.<br>
+      <strong>b)</strong> Construya \(\mathrm{PL}_0\), resuélvalo y reporte su solución y \(z_{\mathrm{PL}0}^*\). <strong>Pista:</strong> es una mochila fraccional con una sola restricción de presupuesto: ordene las iniciativas por beneficio por MM$ y llene el presupuesto en ese orden. <strong>Ramifique primero en \(x_4\)</strong> y resuelva los PL de \(x_4\le0\) y \(x_4\ge1\); en cada hijo vuelva a optimizar el PL, no redondee la solución de la raíz.<br>
+      <strong>c)</strong> El plan entero “planta solar + flota eléctrica” entrega 45 MM$ de beneficio. Úselo como incumbente: ¿se puede sondear alguno de los dos hijos de (b) por cota? Justifique usando cotas e incumbente, no solo el valor de una solución.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Continúe el árbol hasta certificar el óptimo, explorando siempre primero el hijo de la desigualdad \(\le\). Dibuje cada PL resuelto y la razón de sondeo de cada hoja.</p>
+    </div>
+  </div>
+
+  <div class="nota libro" style="margin-top:30px">
+    <span class="et">Para leer, si el tema te interesa</span>
+    <p><strong>Dónde está esto en el libro.</strong> Hillier &amp; Lieberman tratan estas ideas en el capítulo 11: la sección <strong>11.5</strong> discute qué hace difícil a un PLE y por qué la calidad de la formulación importa tanto; la <strong>11.6</strong> desarrolla ramificación y acotamiento sobre programación binaria; y la <strong>11.7</strong> generaliza el algoritmo a variables enteras y mixtas, que es exactamente el caso del E3.</p>
+    <p style="margin-bottom:0">Un detalle de vocabulario que conviene tener claro porque aparece en todos lados: en inglés el método se llama <em>branch and bound</em>, y las tres razones de sondeo son <em>fathoming by bound</em>, <em>by feasibility</em> y <em>by infeasibility</em>. Si buscas material en inglés, "fathom" es el verbo que en el curso traducimos como sondear o podar. No es materia ni entra en evaluaciones — es para que no te pierdas leyendo la documentación de cualquier solver.</p>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ==================================================================
+   Clase 08 · utilidades de geometría 2D compartidas por los dos
+   simuladores. Un PL con dos variables se resuelve enumerando los
+   vértices: con pocas restricciones es exacto y es instantáneo.
+   Cada restricción se escribe [a, b, c] y significa a·x1 + b·x2 <= c.
+   ================================================================== */
+var C8 = (function(){
+  var EPS = 1e-9;
+
+  function factible(p, cs){
+    for(var i=0;i<cs.length;i++){
+      if(cs[i][0]*p[0] + cs[i][1]*p[1] > cs[i][2] + 1e-7) return false;
+    }
+    return true;
+  }
+
+  /* vértices: todas las intersecciones de pares de restricciones que
+     además satisfacen a todas las demás */
+  function vertices(cs){
+    var v=[], i, j;
+    for(i=0;i<cs.length;i++){
+      for(j=i+1;j<cs.length;j++){
+        var d = cs[i][0]*cs[j][1] - cs[j][0]*cs[i][1];
+        if(Math.abs(d) < EPS) continue;
+        var x = (cs[i][2]*cs[j][1] - cs[j][2]*cs[i][1])/d;
+        var y = (cs[i][0]*cs[j][2] - cs[j][0]*cs[i][2])/d;
+        if(factible([x,y], cs)) v.push([x,y]);
+      }
+    }
+    /* se eliminan duplicados para que el polígono no se dibuje dos veces */
+    var out=[];
+    v.forEach(function(p){
+      for(var k=0;k<out.length;k++){
+        if(Math.abs(out[k][0]-p[0])<1e-7 && Math.abs(out[k][1]-p[1])<1e-7) return;
+      }
+      out.push(p);
+    });
+    return out;
+  }
+
+  /* los vértices vienen en cualquier orden: se ordenan por ángulo
+     alrededor del centroide para poder dibujar el polígono */
+  function ordenar(v){
+    if(v.length < 3) return v.slice();
+    var cx=0, cy=0;
+    v.forEach(function(p){cx+=p[0];cy+=p[1];});
+    cx/=v.length; cy/=v.length;
+    return v.slice().sort(function(a,b){
+      return Math.atan2(a[1]-cy,a[0]-cx) - Math.atan2(b[1]-cy,b[0]-cx);
+    });
+  }
+
+  /* resuelve max c1*x1 + c2*x2 sujeto a cs; devuelve null si es infactible */
+  function resolver(obj, cs){
+    var v = vertices(cs);
+    if(!v.length) return null;
+    var mejor = null;
+    v.forEach(function(p){
+      var z = obj[0]*p[0] + obj[1]*p[1];
+      if(!mejor || z > mejor.z + 1e-9) mejor = {x:p[0], y:p[1], z:z};
+    });
+    return {x:mejor.x, y:mejor.y, z:mejor.z, verts:ordenar(v)};
+  }
+
+  function esEntero(t){ return Math.abs(t - Math.round(t)) < 1e-6; }
+
+  /* ejes, grilla y puntos enteros factibles: lo comparten los tres SVG */
+  var SANS = "font-family:'Archivo',sans-serif";
+  var MATE = "font-family:Georgia,serif;font-style:italic";
+
+  function texto(svg, a, estilo, contenido){
+    var e = svgEl('text', a);
+    e.setAttribute('style', estilo);
+    if(contenido !== undefined) e.textContent = contenido;
+    svg.appendChild(e);
+    return e;
+  }
+
+  function lienzo(svg, cfg){
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    var ML=78, MR=32, MT=20, MB=44;
+    var W=cfg.W, H=cfg.H, MX=cfg.max;
+    function X(x){ return ML + x*(W-ML-MR)/MX; }
+    function Y(y){ return H - MB - y*(H-MB-MT)/MX; }
+    var paso = MX > 8 ? 2 : 1;
+    for(var k=0;k<=Math.floor(MX);k+=paso){
+      svg.appendChild(svgEl('line',{x1:X(k),y1:Y(0),x2:X(k),y2:Y(MX),stroke:'rgba(20,24,31,.10)'}));
+      svg.appendChild(svgEl('line',{x1:X(0),y1:Y(k),x2:X(MX),y2:Y(k),stroke:'rgba(20,24,31,.10)'}));
+      texto(svg,{x:X(k),y:Y(0)+22,'text-anchor':'middle'}, SANS+';font-size:12px;fill:#6B7683', k);
+      texto(svg,{x:X(0)-14,y:Y(k)+5,'text-anchor':'end'}, SANS+';font-size:12px;fill:#6B7683', k);
+    }
+    svg.appendChild(svgEl('line',{x1:X(0),y1:Y(0),x2:X(MX),y2:Y(0),stroke:'#14181F','stroke-width':1.5}));
+    svg.appendChild(svgEl('line',{x1:X(0),y1:Y(0),x2:X(0),y2:Y(MX),stroke:'#14181F','stroke-width':1.5}));
+    texto(svg,{x:X(MX)+6,y:Y(0)+20}, MATE+';font-size:15px;fill:#3C4551', 'x₁');
+    texto(svg,{x:X(0)-22,y:Y(MX)-4}, MATE+';font-size:15px;fill:#3C4551', 'x₂');
+    return {X:X, Y:Y};
+  }
+
+  return {
+    factible:factible, vertices:vertices, ordenar:ordenar, resolver:resolver,
+    esEntero:esEntero, lienzo:lienzo, texto:texto, SANS:SANS, MATE:MATE
+  };
+})();
+
+/* ==================================================================
+   Visualización · P1 (PLE) y P2 (PL0) sobre la misma instancia
+   ================================================================== */
+(function(){
+  var svg = document.getElementById('g-relacion');
+  var modelo = document.getElementById('rel-modelo');
+  var explica = document.getElementById('rel-exp');
+  var b1 = document.getElementById('rel-p1');
+  var b2 = document.getElementById('rel-p2');
+  if(!svg || !modelo || !b1 || !b2) return;
+
+  var CS = [[1,1,5],[10,6,45],[-1,0,0],[0,-1,0]];
+  var OBJ = [5,4];
+  var rel = C8.resolver(OBJ, CS);
+  var entero = {x:3,y:2,z:23};
+
+  function modeloP1(){
+    return '<span class="et">P1 · PLE</span>'+
+      '<p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.92rem;margin:0 0 10px">Variables: \\(x_1\\), unidades del producto 1; \\(x_2\\), unidades del producto 2.</p>'+
+      '\\[\\begin{aligned}\\max\\;\\; & z=5x_1+4x_2\\\\\\text{s.a.}\\;\\; & x_1+x_2\\le5\\\\&10x_1+6x_2\\le45\\\\&x_1,x_2\\in\\mathbb{Z}_0^+\\end{aligned}\\]'+
+      '<p class="glosa">Solo admite los puntos de la retícula que caen dentro de las dos restricciones.</p>';
+  }
+  function modeloP2(){
+    return '<span class="et">P2 · relajación lineal: PL0</span>'+
+      '<p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.92rem;margin:0 0 10px">Mismo objetivo y mismas restricciones; cambia únicamente el dominio.</p>'+
+      '\\[\\begin{aligned}\\max\\;\\; & z=5x_1+4x_2\\\\\\text{s.a.}\\;\\; & x_1+x_2\\le5\\\\&10x_1+6x_2\\le45\\\\&x_1,x_2\\ge0\\end{aligned}\\]'+
+      '<p class="glosa">Ahora también admite puntos fraccionales de la región sombreada.</p>';
+  }
+
+  function pintar(tipo){
+    var ej = C8.lienzo(svg,{W:900,H:390,max:5.6});
+    var X=ej.X, Y=ej.Y;
+    var poly=C8.ordenar(C8.vertices(CS));
+    svg.appendChild(svgEl('polygon',{
+      points:poly.map(function(p){return X(p[0])+','+Y(p[1]);}).join(' '),
+      fill:tipo==='p2'?'rgba(15,110,99,.20)':'rgba(15,110,99,.07)',
+      stroke:'#0F6E63','stroke-width':2
+    }));
+    [[1,1,5,'x₁ + x₂ = 5'],[10,6,45,'10x₁ + 6x₂ = 45']].forEach(function(c,idx){
+      var a=[0,c[2]/c[1]], b=[c[2]/c[0],0];
+      svg.appendChild(svgEl('line',{x1:X(a[0]),y1:Y(a[1]),x2:X(b[0]),y2:Y(b[1]),stroke:'#5B3A6B','stroke-width':1.3,'stroke-dasharray':'5 4'}));
+      C8.texto(svg,{x:idx?X(3.7):X(.35),y:idx?Y(1.3):Y(4.75)},C8.SANS+';font-size:12px;fill:#5B3A6B;font-weight:700',c[3]);
+    });
+    for(var x=0;x<=5;x++) for(var y=0;y<=5;y++){
+      if(C8.factible([x,y],CS)) svg.appendChild(svgEl('circle',{cx:X(x),cy:Y(y),r:tipo==='p1'?5:3.5,fill:'#14181F',opacity:tipo==='p1'?1:.55}));
+    }
+    var p=tipo==='p1'?entero:rel;
+    svg.appendChild(svgEl('circle',{cx:X(p.x),cy:Y(p.y),r:9,fill:'#C8551E',stroke:'#fff','stroke-width':3}));
+    C8.texto(svg,{x:X(p.x)+15,y:Y(p.y)-14},C8.SANS+';font-size:14px;fill:#C8551E;font-weight:700',
+      tipo==='p1'?'óptimo P1: (3; 2), z = 23':'óptimo PL0: (3,75; 1,25), z = 23,75');
+    C8.texto(svg,{x:450,y:31,'text-anchor':'middle'},C8.SANS+';font-size:15px;fill:#3C4551;font-weight:700',
+      tipo==='p1'?'P1: puntos enteros factibles dentro de P2':'P2: región factible continua de PL0');
+
+    modelo.innerHTML=tipo==='p1'?modeloP1():modeloP2();
+    explica.innerHTML=tipo==='p1'
+      ? '<b>P1 está contenido en P2.</b> Cada punto entero negro cumple las restricciones de la relajación. El óptimo entero es \\(z^*=23\\), pero no puede usar el vértice fraccional.'
+      : '<b>P2 relaja solo la integridad.</b> El vértice fraccional también es admisible y entrega \\(z_{\\mathrm{PL}0}^*=23{,}75\\), una cota superior sobre \\(z^*\\).';
+    b1.className=tipo==='p1'?'btn':'btn ghost';
+    b2.className=tipo==='p2'?'btn':'btn ghost';
+    if(window.MathJax&&MathJax.typesetPromise) MathJax.typesetPromise([modelo,explica]);
+  }
+  b1.onclick=function(){pintar('p1');};
+  b2.onclick=function(){pintar('p2');};
+  pintar('p1');
+})();
+
+/* ==================================================================
+   Simulador 1 · el redondeo y sus cuatro vecinos
+   ================================================================== */
+(function(){
+  var selI = document.getElementById('vec-inst');
+  var selP = document.getElementById('vec-punto');
+  if(!selI || !selP) return;
+  var svg = document.getElementById('g-vecinos');
+
+  var INST = [
+    { obj:[5,4],
+      cs:[[1,1,5],[10,6,45],[-1,0,0],[0,-1,0]],
+      etiquetas:['x₁ + x₂ ≤ 5','10x₁ + 6x₂ ≤ 45'],
+      max:5.6, nombre:'A' },
+    { obj:[6,7],
+      cs:[[5,4,27],[3,7,28],[-1,0,0],[0,-1,0]],
+      etiquetas:['5x₁ + 4x₂ ≤ 27','3x₁ + 7x₂ ≤ 28'],
+      max:6.8, nombre:'B' }
+  ];
+
+  /* para cada instancia se precalculan relajado, vecinos y óptimo entero */
+  INST.forEach(function(I){
+    var r = C8.resolver(I.obj, I.cs);
+    I.rel = r;
+    var fx = Math.floor(r.x + 1e-9), fy = Math.floor(r.y + 1e-9);
+    I.vecinos = [[fx,fy],[fx,fy+1],[fx+1,fy],[fx+1,fy+1]];
+    I.trunc = [fx, fy];
+    I.cerca = [Math.round(r.x), Math.round(r.y)];
+    var mejorVec = null;
+    I.vecinos.forEach(function(p){
+      if(!C8.factible(p, I.cs)) return;
+      var z = I.obj[0]*p[0] + I.obj[1]*p[1];
+      if(!mejorVec || z > mejorVec.z) mejorVec = {p:p, z:z};
+    });
+    I.mejorVec = mejorVec;
+    var best = null;
+    for(var x=0; x<=Math.ceil(I.max); x++){
+      for(var y=0; y<=Math.ceil(I.max); y++){
+        if(!C8.factible([x,y], I.cs)) continue;
+        var z2 = I.obj[0]*x + I.obj[1]*y;
+        if(!best || z2 > best.z) best = {p:[x,y], z:z2};
+      }
+    }
+    I.opt = best;
+  });
+
+  function num(v, d){ return fmt(v, d === undefined ? 2 : d); }
+
+  function dibujar(){
+    var I = INST[+selI.value];
+    var vista = selP.value;
+    var ej = C8.lienzo(svg, {W:900, H:400, max:I.max});
+    var X = ej.X, Y = ej.Y;
+
+    /* región factible de la relajación */
+    var poly = C8.ordenar(C8.vertices(I.cs));
+    svg.appendChild(svgEl('polygon', {
+      points: poly.map(function(p){ return X(p[0])+','+Y(p[1]); }).join(' '),
+      fill:'rgba(15,110,99,.18)', stroke:'#0F6E63', 'stroke-width':2
+    }));
+
+    /* curvas de nivel que pasan por los dos valores de referencia */
+    function curvaNivel(z, color, etiqueta, dy){
+      var candidatos = [];
+      function agregar(x,y){
+        if(x >= -1e-7 && x <= I.max+1e-7 && y >= -1e-7 && y <= I.max+1e-7){
+          if(!candidatos.some(function(q){ return Math.abs(q[0]-x)<1e-6 && Math.abs(q[1]-y)<1e-6; })) candidatos.push([x,y]);
+        }
+      }
+      agregar(0, z/I.obj[1]);
+      agregar(I.max, (z-I.obj[0]*I.max)/I.obj[1]);
+      agregar(z/I.obj[0], 0);
+      agregar((z-I.obj[1]*I.max)/I.obj[0], I.max);
+      if(candidatos.length < 2) return;
+      svg.appendChild(svgEl('line',{
+        x1:X(candidatos[0][0]), y1:Y(candidatos[0][1]),
+        x2:X(candidatos[1][0]), y2:Y(candidatos[1][1]),
+        stroke:color, 'stroke-width':1.25, 'stroke-dasharray':'4 4', opacity:.88
+      }));
+      var ancla = candidatos.reduce(function(a,b){ return b[1] > a[1] ? b : a; }, candidatos[0]);
+      C8.texto(svg,{x:X(ancla[0])+8,y:Y(ancla[1])+dy},
+        C8.SANS+';font-size:12px;fill:'+color+';font-weight:700', etiqueta);
+    }
+    if(vista === 'rel') curvaNivel(I.rel.z, '#5B3A6B', 'nivel óptimo de PL0 = '+num(I.rel.z), -6);
+    if(vista === 'opt') curvaNivel(I.opt.z, '#B8892B', 'nivel de z* = '+num(I.opt.z,0), 15);
+
+    /* puntos enteros factibles */
+    for(var x=0; x<=Math.ceil(I.max); x++){
+      for(var y=0; y<=Math.ceil(I.max); y++){
+        if(C8.factible([x,y], I.cs)){
+          svg.appendChild(svgEl('circle',{cx:X(x),cy:Y(y),r:3.6,fill:'#14181F',opacity:.8}));
+        }
+      }
+    }
+
+    /* los cuatro vecinos, siempre visibles, marcados según factibilidad */
+    I.vecinos.forEach(function(p){
+      var ok = C8.factible(p, I.cs);
+      svg.appendChild(svgEl('rect',{
+        x:X(p[0])-9, y:Y(p[1])-9, width:18, height:18, rx:4,
+        fill:'none', stroke: ok ? '#0F6E63' : '#C8551E',
+        'stroke-width':1.6, 'stroke-dasharray':'4 3'
+      }));
+    });
+
+    /* óptimo entero: anillo dorado */
+    svg.appendChild(svgEl('circle',{
+      cx:X(I.opt.p[0]), cy:Y(I.opt.p[1]), r:12,
+      fill:'none', stroke:'#B8892B', 'stroke-width':3
+    }));
+
+    /* punto evaluado */
+    var p, etiqueta;
+    if(vista === 'rel'){ p = [I.rel.x, I.rel.y]; etiqueta = 'relajado'; }
+    else if(vista === 'trunc'){ p = I.trunc; etiqueta = 'truncado'; }
+    else if(vista === 'cerca'){ p = I.cerca; etiqueta = 'redondeado'; }
+    else if(vista === 'mejor'){ p = I.mejorVec ? I.mejorVec.p : I.trunc; etiqueta = 'mejor vecino'; }
+    else { p = I.opt.p; etiqueta = 'óptimo entero'; }
+
+    var fact = C8.factible(p, I.cs);
+    svg.appendChild(svgEl('circle',{
+      cx:X(p[0]), cy:Y(p[1]), r:8.5, fill:'#C8551E', stroke:'#fff', 'stroke-width':3
+    }));
+    C8.texto(svg, {x:X(p[0])+15, y:Y(p[1])-13},
+      C8.SANS+';font-size:14px;fill:#C8551E;font-weight:700',
+      etiqueta + ': (' + num(p[0]) + '; ' + num(p[1]) + ')');
+
+    /* marcadores */
+    var z = I.obj[0]*p[0] + I.obj[1]*p[1];
+    document.getElementById('vec-cota').textContent = num(I.rel.z);
+    document.getElementById('vec-pt').textContent = '(' + num(p[0]) + '; ' + num(p[1]) + ')';
+    document.getElementById('vec-z').textContent = num(z);
+    var bf = document.getElementById('vec-fact');
+    bf.textContent = fact ? 'Sí' : 'No';
+    bf.className = fact ? 'ok' : 'mal';
+    document.getElementById('vec-opt').textContent = num(I.opt.z, 0);
+
+    var m = document.getElementById('vec-msg'), t, color = 'var(--teal)';
+    if(vista === 'rel'){
+      t = '<b>Óptimo de la relajación.</b> Vale ' + num(I.rel.z) + ' y es una cota superior válida: ningún punto entero factible puede superarla. No es una solución, porque sus coordenadas no son enteras.';
+    } else if(vista === 'trunc'){
+      if(fact) t = '<b>Truncar es factible pero pierde valor.</b> Bajar las dos coordenadas siempre deja el punto dentro de la región cuando los coeficientes son positivos, así que factible lo es. El costo es el valor: ' + num(z) + ' contra un óptimo de ' + num(I.opt.z,0) + '.';
+      else { t = '<b>Ni siquiera truncar salva.</b> El punto truncado viola alguna restricción de esta instancia.'; color = 'var(--amber)'; }
+    } else if(vista === 'cerca'){
+      if(fact) t = '<b>El redondeo resultó factible.</b> Vale ' + num(z) + '. Que sea factible no lo hace óptimo: compáralo con el anillo dorado.';
+      else { t = '<b>El redondeo es infactible.</b> Da z = ' + num(z) + ', un valor que supera la cota ' + num(I.rel.z) + ' — señal inequívoca de que el punto está fuera de la región relajada. Redondear movió el punto hacia afuera.'; color = 'var(--amber)'; }
+    } else if(vista === 'mejor'){
+      var mismo = I.mejorVec && I.mejorVec.p[0] === I.opt.p[0] && I.mejorVec.p[1] === I.opt.p[1];
+      if(mismo) t = '<b>Aquí el mejor vecino sí es el óptimo.</b> Pasa, y es exactamente lo que vuelve peligrosa la idea: funcionó una vez y uno se confía. Cambia a la instancia B y vuelve a mirar.';
+      else { t = '<b>El mejor vecino factible no es el óptimo.</b> Rinde ' + num(z) + ' contra ' + num(I.opt.z,0) + '. El anillo dorado está fuera del cuadrado de vecinos: ningún redondeo llega hasta ahí.'; color = 'var(--amber)'; }
+    } else {
+      t = '<b>Óptimo entero.</b> Vale ' + num(I.opt.z,0) + ', contra la cota ' + num(I.rel.z) + ' de la relajación. La brecha entre ambos es ' + num(I.rel.z - I.opt.z) + ', y cerrarla es todo el trabajo del algoritmo que viene.';
+    }
+    m.innerHTML = t;
+    m.style.borderLeftColor = color;
+  }
+
+  selI.onchange = dibujar;
+  selP.onchange = dibujar;
+  dibujar();
+})();
+
+/* ==================================================================
+   Simulador 2 · ramificación y acotamiento en vivo
+   Cada nodo resuelve su propio PL. El árbol lo construye el alumno.
+   ================================================================== */
+(function(){
+  var svgA = document.getElementById('g-arbol');
+  var svgN = document.getElementById('g-nodo');
+  if(!svgA || !svgN) return;
+
+  var OBJ = [5,4];
+  var BASE = [[1,1,5],[10,6,45],[-1,0,0],[0,-1,0]];
+  var BASE_ETQ = ['x₁ + x₂ ≤ 5', '10x₁ + 6x₂ ≤ 45', 'x₁ ≥ 0', 'x₂ ≥ 0'];
+  var MAXEJE = 5.6;
+
+  var nodos, sel, incumbente, incumbentePunto, contador;
+
+  function crearNodo(padre, restr, etq){
+    var n = {
+      id: nodos.length,
+      padre: padre,
+      hijos: [],
+      restr: restr,
+      etq: etq,
+      prof: padre === null ? 0 : nodos[padre].prof + 1,
+      sol: null,
+      resuelto: false,
+      plId: null,
+      cotaHerencia: padre === null ? null : (nodos[padre].sol ? nodos[padre].sol.z : nodos[padre].cotaHerencia),
+      estado: 'pendiente',
+      motivo: 'Rama abierta; su PL aún no se resuelve.'
+    };
+    nodos.push(n);
+    if(padre !== null) nodos[padre].hijos.push(n.id);
+    return n;
+  }
+
+  function resolverNodo(n){
+    if(!n || n.resuelto) return;
+    var r = C8.resolver(OBJ, BASE.concat(n.restr));
+    n.resuelto = true;
+    n.plId = contador++;
+    n.sol = r;
+    n.estado = 'activo';
+
+    if(!r){
+      n.estado = 'infactible';
+      n.motivo = 'Problema infactible.';
+      return n;
+    }
+    if(C8.esEntero(r.x) && C8.esEntero(r.y)){
+      n.estado = 'entero';
+      if(incumbente === null || r.z > incumbente + 1e-9){
+        incumbente = r.z;
+        incumbentePunto = [Math.round(r.x), Math.round(r.y)];
+        n.motivo = 'El óptimo del PL resultó entero: se sondea por factibilidad y pasa a ser la nueva incumbente con z = ' + fmt(r.z,2) + '.';
+      } else {
+        n.motivo = 'El óptimo del PL es entero, pero con z = ' + fmt(r.z,2) + ' no mejora la incumbente. Se sondea por factibilidad igual.';
+      }
+      return n;
+    }
+    if(incumbente !== null && r.z <= incumbente + 1e-9){
+      n.estado = 'cota';
+      n.motivo = 'Su cota ' + fmt(r.z,2) + ' no supera la incumbente ' + fmt(incumbente,2) + ': ninguna solución entera de esta región puede ganar. Se sondea por cota.';
+      return n;
+    }
+    n.motivo = 'Óptimo fraccional con cota ' + fmt(r.z,2) + ', por encima de la incumbente. Queda activo: hay que ramificarlo.';
+    return n;
+  }
+
+  /* cuando la incumbente mejora, algunos nodos activos dejan de servir */
+  function repodar(){
+    nodos.forEach(function(n){
+      if(n.estado === 'activo' && incumbente !== null && n.sol && n.sol.z <= incumbente + 1e-9){
+        n.estado = 'cota';
+        n.motivo = 'Su cota ' + fmt(n.sol.z,2) + ' quedó por debajo de la incumbente ' + fmt(incumbente,2) + ' al encontrarse una solución mejor en otra rama. Sondeado por cota.';
+      } else if(n.estado === 'pendiente' && incumbente !== null && n.cotaHerencia !== null && n.cotaHerencia <= incumbente + 1e-9){
+        n.estado = 'cota';
+        n.motivo = 'Sondeado por cota usando la cota heredada del padre.';
+      }
+    });
+  }
+
+  function reiniciar(){
+    nodos = []; incumbente = null; incumbentePunto = null; contador = 0;
+    var raiz = crearNodo(null, [], []);
+    resolverNodo(raiz);
+    sel = 0;
+    pintar();
+  }
+
+  function activos(){
+    return nodos.filter(function(n){ return n.estado === 'activo'; });
+  }
+
+  function pendientes(){
+    return nodos.filter(function(n){ return n.estado === 'pendiente'; });
+  }
+
+  function mejorCotaAbierta(){
+    var c = activos().map(function(n){ return n.sol.z; });
+    pendientes().forEach(function(n){ if(n.cotaHerencia !== null) c.push(n.cotaHerencia); });
+    if(!c.length) return null;
+    return Math.max.apply(null,c);
+  }
+
+  function ramificar(k){
+    var n = nodos[sel];
+    if(!n || n.estado !== 'activo'){
+      aviso('Solo se puede ramificar un nodo activo. Haz clic en uno oscuro.', 'var(--amber)');
+      return;
+    }
+    var v = k === 0 ? n.sol.x : n.sol.y;
+    if(C8.esEntero(v)){
+      aviso('En este nodo x' + (k===0?'₁':'₂') + ' ya vale un entero: ramificar ahí no elimina nada.', 'var(--amber)');
+      return;
+    }
+    var piso = Math.floor(v + 1e-9);
+    var nom = k === 0 ? 'x₁' : 'x₂';
+    var izq = [0,0,0], der = [0,0,0];
+    izq[k] = 1;  izq[2] = piso;            /*  x_k <= piso   */
+    der[k] = -1; der[2] = -(piso + 1);     /* -x_k <= -(piso+1)  es  x_k >= piso+1 */
+    n.estado = 'ramificado';
+    n.motivo = 'Ramificado en ' + nom + ' = ' + fmt(v,2) + '.';
+    var a = crearNodo(n.id, n.restr.concat([izq]), n.etq.concat([nom + ' ≤ ' + piso]));
+    crearNodo(n.id, n.restr.concat([der]), n.etq.concat([nom + ' ≥ ' + (piso+1)]));
+    sel = a.id;
+    pintar();
+  }
+
+  function resolverSeleccionado(){
+    var n = nodos[sel];
+    if(!n || n.estado !== 'pendiente'){
+      aviso('Selecciona una rama pendiente para resolver exactamente un PL nuevo.', 'var(--amber)');
+      return;
+    }
+    resolverNodo(n);
+    repodar();
+    pintar();
+  }
+
+  /* ---------- dibujo del árbol ---------- */
+  var COLOR = {
+    pendiente:'#6B7683', activo:'#14181F', ramificado:'#5B3A6B', entero:'#0F6E63',
+    cota:'#C8551E', infactible:'#B8892B'
+  };
+
+  function posiciones(){
+    /* las hojas se reparten de izquierda a derecha; cada padre se
+       centra sobre sus hijos */
+    var pos = {}, siguiente = 0;
+    function rec(id){
+      var n = nodos[id];
+      if(!n.hijos.length){ pos[id] = siguiente++; return pos[id]; }
+      var xs = n.hijos.map(rec);
+      pos[id] = (xs[0] + xs[xs.length-1]) / 2;
+      return pos[id];
+    }
+    rec(0);
+    return {pos:pos, hojas:Math.max(1, siguiente)};
+  }
+
+  function pintarArbol(){
+    while(svgA.firstChild) svgA.removeChild(svgA.firstChild);
+    var W = 900, H = 400;
+    var P = posiciones();
+    var profMax = nodos.reduce(function(m,n){ return Math.max(m, n.prof); }, 0);
+    var anchoCaja = Math.min(190, (W - 40) / P.hojas - 10);
+    anchoCaja = Math.max(96, anchoCaja);
+    var alto = 66;
+    function X(i){ return 30 + (P.pos[i] + 0.5) * (W - 60) / P.hojas; }
+    function Y(p){ return 36 + p * (profMax > 0 ? (H - 90) / profMax : 0); }
+
+    nodos.forEach(function(n){
+      if(n.padre === null) return;
+      svgA.appendChild(svgEl('line',{
+        x1:X(n.padre), y1:Y(nodos[n.padre].prof) + alto/2,
+        x2:X(n.id), y2:Y(n.prof) - alto/2,
+        stroke:'#6B7683', 'stroke-width':1.4
+      }));
+      var tx = (X(n.padre)+X(n.id))/2;
+      var ty = (Y(nodos[n.padre].prof)+Y(n.prof))/2 - 2;
+      var etiqueta = n.etq[n.etq.length-1];
+      var anchoEtq = Math.max(48, etiqueta.length*7.1+16);
+      svgA.appendChild(svgEl('rect',{
+        x:tx-anchoEtq/2, y:ty-14, width:anchoEtq, height:22, rx:6,
+        fill:'#F4F1EA', stroke:'rgba(91,58,107,.45)', 'stroke-width':1
+      }));
+      C8.texto(svgA, {x:tx, y:ty+1, 'text-anchor':'middle'},
+        C8.SANS+';font-size:12px;fill:#3C4551;font-weight:700', etiqueta);
+    });
+
+    nodos.forEach(function(n){
+      var g = svgEl('g', {style:'cursor:pointer'});
+      var caja = svgEl('rect',{
+        x:X(n.id)-anchoCaja/2, y:Y(n.prof)-alto/2, width:anchoCaja, height:alto, rx:9,
+        fill:COLOR[n.estado],
+        stroke: n.id === sel ? '#B8892B' : 'rgba(0,0,0,0)', 'stroke-width':3
+      });
+      g.appendChild(caja);
+      var pl = n.resuelto ? 'PL' + n.plId : 'pendiente';
+      var t1 = svgEl('text',{x:X(n.id), y:Y(n.prof)-18,'text-anchor':'middle'});
+      t1.setAttribute('style', C8.SANS+';font-size:13px;fill:#fff;font-weight:700');
+      t1.textContent = pl;
+      g.appendChild(t1);
+      var t2 = svgEl('text',{x:X(n.id), y:Y(n.prof)+1,'text-anchor':'middle'});
+      t2.setAttribute('style', C8.SANS+';font-size:11px;fill:rgba(255,255,255,.88)');
+      if(n.resuelto && n.sol){
+        t2.appendChild(document.createTextNode('z'));
+        var sup = svgEl('tspan',{'baseline-shift':'super','font-size':'8'}); sup.textContent='*'; t2.appendChild(sup);
+        var indice = svgEl('tspan',{'baseline-shift':'sub','font-size':'8'}); indice.textContent=pl; t2.appendChild(indice);
+        t2.appendChild(document.createTextNode(' = ' + fmt(n.sol.z,2)));
+      } else if(n.resuelto) t2.textContent = 'problema infactible';
+      else t2.textContent = n.estado === 'cota' ? 'sondeada por cota' : 'sin resolver';
+      g.appendChild(t2);
+      var t3 = svgEl('text',{x:X(n.id), y:Y(n.prof)+19,'text-anchor':'middle'});
+      t3.setAttribute('style', C8.SANS+';font-size:11px;fill:rgba(255,255,255,.82)');
+      t3.textContent = n.resuelto && n.sol ? 'x = (' + fmt(n.sol.x,2) + '; ' + fmt(n.sol.y,2) + ')' : '';
+      g.appendChild(t3);
+      g.onclick = function(){ sel = n.id; pintar(); };
+      svgA.appendChild(g);
+    });
+  }
+
+  /* ---------- dibujo del PL del nodo seleccionado ---------- */
+  function pintarNodo(){
+    var n = nodos[sel];
+    var ej = C8.lienzo(svgN, {W:900, H:380, max:MAXEJE});
+    var X = ej.X, Y = ej.Y;
+    var todas = BASE.concat(n.restr);
+
+    var v = C8.ordenar(C8.vertices(todas));
+    if(v.length >= 3){
+      svgN.appendChild(svgEl('polygon',{
+        points: v.map(function(p){ return X(p[0])+','+Y(p[1]); }).join(' '),
+        fill:'rgba(15,110,99,.18)', stroke:'#0F6E63', 'stroke-width':2
+      }));
+    } else if(v.length === 2){
+      svgN.appendChild(svgEl('line',{
+        x1:X(v[0][0]), y1:Y(v[0][1]), x2:X(v[1][0]), y2:Y(v[1][1]),
+        stroke:'#0F6E63', 'stroke-width':3
+      }));
+    }
+
+    /* las restricciones de ramificación son siempre verticales u horizontales */
+    n.restr.forEach(function(c){
+      if(c[1] === 0){
+        var xv = c[2] / c[0];
+        svgN.appendChild(svgEl('line',{
+          x1:X(xv), y1:Y(0), x2:X(xv), y2:Y(MAXEJE),
+          stroke:'#5B3A6B', 'stroke-width':2.2, 'stroke-dasharray':'6 5'
+        }));
+      } else {
+        var yv = c[2] / c[1];
+        svgN.appendChild(svgEl('line',{
+          x1:X(0), y1:Y(yv), x2:X(MAXEJE), y2:Y(yv),
+          stroke:'#5B3A6B', 'stroke-width':2.2, 'stroke-dasharray':'6 5'
+        }));
+      }
+    });
+
+    for(var x=0; x<=Math.ceil(MAXEJE); x++){
+      for(var y=0; y<=Math.ceil(MAXEJE); y++){
+        if(C8.factible([x,y], todas)){
+          svgN.appendChild(svgEl('circle',{cx:X(x),cy:Y(y),r:3.6,fill:'#14181F',opacity:.8}));
+        }
+      }
+    }
+
+    if(!n.resuelto){
+      C8.texto(svgN, {x:450, y:190, 'text-anchor':'middle'},
+        C8.SANS+';font-size:20px;fill:#6B7683;font-weight:700',
+        n.estado === 'cota' ? 'Rama sondeada por cota' : 'Rama pendiente: PL aún no resuelto');
+    } else if(!n.sol){
+      C8.texto(svgN, {x:450, y:190, 'text-anchor':'middle'},
+        C8.SANS+';font-size:22px;fill:#B8892B;font-weight:700', 'Problema infactible');
+    } else {
+      svgN.appendChild(svgEl('circle',{
+        cx:X(n.sol.x), cy:Y(n.sol.y), r:8.5, fill:'#C8551E', stroke:'#fff', 'stroke-width':3
+      }));
+      C8.texto(svgN, {x:X(n.sol.x)+15, y:Y(n.sol.y)-13},
+        C8.SANS+';font-size:14px;fill:#C8551E;font-weight:700',
+        '(' + fmt(n.sol.x,2) + '; ' + fmt(n.sol.y,2) + ') · z = ' + fmt(n.sol.z,2));
+    }
+  }
+
+  function pintar(){
+    pintarArbol();
+    pintarNodo();
+
+    var n = nodos[sel];
+    document.getElementById('bb-n').textContent = contador;
+    document.getElementById('bb-inc').textContent =
+      incumbente === null ? 'sin incumbente'
+        : fmt(incumbente,2) + ' en (' + incumbentePunto[0] + '; ' + incumbentePunto[1] + ')';
+    var mc = mejorCotaAbierta();
+    document.getElementById('bb-cota').textContent = mc === null ? 'no quedan nodos' : fmt(mc,2);
+    var br = document.getElementById('bb-brecha');
+    if(mc === null && incumbente !== null){
+      br.textContent = 'cerrada · óptimo certificado';
+      br.className = 'ok';
+    } else if(incumbente === null || mc === null){
+      br.textContent = '—';
+      br.className = '';
+    } else {
+      br.textContent = fmt(mc - incumbente, 2);
+      br.className = '';
+    }
+
+    document.getElementById('bb-tit').textContent = n.resuelto
+      ? 'PL' + n.plId + ' · el problema resuelto en este nodo'
+      : 'Rama pendiente · el PL aún no se resuelve';
+    document.getElementById('bb-restr').innerHTML =
+      '<b>max 5x₁ + 4x₂</b> sujeto a ' +
+      BASE_ETQ.slice(0,2).concat(n.etq).join(' · ') +
+      ', con x₁, x₂ ≥ 0 <em>y sin exigir que sean enteras</em>. ' +
+      (n.etq.length ? 'Las ' + n.etq.length + ' restricción(es) de ramificación son las que se acumularon desde la raíz hasta aquí.'
+                    : 'Es la relajación lineal original: todavía no hay restricciones de ramificación.');
+
+    var m = document.getElementById('bb-msg');
+    var extra = '';
+    if(!activos().length && !pendientes().length){
+      extra = ' <b>No quedan nodos activos: el árbol está completo y el óptimo queda certificado con ' +
+              contador + ' PL resueltos.</b>';
+    }
+    m.innerHTML = '<b>' + (n.resuelto ? 'PL' + n.plId : 'Rama pendiente') + '.</b> ' + n.motivo + extra;
+    m.style.borderLeftColor =
+      (n.estado === 'cota' || n.estado === 'infactible') ? 'var(--amber)'
+      : n.estado === 'entero' ? 'var(--teal)' : n.estado === 'pendiente' ? 'var(--ink-3)' : 'var(--ink-3)';
+  }
+
+  document.getElementById('bb-resolver').onclick = resolverSeleccionado;
+  document.getElementById('bb-rx1').onclick = function(){ ramificar(0); };
+  document.getElementById('bb-rx2').onclick = function(){ ramificar(1); };
+  document.getElementById('bb-reset').onclick = function(){
+    reiniciar();
+    aviso('Árbol reiniciado: vuelve a empezar desde la relajación.');
+  };
+
+  reiniciar();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>
