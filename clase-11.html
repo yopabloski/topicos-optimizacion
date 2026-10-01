@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cortes de Gomory y símplex dual · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 11</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">11</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>El corte que sale<br>de la <em style="font-style:italic;color:var(--amber)">tabla</em></h1>
+  <p class="lead">La Clase 10 dijo qué debe cumplir un corte. Esta dice de dónde sacarlo: la misma tabla símplex que ya resolvió la relajación tiene la desigualdad escrita adentro.</p>
+  <div class="meta">
+    <span class="chip on">Cortes de Gomory</span>
+    <span class="chip">Símplex dual</span>
+    <span class="chip">Fracciones exactas</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>De la idea al procedimiento</h2>
+  <p class="lead">La clase pasada quedó una pregunta sin responder: está muy bien saber qué es un corte válido, pero ¿cómo se fabrica uno, mecánicamente, sin adivinar?</p>
+  <p>La respuesta de Ralph Gomory, en 1958, es de una elegancia que sorprende. No hace falta información nueva: la tabla símplex óptima de la relajación ya contiene todo lo necesario. Cada fila de esa tabla es una ecuación que relaciona una variable básica con las no básicas, y si el lado derecho salió fraccionario, esa ecuación se puede manipular —separando partes enteras de partes fraccionarias y usando que todas las variables son enteras— hasta producir una desigualdad admisible que el óptimo actual viola. Un corte, gratis, de una fila.</p>
+  <p>El precio de esa elegancia es que el corte nace escrito en variables de holgura, no en las variables originales, y que agregarlo deja la tabla en un estado incómodo: la base anterior sigue siendo buena en el sentido de costos reducidos, pero deja de ser factible porque el nuevo lado derecho es negativo. El símplex de siempre no sirve para arreglar eso. Hace falta su gemelo, el <strong>símplex dual</strong>, que recorre el camino inverso: parte de una base con costos reducidos correctos y busca factibilidad.</p>
+  <p>Las dos piezas juntas forman el algoritmo de planos cortantes: resolver, generar corte, agregar, reoptimizar con símplex dual, repetir hasta que la solución salga entera. En nuestro ejemplo van a bastar dos vueltas.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Generar</strong> un corte de Gomory a partir de una fila cualquiera de la tabla símplex óptima, descomponiendo coeficientes en parte entera y fraccionaria.</li>
+    <li><strong>Demostrar</strong> por qué ese corte es admisible, identificando en qué paso exacto del argumento se usa la integridad.</li>
+    <li><strong>Ejecutar</strong> el algoritmo de símplex dual: elegir fila pivote, calcular los cocientes, elegir columna entrante y pivotear.</li>
+    <li><strong>Explicar</strong> por qué agregar una restricción exige símplex dual y no símplex primal.</li>
+    <li><strong>Reconocer</strong> las condiciones que el modelo debe cumplir para que los cortes fraccionales sean admisibles, y transformarlo cuando no las cumple.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Generar el corte">
+  <div class="eyebrow">Primer bloque · el corte</div>
+  <h2>Una fila, cuatro pasos, una desigualdad</h2>
+  <p class="lead">Seguimos con la instancia de la Clase 10. Su relajación ya está resuelta y su tabla óptima es el punto de partida de todo lo que viene.</p>
+
+  <div class="modelo">
+    <span class="et">Instancia y forma estándar</span>
+    \[
+    \begin{aligned}
+    \max\;\; & z = 7x_1 + 10x_2\\
+    \text{s.a.}\;\; & -x_1 + 3x_2 + x_3 = 6\\
+    & 7x_1 + x_2 + x_4 = 35\\
+    & x_j \in \mathbb{Z}_0^+ \quad \forall j \in J=\{1,2,3,4\}
+    \end{aligned}
+    \]
+    <p class="glosa">Las holguras \(x_3\) y \(x_4\) también se declaran enteras. No es un capricho: el argumento de Gomory necesita que <em>todas</em> las variables de la fila sean enteras, y más adelante veremos qué hay que exigirle al modelo para que eso se cumpla solo.</p>
+  </div>
+
+  <div class="nota">
+    <span class="et">Tabla óptima de la relajación</span>
+    <p>Resolviendo con símplex, la base óptima es \(\{x_2, x_1\}\) y la tabla queda así, en fracciones exactas:</p>
+    <div class="tabla-scroll"><table>
+      <thead><tr><th>Básica</th><th class="num">z</th><th class="num">x₁</th><th class="num">x₂</th><th class="num">x₃</th><th class="num">x₄</th><th class="num">Solución</th></tr></thead>
+      <tbody>
+        <tr><td>z</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">63/22</td><td class="num">31/22</td><td class="num">133/2</td></tr>
+        <tr><td>x₂</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">7/22</td><td class="num">1/22</td><td class="num">7/2</td></tr>
+        <tr><td>x₁</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">−1/22</td><td class="num">3/22</td><td class="num">9/2</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-bottom:0">Es decir \(\bar x = (9/2;\,7/2)\) con \(z_{\mathrm{PL}0}^* = 133/2 = 66{,}5\). Las tres filas tienen lado derecho fraccionario, así que <strong>cualquiera de las tres</strong> sirve para generar un corte.</p>
+    <p style="margin-bottom:0">La columna de \(z\) está porque \(z\) es la <strong>variable básica de la fila 0</strong>: vale 1 ahí y 0 en las demás, y ningún pivote la cambia. Eso es lo que autoriza a leer la fila 0 como \(z = \tfrac{133}{2} - \tfrac{63}{22}x_3 - \tfrac{31}{22}x_4\) y a generar un corte desde ella igual que desde la fila de \(x_1\) o la de \(x_2\). Lo único que hay que exigirle es lo mismo que a cualquier otra fila: que su variable básica sea entera. Aquí lo es, porque \(z = 7x_1 + 10x_2\) con coeficientes enteros y variables enteras.</p>
+  </div>
+
+  <div class="modelo">
+    <span class="et">El procedimiento, sobre la fila de \(x_2\)</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0 0 10px"><b>Paso 1.</b> Escribir la fila como ecuación:</p>
+    \[ x_2 + \tfrac{7}{22}x_3 + \tfrac{1}{22}x_4 = \tfrac{7}{2} \]
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:12px 0 10px"><b>Paso 2.</b> Descomponer cada coeficiente y el lado derecho como parte entera más parte fraccionaria <em>no negativa</em>, \(a = \lfloor a \rfloor + f\) con \(0 \le f &lt; 1\):</p>
+    \[ x_2 + \left(0+\tfrac{7}{22}\right)x_3 + \left(0+\tfrac{1}{22}\right)x_4 = \left(3+\tfrac{1}{2}\right) \]
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:12px 0 10px"><b>Paso 3.</b> Dejar a la izquierda todo lo entero y a la derecha lo fraccionario:</p>
+    \[ \underbrace{x_2 - 3}_{\text{entero}} \;=\; \underbrace{\tfrac{1}{2} - \tfrac{7}{22}x_3 - \tfrac{1}{22}x_4}_{\text{fraccionario}} \]
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:12px 0 10px"><b>Paso 4.</b> Acotar el lado derecho y usar la integridad del izquierdo:</p>
+    \[ \tfrac{7}{22}x_3 + \tfrac{1}{22}x_4 \;\ge\; \tfrac{1}{2} \qquad \textbf{(Corte I)} \]
+    <p class="glosa">El argumento del paso 4 es el corazón del método y conviene decirlo despacio. Como \(x_3, x_4 \ge 0\), el lado derecho del paso 3 es a lo más \(1/2\), o sea \(x_2 - 3 \le 1/2\). Pero \(x_2 - 3\) es un <strong>entero</strong>, y un entero que no pasa de \(1/2\) tampoco pasa de \(0\). Entonces \(x_2 - 3 \le 0\), y devolviendo al paso 3 queda \(\tfrac{1}{2} - \tfrac{7}{22}x_3 - \tfrac{1}{22}x_4 \le 0\), que es el corte. La integridad se usó en un solo lugar, y sin ella todo el razonamiento se cae.</p>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Qué es este corte en realidad</span>
+    <p>Escrito en \(x_3\) y \(x_4\) el corte no dice nada legible. Traduciéndolo con \(x_3 = 6 + x_1 - 3x_2\) y \(x_4 = 35 - 7x_1 - x_2\), los términos en \(x_1\) se cancelan y queda:</p>
+    <p style="text-align:center;margin:10px 0"><strong>\(x_2 \le 3\)</strong></p>
+    <p style="margin-bottom:0">Que es exactamente una de las dos facetas que en la Clase 10 llevaron la relajación de 66,5 a 58. Gomory la encontró sin mirar el dibujo, sin conocer los 18 puntos enteros y sin saber qué es una envoltura convexa: solo manipulando una fila de la tabla. <strong>El corte siempre es válido</strong>, cualquiera sea la fila usada, siempre que su lado derecho sea fraccionario.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Simulador: generador de cortes">
+  <div class="eyebrow">Primer bloque · simulador</div>
+  <h2>Elige la fila fuente y mira salir el corte</h2>
+  <p class="lead">Las tres filas de la tabla generan cortes válidos, y no son el mismo. Compáralos: en fracciones exactas, traducidos a \(x_1,x_2\), y dibujados sobre la región.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Corte de Gomory desde cualquier fila</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl">
+          <label style="display:block">Fila fuente de la tabla óptima</label>
+          <select id="gm-fila">
+            <option value="1">Fila de x₂ &nbsp;·&nbsp; lado derecho 7/2</option>
+            <option value="2">Fila de x₁ &nbsp;·&nbsp; lado derecho 9/2</option>
+            <option value="0">Fila de z &nbsp;·&nbsp; lado derecho 133/2</option>
+          </select>
+        </div>
+      </div>
+      <div id="gm-tabla" class="tabla-scroll"></div>
+      <h3>La descomposición, coeficiente por coeficiente</h3>
+      <div id="gm-desc" class="tabla-scroll"></div>
+      <div class="marcador">
+        <div><span>Parte fraccionaria \(f_0\)</span><b id="gm-f0">—</b></div>
+        <div><span>El corte, en \(x_1\) y \(x_2\)</span><b id="gm-trad" style="font-size:1.1rem">—</b></div>
+        <div><span>¿Separa a \(\bar x\)?</span><b id="gm-corta" style="font-size:1.15rem">—</b></div>
+        <div><span>Relajación con el corte</span><b id="gm-z">—</b></div>
+      </div>
+      <svg id="g-gomory" viewBox="0 0 900 380" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
+      <div class="leyenda">
+        <span><i style="background:rgba(15,110,99,.18);border:1px solid var(--teal)"></i>Región de la relajación</span>
+        <span><i style="background:#14181F"></i>Punto entero factible</span>
+        <span><i style="background:var(--plum)"></i>El corte generado</span>
+        <span><i style="background:var(--amber)"></i>Óptimo relajado \(\bar x\)</span>
+      </div>
+      <p id="gm-msg" style="margin-top:14px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Por qué la heurística dice "la fracción más cercana a 1/2"</span>
+    <p>Las tres filas tienen aquí la misma parte fraccionaria, \(f_0 = 1/2\), así que el criterio no las distingue — pero los cortes que producen sí son distintos en fuerza. La regla práctica de elegir la fila cuyo lado derecho tenga la fracción más próxima a \(1/2\) busca un corte que penetre profundo: con \(f_0\) muy chico el corte apenas roza el óptimo fraccional, y con \(f_0\) muy cerca de 1 la desigualdad queda casi trivial. Es una heurística, no un teorema: a veces la fila "mejor" por este criterio produce un corte peor.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Pausa 1">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre la generación del corte.</p>
+
+  <div class="quiz" data-correcta="2" data-retro='["La no negatividad se usa, pero solo para acotar el lado fraccionario por \\(f_0\\); por sí sola no permite bajar la cota hasta cero.","Que la fila provenga de una base óptima no interviene en el argumento: el corte sería válido desde cualquier base factible con lado derecho fraccionario.","Correcto. El paso decisivo es que \\(x_2-3\\) es entero: un entero que no supera \\(1/2\\) tampoco supera \\(0\\). Sin integridad la desigualdad se quedaría en \\(\\le 1/2\\) y no cortaría nada.","La dualidad no aparece en la construcción del corte; aparece después, al reoptimizar."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">En la derivación del Corte I, ¿en qué paso exacto se usa que el problema es entero?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Al usar que \(x_3, x_4 \ge 0\).</span></button>
+      <button><span class="k">B</span><span>Al tomar la fila de una tabla óptima.</span></button>
+      <button><span class="k">C</span><span>Al afirmar que \(x_2-3 \le 1/2\) implica \(x_2-3 \le 0\).</span></button>
+      <button><span class="k">D</span><span>Al aplicar dualidad sobre la fila.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="3" data-retro='["Las tres filas de esta tabla tienen lado derecho fraccionario, así que las tres generan cortes válidos.","Los cortes obtenidos de filas distintas no coinciden: la fila de z da \\(2x_1+3x_2\\le19\\) y la de \\(x_1\\) da \\(3x_2\\le10\\).","La fila de \\(z\\) también sirve: su lado derecho 133/2 es fraccionario y el procedimiento es idéntico.","Correcto. La condición es que el lado derecho tenga parte fraccionaria no nula. Con lado derecho entero, \\(f_0=0\\) y el corte resultante se satisface trivialmente: no separa nada."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">¿Qué condición debe cumplir una fila para servir de fuente de un corte de Gomory?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Que corresponda a una variable de decisión, no a una holgura.</span></button>
+      <button><span class="k">B</span><span>Ninguna: todas las filas dan el mismo corte.</span></button>
+      <button><span class="k">C</span><span>Que no sea la fila de \(z\).</span></button>
+      <button><span class="k">D</span><span>Que su lado derecho tenga parte fraccionaria distinta de cero.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Símplex dual">
+  <div class="eyebrow">Segundo bloque · reoptimizar</div>
+  <h2>El gemelo que busca factibilidad</h2>
+  <p class="lead">Agregar el corte rompe algo muy específico en la tabla, y saber exactamente qué se rompe es lo que dice cuál algoritmo usar.</p>
+
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <span class="icono">SÍMPLEX PRIMAL</span>
+      <h4>Tiene factibilidad, busca optimalidad</h4>
+      <p>Parte de una base factible —todos los lados derechos no negativos— con algún costo reducido que todavía permite mejorar. Itera manteniendo la factibilidad hasta que ningún costo reducido mejore. Es el de siempre.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">SÍMPLEX DUAL</span>
+      <h4>Tiene optimalidad, busca factibilidad</h4>
+      <p>Parte de una base con costos reducidos ya correctos pero con algún lado derecho <strong>negativo</strong>. Itera manteniendo los costos reducidos correctos hasta que todos los lados derechos sean no negativos. Es el que necesitamos hoy.</p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Por qué justo este caso</span>
+    <p>Al agregar el Corte I como fila nueva, \(-\tfrac{7}{22}x_3 - \tfrac{1}{22}x_4 + s_1 = -\tfrac{1}{2}\), la variable de holgura \(s_1\) entra a la base con valor \(-1/2\). Eso deja la tabla <strong>primal infactible</strong>. Pero los costos reducidos de la fila de \(z\) no se tocaron: siguen siendo los de una base óptima. Es exactamente la situación de partida del símplex dual, y no es casualidad — pasa siempre que se agrega una restricción a un problema ya resuelto.</p>
+    <p style="margin-bottom:0">Usar símplex primal aquí sería un error de método: el primal <em>supone</em> factibilidad para funcionar, y su regla del cociente mínimo ni siquiera está definida cuando hay lados derechos negativos. Habría que empezar de cero con fase I, tirando a la basura todo el trabajo anterior. El dual reoptimiza en una o dos iteraciones. Esa es la razón práctica de que los planos cortantes sean baratos: <strong>no se resuelve el PL de nuevo, se repara</strong>.</p>
+  </div>
+
+  <div class="modelo">
+    <span class="et">Algoritmo de símplex dual, para maximización</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0">
+      <b>Paso 1 · ¿terminamos?</b> Si todos los lados derechos son no negativos, la base es factible y óptima: fin. Si no, ir al paso 2.<br><br>
+      <b>Paso 2 · fila pivote.</b> Elegir la fila con el lado derecho <strong>más negativo</strong>. Esa variable básica sale de la base.<br><br>
+      <b>Paso 3 · columna entrante.</b> Para cada columna \(j\) con coeficiente <strong>negativo</strong> en la fila pivote, calcular el cociente \(\left|\bar c_j / \bar a_{rj}\right|\) entre el costo reducido \(\bar c_j\) de la columna y su coeficiente \(\bar a_{rj}\) en la fila pivote. Entra la columna de <strong>menor</strong> cociente en valor absoluto.<br><br>
+      <b>Paso 4 · infactibilidad.</b> Si en la fila pivote <em>todos</em> los coeficientes son no negativos, no hay columna candidata: el problema es infactible. Fin.<br><br>
+      <b>Paso 5 · pivotear.</b> Operaciones elementales por fila como en el símplex de siempre, y volver al paso 1.
+    </p>
+    <p class="glosa">La regla del cociente del paso 3 tiene la misma lógica que la del primal, con los papeles cambiados: elige la columna que restablece la factibilidad sin arruinar los costos reducidos. Si se eligiera otra, la fila de \(z\) quedaría con un costo reducido del signo equivocado y se perdería la optimalidad que justamente se quería conservar.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Simulador: el algoritmo completo">
+  <div class="eyebrow">Segundo bloque · simulador</div>
+  <h2>Dos cortes y dos pivotes, paso a paso</h2>
+  <p class="lead">Recorre el algoritmo completo sobre la instancia de la clase. Todas las cifras son fracciones exactas y la fila y columna pivote quedan marcadas.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Algoritmo de planos cortantes con símplex dual</h4></header>
+    <div class="cuerpo">
+      <div class="botonera">
+        <button class="btn ghost" id="sd-ant">← Anterior</button>
+        <button class="btn" id="sd-sig">Siguiente paso →</button>
+        <button class="btn ghost" id="sd-reset">Reiniciar</button>
+        <span class="chip" id="sd-pos" style="align-self:center">1 / 7</span>
+      </div>
+      <h3 id="sd-tit">Tabla óptima de la relajación</h3>
+      <div id="sd-tabla" class="tabla-scroll" style="margin-top:6px"></div>
+      <div id="sd-razones" style="margin-top:10px"></div>
+      <div class="marcador">
+        <div><span>Valor de \(z\)</span><b id="sd-z">—</b></div>
+        <div><span>\(x_1\)</span><b id="sd-x1">—</b></div>
+        <div><span>\(x_2\)</span><b id="sd-x2">—</b></div>
+        <div><span>Estado</span><b id="sd-est" style="font-size:1.05rem">—</b></div>
+      </div>
+      <p id="sd-msg" style="margin-top:6px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">El segundo corte, traducido</span>
+    <p>El Corte II nace como \(\tfrac{1}{7}x_4 + \tfrac{6}{7}s_1 \ge \tfrac{4}{7}\), escrito en una holgura original y en la holgura del corte anterior. Traducido a las variables del problema —usando \(s_1 = 3-x_2\) y \(x_4 = 35-7x_1-x_2\)— resulta ser:</p>
+    <p style="text-align:center;margin:10px 0"><strong>\(x_1 + x_2 \le 7\)</strong></p>
+    <p style="margin-bottom:0">Vale la pena detenerse aquí. En la Clase 10 esa misma desigualdad apareció como uno de los presets del clasificador, y la clasificamos como <em>corte válido pero no faceta</em>: toca la envoltura convexa en un solo vértice, \((4,3)\). Gomory produjo un corte dominado, y aun así el algoritmo terminó, porque \(x_1+x_2\le7\) junto con \(x_2\le3\) alcanza para definir el vértice \((4,3)\). <strong>No hace falta que los cortes sean facetas para que el método funcione</strong>; solo hacen falta más cortes cuando no lo son. Esa es, en una frase, la debilidad práctica del método puro.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Pausa 2">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre símplex dual.</p>
+
+  <div class="quiz" data-correcta="1" data-retro='["La base sigue siendo óptima en costos reducidos: eso es justamente lo que no se rompe al agregar una restricción.","Correcto. La holgura del corte entra a la base con valor negativo, así que se pierde la factibilidad primal y se conserva la optimalidad. Esa combinación es exactamente el punto de partida del símplex dual.","Si se hubiera perdido la optimalidad, el camino sería seguir con símplex primal, que es lo contrario de lo que hacemos.","Se pierde una de las dos, no ninguna: por eso hace falta reoptimizar."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">Al agregar un corte a una tabla óptima, ¿qué se pierde y qué se conserva?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Se pierde la optimalidad y se conserva la factibilidad.</span></button>
+      <button><span class="k">B</span><span>Se pierde la factibilidad y se conserva la optimalidad.</span></button>
+      <button><span class="k">C</span><span>Se pierden ambas: hay que resolver desde cero.</span></button>
+      <button><span class="k">D</span><span>No se pierde ninguna: la tabla sigue siendo óptima y factible.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. Sin coeficientes negativos en la fila pivote no hay forma de subir ese lado derecho negativo sin romper otra cosa: el sistema no tiene solución factible.","Que la fila esté completa de coeficientes no negativos no hace óptima la tabla: sigue habiendo un lado derecho negativo, o sea una variable básica negativa.","El pivote requiere un coeficiente negativo en la fila elegida; con todos no negativos no hay candidata.","Cambiar de fila pivote no arregla nada: la conclusión de infactibilidad ya está establecida por esa fila."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">Durante el símplex dual, la fila pivote tiene lado derecho negativo y <em>todos</em> sus demás coeficientes son no negativos. ¿Qué significa?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>El problema es infactible.</span></button>
+      <button><span class="k">B</span><span>La tabla ya es óptima.</span></button>
+      <button><span class="k">C</span><span>Hay que pivotear en la columna de mayor coeficiente.</span></button>
+      <button><span class="k">D</span><span>Hay que elegir otra fila pivote y continuar.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Caso de aplicación">
+  <div class="eyebrow">Historia del método</div>
+  <h2>El método que se abandonó por treinta años</h2>
+
+  <div class="widget">
+    <header><span class="tag caso">Caso</span><h4>Gomory 1958, el olvido, y el regreso en los noventa</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Pocos métodos tienen una biografía tan accidentada, y vale la pena conocerla porque explica por qué el algoritmo que acabamos de ver <em>no</em> se usa tal cual en ningún solver, y por qué su idea central está en todos.</p>
+
+      <div class="rejilla r3">
+        <div class="tarjeta">
+          <span class="icono">1958 · EL HALLAZGO</span>
+          <h4>Convergencia finita</h4>
+          <p>Ralph Gomory demuestra que repitiendo el procedimiento se llega al óptimo entero en una cantidad finita de pasos. Es el primer algoritmo exacto general para programación entera, y el resultado es teóricamente impecable.</p>
+        </div>
+        <div class="tarjeta">
+          <span class="icono">AÑOS 60-90 · EL OLVIDO</span>
+          <h4>Se porta mal en la práctica</h4>
+          <p>Los cortes se debilitan a medida que se acumulan, la tabla se llena de filas, los errores de redondeo se amplifican, y no hay ninguna solución factible en la mano hasta el final. Ramificación y acotamiento gana la competencia y Gomory queda como una curiosidad de libro.</p>
+        </div>
+        <div class="tarjeta">
+          <span class="icono">1996 · EL REGRESO</span>
+          <h4>Dentro del árbol, no en vez del árbol</h4>
+          <p>Balas, Ceria, Cornuéjols y Natraj muestran que los cortes de Gomory, usados <em>dentro</em> de un esquema de ramificación y en cantidades moderadas, funcionan muy bien. Los solvers comerciales los incorporan y quedan hasta hoy.</p>
+        </div>
+      </div>
+
+      <p style="font-size:.94rem">La lección de método es doble y no es solo histórica. Primero: un algoritmo con garantía de convergencia finita puede ser inservible en la práctica, porque "finito" no dice nada sobre cuántos pasos ni sobre la estabilidad numérica del camino. Segundo, y más interesante: <strong>la misma técnica cambia de valor según dónde se la ponga</strong>. Gomory como algoritmo completo fracasa; Gomory como generador de cortes en el nodo raíz de un árbol de ramificación es una de las piezas que más aporta. Eso es exactamente ramificación y corte, y es la Clase 13.</p>
+
+      <div class="nota" style="margin-bottom:0">
+        <span class="et">Las tres debilidades, y cómo las resuelve el enfoque moderno</span>
+        <p style="margin-bottom:0"><strong>Los cortes se debilitan.</strong> Lo vimos hoy: el Corte II resultó no ser faceta. Solución moderna: generar pocos, quedarse con los que quedan activos y descartar el resto.<br>
+        <strong>La tabla crece.</strong> Cada corte agrega una fila y una columna. Solución: descartar los cortes inactivos y usar rondas acotadas, no iterar hasta el final.<br>
+        <strong>No hay solución factible hasta el último paso.</strong> Es la peor de las tres, porque impide cualquier parada temprana: sin incumbente no hay gap, y toda la Clase 09 queda inutilizable. Solución: combinarlo con ramificación, que sí produce incumbentes por el camino.</p>
+      </div>
+
+      <details class="explica">
+        <summary>Una advertencia numérica que sí importa en la práctica</summary>
+        <div class="contenido">
+          <p>Hoy trabajamos en fracciones exactas y todo salió limpio. Un solver trabaja en punto flotante, y ahí los cortes de Gomory tienen mala fama merecida: los coeficientes que produce el procedimiento tienden a tener denominadores cada vez más grandes, y al acumular cortes aparecen números como \(10^{-9}\) que el solver no puede distinguir de cero. Un coeficiente mal redondeado convierte un corte válido en uno inadmisible, y ahí se pierde el óptimo sin ninguna señal.</p>
+          <p style="margin-bottom:0">Por eso los solvers aplican filtros de seguridad antes de aceptar un corte generado: descartan los que tienen coeficientes con rangos de magnitud demasiado amplios, redondean con tolerancias conservadoras, y prefieren cortes con coeficientes chicos aunque corten menos. Es un buen ejemplo de una idea matemáticamente correcta que necesita ingeniería cuidadosa para sobrevivir al mundo real.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l9" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>Un <strong>corte de Gomory</strong> se fabrica desde una fila de la tabla óptima cuyo lado derecho sea fraccionario, descomponiendo coeficientes en \(\lfloor a \rfloor + f\).</li>
+    <li>Su admisibilidad sale de un solo paso: el lado izquierdo es <strong>entero</strong>, y un entero que no supera \(f_0\) tampoco supera cero.</li>
+    <li>Agregar el corte deja la tabla <strong>primal infactible y dual factible</strong>, que es la situación de partida del <strong>símplex dual</strong>.</li>
+    <li>El símplex dual elige fila por el lado derecho más negativo y columna por el menor cociente en valor absoluto entre coeficientes negativos.</li>
+    <li>El método converge en pasos finitos pero produce <strong>cortes que se debilitan</strong>; por eso hoy se usa dentro de un árbol de ramificación y no en su lugar.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>La tabla símplex no era solo el resultado del cálculo: era una fuente de información sobre el problema entero que nadie estaba leyendo. Buena parte del progreso en optimización consiste en descubrir que algo que ya estaba calculado decía más de lo que parecía.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l10" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Planos cortantes sobre un tableau dado</h4></div>
+    <div class="enunciado">
+      <p>Un problema de <strong>minimización</strong> tiene la siguiente tabla óptima de su relajación lineal, donde \(s_1\), \(s_2\) y \(s_3\) son variables de holgura y todas las variables son enteras:</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Básica</th><th class="num">z</th><th class="num">x₁</th><th class="num">x₂</th><th class="num">s₁</th><th class="num">s₂</th><th class="num">s₃</th><th class="num">Solución</th></tr></thead>
+        <tbody>
+          <tr><td>z</td><td class="num">−1</td><td class="num">0</td><td class="num">0</td><td class="num">1/4</td><td class="num">0</td><td class="num">3/2</td><td class="num">−11/4</td></tr>
+          <tr><td>x₂</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">−1/4</td><td class="num">0</td><td class="num">1/2</td><td class="num">3/4</td></tr>
+          <tr><td>s₂</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">−1/2</td><td class="num">1</td><td class="num">3</td><td class="num">9/2</td></tr>
+          <tr><td>x₁</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">−1</td><td class="num">1</td></tr>
+        </tbody>
+      </table></div>
+      <p>Resuelva el problema mediante el algoritmo de planos cortantes. En cada iteración muestre <strong>todos</strong> los cortes de Gomory posibles, pero agregue solo el que tenga la mayor parte fraccionaria. Use símplex dual para reoptimizar después de cada corte.</p>
+      <p><strong>a)</strong> Lea de la tabla el valor de \(z\) y de cada variable básica. ¿Por qué la solución no resuelve todavía el problema entero?<br>
+      <strong>b)</strong> Genere todos los cortes de Gomory posibles a partir de esta tabla, indicando de qué fila sale cada uno. Justifique por qué alguna fila no genera ninguno.<br>
+      <strong>c)</strong> Agregue el corte de mayor parte fraccionaria y escriba la tabla ampliada.<br>
+      <strong>d)</strong> Aplique símplex dual: identifique la fila pivote, calcule los cocientes de todas las columnas candidatas, elija la columna entrante y pivotee. Muestre la tabla resultante en fracciones exactas.<br>
+      <strong>e)</strong> ¿Terminó el algoritmo? Justifique leyendo la tabla, y reporte la solución óptima entera con su valor.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Los tres cortes de la misma tabla</h4></div>
+    <div class="enunciado">
+      <p>Sobre la tabla óptima de la instancia de la clase —\(z\): 63/22, 31/22, lado derecho 133/2; \(x_2\): 7/22, 1/22, lado derecho 7/2; \(x_1\): −1/22, 3/22, lado derecho 9/2—, las tres filas tienen lado derecho fraccionario.</p>
+      <p><strong>a)</strong> Genere el corte de Gomory de cada una de las tres filas, expresado en \(x_3\) y \(x_4\), mostrando la descomposición de cada coeficiente. Cuidado con la fila de \(x_1\), que tiene un coeficiente negativo.<br>
+      <strong>b)</strong> Traduzca cada corte a las variables originales usando \(x_3 = 6+x_1-3x_2\) y \(x_4 = 35-7x_1-x_2\). Debería obtener tres desigualdades distintas.<br>
+      <strong>c)</strong> Verifique que las tres son admisibles, comprobando que ningún punto entero factible las viola. Use que los puntos con mayor \(x_2\) son \((3,3)\) y \((4,3)\) y que el de mayor \(x_1\) es \((5,0)\).<br>
+      <strong>d)</strong> Calcule el valor de la relajación al agregar cada corte por separado. Ordene los tres cortes de más fuerte a más débil según ese criterio.<br>
+      <strong>e)</strong> Las tres filas tienen \(f_0 = 1/2\), así que la heurística de la fracción más cercana a \(1/2\) no las distingue. Comente qué implica eso sobre la heurística y proponga un criterio alternativo que sí habría elegido el mejor corte.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Por qué dual y no primal</h4></div>
+    <div class="enunciado">
+      <p>Considere la tabla ampliada de la clase, tras agregar el Corte I:</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Básica</th><th class="num">z</th><th class="num">x₁</th><th class="num">x₂</th><th class="num">x₃</th><th class="num">x₄</th><th class="num">s₁</th><th class="num">Solución</th></tr></thead>
+        <tbody>
+          <tr><td>z</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">63/22</td><td class="num">31/22</td><td class="num">0</td><td class="num">133/2</td></tr>
+          <tr><td>x₂</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">7/22</td><td class="num">1/22</td><td class="num">0</td><td class="num">7/2</td></tr>
+          <tr><td>x₁</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">−1/22</td><td class="num">3/22</td><td class="num">0</td><td class="num">9/2</td></tr>
+          <tr><td>s₁</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">−7/22</td><td class="num">−1/22</td><td class="num">1</td><td class="num">−1/2</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Verifique que esta tabla es dual factible y primal infactible, señalando exactamente qué lectura de la tabla establece cada cosa.<br>
+      <strong>b)</strong> Intente aplicar la regla del cociente mínimo del símplex <em>primal</em> a esta tabla. ¿Qué columna entraría? ¿Qué ocurre al calcular los cocientes de salida? Explique por qué la regla no está definida aquí.<br>
+      <strong>c)</strong> Aplique símplex dual: fila pivote, cocientes de las dos columnas candidatas, columna entrante y pivote. Reporte la tabla resultante en fracciones exactas y la solución \((x_1, x_2)\).<br>
+      <strong>d)</strong> Verifique que tras el pivote la fila de \(z\) sigue teniendo todos sus costos reducidos no negativos. ¿Por qué esa verificación no es opcional, y qué habría pasado si se hubiera elegido la otra columna candidata?<br>
+      <strong>e)</strong> Generalice: si a un modelo ya resuelto se le agrega una restricción cualquiera —no necesariamente un corte de Gomory— que el óptimo actual viola, ¿siempre se puede reoptimizar con símplex dual? ¿Y si en cambio se modifica un coeficiente de la función objetivo?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Cuándo el modelo no está listo para Gomory</h4></div>
+    <div class="enunciado">
+      <p>El corte fraccional supone que <strong>todas</strong> las variables de la fila, incluidas las de holgura y superávit, son enteras. Ese supuesto no se cumple solo por desearlo.</p>
+      <p><strong>a)</strong> Considere la restricción \(x_1 - \tfrac14 x_2 \le \tfrac52\) con \(x_1, x_2\) enteras. Escríbala en forma estándar e identifique por qué su holgura no tiene por qué ser entera. Transforme la restricción para que sí lo sea y verifique que la transformación no cambia el conjunto de soluciones enteras.<br>
+      <strong>b)</strong> Formule la condición general: ¿qué deben cumplir los coeficientes y el lado derecho de una restricción \(\le\) para que su holgura sea entera cuando las variables lo son?<br>
+      <strong>c)</strong> Suponga ahora que una sola variable del modelo, \(x_5\), es continua y el resto enteras. Explique qué paso de la derivación del corte se cae, y por qué el corte resultante podría ser inadmisible. Dé la forma general del error.<br>
+      <strong>d)</strong> Se propone generar dos cortes en una misma iteración, desde dos filas distintas, y agregarlos ambos antes de reoptimizar. ¿Es legítimo? ¿Qué se gana y qué se arriesga? ¿Cómo afecta al símplex dual tener dos lados derechos negativos a la vez?<br>
+      <strong>e)</strong> Tras varias rondas, un corte generado en la iteración 3 ya no está activo: su holgura es estrictamente positiva en el óptimo actual. ¿Conviene eliminarlo de la tabla? Discuta el beneficio y el riesgo, y qué pasa con la garantía de convergencia.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E5 · Por qué los cortes se debilitan</h4></div>
+    <div class="enunciado">
+      <p>En la clase, el Corte I resultó ser \(x_2 \le 3\) y el Corte II resultó ser \(x_1 + x_2 \le 7\). En la Clase 10 clasificamos ambos: el primero es faceta de la envoltura convexa; el segundo es un corte válido pero <strong>no</strong> es faceta, porque toca la envoltura en un solo vértice.</p>
+      <p><strong>a)</strong> Verifique que \(x_1+x_2 \le 7\) toca la envoltura solo en \((4,3)\), evaluando la expresión en los cinco vértices \((0,0)\), \((5,0)\), \((4,3)\), \((3,3)\) y \((0,2)\).<br>
+      <strong>b)</strong> Identifique cuál faceta de la envoltura domina a \(x_1+x_2\le7\) en la dirección relevante, y muestre en qué vértice se ve la diferencia.<br>
+      <strong>c)</strong> Aun siendo dominado, el Corte II terminó el algoritmo. Explique por qué, en términos del vértice que define junto con el Corte I.<br>
+      <strong>d)</strong> Argumente por qué es esperable que los cortes de Gomory se debiliten a medida que el algoritmo avanza. Considere de dónde salen los coeficientes en la ronda \(k\): de una tabla que ya incorpora los cortes de las rondas anteriores.<br>
+      <strong>e)</strong> A partir de todo lo anterior, explique por qué la combinación de Gomory con ramificación funciona mejor que Gomory solo, y qué papel cumple cada componente. Anticipe qué esperaría ver en el log de un solver.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Genere un tercer corte desde la tabla final del simulador y verifique que su parte fraccionaria es cero, es decir que no existe. Explique qué significa eso en términos del algoritmo.</p>
+    </div>
+  </div>
+
+  <div class="nota libro" style="margin-top:30px">
+    <span class="et">Para leer, si el tema te interesa</span>
+    <p><strong>Dónde está esto en el libro.</strong> Hillier &amp; Lieberman tratan los planos cortantes dentro de la sección <strong>11.8</strong>, junto con el preprocesamiento y el enfoque de ramificación y corte que veremos en la Clase 13. El tratamiento del símplex dual está en el capítulo de dualidad y análisis de sensibilidad, no en el 11.</p>
+    <p style="margin-bottom:0">Dos hilos para tirar por cuenta propia, ninguno materia del curso ni de evaluaciones. El primero son los <strong>cortes de Gomory mixtos</strong>, la variante que sí funciona cuando hay variables continuas y que es la que efectivamente implementan los solvers — busca "Gomory mixed integer cuts" y "MIR inequalities". El segundo es el artículo de 1996 de <strong>Balas, Ceria, Cornuéjols y Natraj</strong> que rehabilitó el método; es corto, legible, y vale la pena por cómo argumenta que un método descartado durante décadas solo estaba siendo usado en el lugar equivocado.</p>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ==================================================================
+   Clase 11 · aritmética racional exacta.
+   Toda la clase trabaja en fracciones: un tableau con 63/22 mostrado
+   como 2.8636 no sirve para enseñar Gomory, porque el método vive de
+   separar parte entera de parte fraccionaria.
+   ================================================================== */
+var Q = (function(){
+  function mcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ var t=a%b; a=b; b=t; } return a||1; }
+  function F(n,d){
+    if(d === undefined) d = 1;
+    if(d < 0){ n = -n; d = -d; }
+    var g = mcd(n,d);
+    return {n:n/g, d:d/g};
+  }
+  function suma(a,b){ return F(a.n*b.d + b.n*a.d, a.d*b.d); }
+  function resta(a,b){ return F(a.n*b.d - b.n*a.d, a.d*b.d); }
+  function mult(a,b){ return F(a.n*b.n, a.d*b.d); }
+  function div(a,b){ return F(a.n*b.d, a.d*b.n); }
+  function neg(a){ return F(-a.n, a.d); }
+  function cero(a){ return a.n === 0; }
+  function menor(a,b){ return a.n*b.d < b.n*a.d; }
+  function valor(a){ return a.n/a.d; }
+  /* piso: ojo con los negativos, Math.floor(-1/22) = -1 y eso es lo correcto */
+  function piso(a){ return F(Math.floor(a.n/a.d), 1); }
+  function frac(a){ return resta(a, piso(a)); }
+  function str(a){
+    /* se usa el signo menos tipogr\u00e1fico U+2212, no el gui\u00f3n ASCII:
+       en una tabla de n\u00fameros alineados la diferencia se nota */
+    if(a.n === 0) return '0';
+    var s = a.n < 0 ? '\u2212' : '';
+    if(a.d === 1) return s + Math.abs(a.n);
+    return s + Math.abs(a.n) + '/' + a.d;
+  }
+  return {F:F, suma:suma, resta:resta, mult:mult, div:div, neg:neg, cero:cero,
+          menor:menor, valor:valor, piso:piso, frac:frac, str:str};
+})();
+
+/* ==================================================================
+   Geometría de la instancia, compartida con la Clase 10:
+   max 7x1 + 10x2 ; -x1 + 3x2 <= 6 ; 7x1 + x2 <= 35 ; x >= 0 entero
+   ================================================================== */
+var G11 = (function(){
+  var BASE = [[-1,3,6],[7,1,35],[-1,0,0],[0,-1,0]];
+  var EJE = 6.4;
+  function factible(p, cs){
+    for(var i=0;i<cs.length;i++){
+      if(cs[i][0]*p[0] + cs[i][1]*p[1] > cs[i][2] + 1e-7) return false;
+    }
+    return true;
+  }
+  function vertices(cs){
+    var v=[], i, j;
+    for(i=0;i<cs.length;i++) for(j=i+1;j<cs.length;j++){
+      var d = cs[i][0]*cs[j][1] - cs[j][0]*cs[i][1];
+      if(Math.abs(d) < 1e-9) continue;
+      var x = (cs[i][2]*cs[j][1] - cs[j][2]*cs[i][1])/d;
+      var y = (cs[i][0]*cs[j][2] - cs[j][0]*cs[i][2])/d;
+      if(factible([x,y], cs)) v.push([x,y]);
+    }
+    var out=[];
+    v.forEach(function(p){
+      for(var k=0;k<out.length;k++)
+        if(Math.abs(out[k][0]-p[0])<1e-7 && Math.abs(out[k][1]-p[1])<1e-7) return;
+      out.push(p);
+    });
+    return out;
+  }
+  function ordenar(v){
+    if(v.length < 3) return v.slice();
+    var cx=0, cy=0;
+    v.forEach(function(p){cx+=p[0];cy+=p[1];});
+    cx/=v.length; cy/=v.length;
+    return v.slice().sort(function(a,b){
+      return Math.atan2(a[1]-cy,a[0]-cx) - Math.atan2(b[1]-cy,b[0]-cx);
+    });
+  }
+  function resolver(obj, cs){
+    var v = vertices(cs);
+    if(!v.length) return null;
+    var m = null;
+    v.forEach(function(p){
+      var z = obj[0]*p[0] + obj[1]*p[1];
+      if(!m || z > m.z + 1e-9) m = {x:p[0], y:p[1], z:z};
+    });
+    return m;
+  }
+  var ENTEROS = (function(){
+    var P=[];
+    for(var x=0;x<=Math.ceil(EJE);x++) for(var y=0;y<=Math.ceil(EJE);y++)
+      if(factible([x,y], BASE)) P.push([x,y]);
+    return P;
+  })();
+  var SANS = "font-family:'Archivo',sans-serif";
+  var MATE = "font-family:Georgia,serif;font-style:italic";
+  function texto(svg,a,e,c){
+    var t = svgEl('text',a); t.setAttribute('style',e);
+    if(c!==undefined) t.textContent=c; svg.appendChild(t); return t;
+  }
+  function lienzo(svg, W, H){
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    var ML=70, MR=30, MT=18, MB=40;
+    function X(x){ return ML + x*(W-ML-MR)/EJE; }
+    function Y(y){ return H - MB - y*(H-MB-MT)/EJE; }
+    for(var k=0;k<=Math.floor(EJE);k++){
+      svg.appendChild(svgEl('line',{x1:X(k),y1:Y(0),x2:X(k),y2:Y(EJE),stroke:'rgba(20,24,31,.10)'}));
+      svg.appendChild(svgEl('line',{x1:X(0),y1:Y(k),x2:X(EJE),y2:Y(k),stroke:'rgba(20,24,31,.10)'}));
+      texto(svg,{x:X(k),y:Y(0)+20,'text-anchor':'middle'},SANS+';font-size:12px;fill:#6B7683',k);
+      texto(svg,{x:X(0)-13,y:Y(k)+5,'text-anchor':'end'},SANS+';font-size:12px;fill:#6B7683',k);
+    }
+    svg.appendChild(svgEl('line',{x1:X(0),y1:Y(0),x2:X(EJE),y2:Y(0),stroke:'#14181F','stroke-width':1.5}));
+    svg.appendChild(svgEl('line',{x1:X(0),y1:Y(0),x2:X(0),y2:Y(EJE),stroke:'#14181F','stroke-width':1.5}));
+    texto(svg,{x:X(EJE)+4,y:Y(0)+19},MATE+';font-size:15px;fill:#3C4551','x\u2081');
+    texto(svg,{x:X(0)-21,y:Y(EJE)-4},MATE+';font-size:15px;fill:#3C4551','x\u2082');
+    return {X:X,Y:Y};
+  }
+  function recta(svg, ej, a1, a2, b, color){
+    var pts=[], t;
+    if(Math.abs(a2)>1e-9){ t=b/a2; pts.push([0,t]); t=(b-a1*EJE)/a2; pts.push([EJE,t]); }
+    if(Math.abs(a1)>1e-9){ t=b/a1; pts.push([t,0]); t=(b-a2*EJE)/a1; pts.push([t,EJE]); }
+    pts = pts.filter(function(p){
+      return p[0]>=-1e-9 && p[0]<=EJE+1e-9 && p[1]>=-1e-9 && p[1]<=EJE+1e-9; });
+    if(pts.length<2) return;
+    var A=pts[0], B=pts[pts.length-1];
+    for(var i=1;i<pts.length;i++)
+      if(Math.abs(pts[i][0]-A[0])>1e-6 || Math.abs(pts[i][1]-A[1])>1e-6){ B=pts[i]; break; }
+    svg.appendChild(svgEl('line',{x1:ej.X(A[0]),y1:ej.Y(A[1]),x2:ej.X(B[0]),y2:ej.Y(B[1]),
+      stroke:color,'stroke-width':2.6}));
+  }
+  return {BASE:BASE, EJE:EJE, ENTEROS:ENTEROS, factible:factible, vertices:vertices,
+          ordenar:ordenar, resolver:resolver, lienzo:lienzo, recta:recta,
+          texto:texto, SANS:SANS, MATE:MATE};
+})();
+
+/* ==================================================================
+   Simulador 1 · generador de cortes de Gomory
+   ================================================================== */
+(function(){
+  var sel = document.getElementById('gm-fila');
+  if(!sel) return;
+  var svg = document.getElementById('g-gomory');
+  var F = Q.F;
+
+  /* tabla óptima: filas z, x2, x1 ; columnas x1 x2 x3 x4 | RHS */
+  var COLS = ['x\u2081','x\u2082','x\u2083','x\u2084'];
+  var NOM  = ['z','x\u2082','x\u2081'];
+  var T = [
+    [F(0),F(0),F(63,22),F(31,22),F(133,2)],
+    [F(0),F(1),F(7,22), F(1,22), F(7,2)],
+    [F(1),F(0),F(-1,22),F(3,22), F(9,2)]
+  ];
+  var REL = G11.resolver([7,10], G11.BASE);
+
+  function tablaOptima(destacada){
+    var h = '<table><thead><tr><th>Básica</th><th class="num">z</th>';
+    COLS.forEach(function(c){ h += '<th class="num">' + c + '</th>'; });
+    h += '<th class="num">Solución</th></tr></thead><tbody>';
+    T.forEach(function(row, i){
+      h += '<tr' + (i === destacada ? ' class="sel"' : '') + '><td>' + NOM[i] + '</td>';
+      h += '<td class="num">' + (NOM[i] === 'z' ? '1' : '0') + '</td>';
+      row.forEach(function(v){ h += '<td class="num">' + Q.str(v) + '</td>'; });
+      h += '</tr>';
+    });
+    return h + '</tbody></table>';
+  }
+
+  function descomposicion(i){
+    var row = T[i];
+    var h = '<table><thead><tr><th>Elemento</th><th class="num">valor a</th>' +
+            '<th class="num">parte entera ⌊a⌋</th>' +
+            '<th class="num">parte fraccionaria f</th></tr></thead><tbody>';
+    [2,3].forEach(function(j){
+      var f = Q.frac(row[j]);
+      h += '<tr' + (Q.cero(f) ? '' : ' class="sel"') + '><td>coeficiente de ' + COLS[j] + '</td>' +
+           '<td class="num">' + Q.str(row[j]) + '</td>' +
+           '<td class="num">' + Q.str(Q.piso(row[j])) + '</td>' +
+           '<td class="num">' + Q.str(f) + '</td></tr>';
+    });
+    var f0 = Q.frac(row[4]);
+    h += '<tr class="sel"><td>lado derecho</td><td class="num">' + Q.str(row[4]) + '</td>' +
+         '<td class="num">' + Q.str(Q.piso(row[4])) + '</td>' +
+         '<td class="num">' + Q.str(f0) + '</td></tr>';
+    return h + '</tbody></table>';
+  }
+
+  /* traduce el corte f3*x3 + f4*x4 >= f0 a  a1*x1 + a2*x2 <= b
+     usando x3 = 6 + x1 - 3x2 y x4 = 35 - 7x1 - x2 */
+  function traducir(f3, f4, f0){
+    var a1 = Q.suma(f3, Q.mult(f4, F(-7)));
+    var a2 = Q.suma(Q.mult(f3, F(-3)), Q.mult(f4, F(-1)));
+    var k  = Q.suma(Q.mult(f3, F(6)), Q.mult(f4, F(35)));
+    return {a1:Q.neg(a1), a2:Q.neg(a2), b:Q.resta(k, f0)};
+  }
+
+  function escribir(c){
+    function term(v, nom){
+      if(Q.cero(v)) return '';
+      var s = v.n < 0 ? ' \u2212 ' : ' + ';
+      var m = (Math.abs(v.n) === 1 && v.d === 1) ? '' : Q.str(Q.F(Math.abs(v.n), v.d));
+      return s + m + nom;
+    }
+    var t = (term(c.a1,'x\u2081') + term(c.a2,'x\u2082'))
+            .replace(/^ \+ /,'').replace(/^ \u2212 /,'\u2212');
+    return t + ' \u2264 ' + Q.str(c.b);
+  }
+
+  function dibujar(){
+    var i = +sel.value;
+    document.getElementById('gm-tabla').innerHTML = tablaOptima(i);
+    document.getElementById('gm-desc').innerHTML = descomposicion(i);
+
+    var row = T[i];
+    var f3 = Q.frac(row[2]), f4 = Q.frac(row[3]), f0 = Q.frac(row[4]);
+    var c = traducir(f3, f4, f0);
+
+    document.getElementById('gm-f0').textContent = Q.str(f0);
+    document.getElementById('gm-trad').textContent = escribir(c);
+
+    /* ¿corta al óptimo relajado? */
+    var a1 = Q.valor(c.a1), a2 = Q.valor(c.a2), b = Q.valor(c.b);
+    var corta = a1*REL.x + a2*REL.y > b + 1e-9;
+    var bc = document.getElementById('gm-corta');
+    bc.textContent = corta ? 'Sí' : 'No';
+    bc.className = corta ? 'ok' : 'mal';
+
+    var nuevo = G11.resolver([7,10], G11.BASE.concat([[a1,a2,b]]));
+    document.getElementById('gm-z').textContent = nuevo ? fmt(nuevo.z,3) : 'infactible';
+
+    /* dibujo */
+    var ej = G11.lienzo(svg, 900, 380);
+    var poly = G11.ordenar(G11.vertices(G11.BASE));
+    svg.appendChild(svgEl('polygon',{
+      points: poly.map(function(p){ return ej.X(p[0])+','+ej.Y(p[1]); }).join(' '),
+      fill:'rgba(15,110,99,.18)', stroke:'#0F6E63','stroke-width':2}));
+    G11.recta(svg, ej, a1, a2, b, '#5B3A6B');
+    G11.ENTEROS.forEach(function(p){
+      var viola = a1*p[0] + a2*p[1] > b + 1e-9;
+      svg.appendChild(svgEl('circle',{cx:ej.X(p[0]),cy:ej.Y(p[1]),r:viola?6:4,
+        fill:viola?'#C8551E':'#14181F'}));
+    });
+    svg.appendChild(svgEl('circle',{cx:ej.X(REL.x),cy:ej.Y(REL.y),r:8,fill:'#C8551E',
+      stroke:'#fff','stroke-width':3}));
+    G11.texto(svg,{x:ej.X(REL.x)+13,y:ej.Y(REL.y)-12},
+      G11.SANS+';font-size:13.5px;fill:#C8551E;font-weight:700','x\u0304 = (9/2; 7/2)');
+
+    var m = document.getElementById('gm-msg');
+    var nombres = ['la fila de z','la fila de x\u2082','la fila de x\u2081'];
+    var extra = '';
+    if(i === 1) extra = ' Es el corte que la clase eligió, y resulta ser <b>faceta</b> de la envoltura convexa: no existe desigualdad admisible que corte más en esa dirección.';
+    if(i === 2) extra = ' Note que dice \u00ab3x\u2082 \u2264 10\u00bb y no \u00abx\u2082 \u2264 3\u00bb: es la misma dirección pero más floja, porque ningún punto entero la deja tirante. Corta menos.';
+    if(i === 0) extra = ' Sale de la fila del objetivo, que también sirve: su lado derecho 133/2 es fraccionario. Involucra a las dos variables y corta menos que el de la fila de x\u2082.';
+    m.innerHTML = '<b>Corte desde ' + nombres[i] + '.</b> En variables de holgura queda ' +
+      Q.str(f3) + ' x\u2083 + ' + Q.str(f4) + ' x\u2084 \u2265 ' + Q.str(f0) +
+      ', y traducido a las variables del problema es <b>' + escribir(c) + '</b>. ' +
+      (corta ? 'Corta al óptimo relajado y la relajación baja de 66,5 a ' + fmt(nuevo.z,3) + '.'
+             : 'No corta al óptimo relajado.') + extra;
+    m.style.borderLeftColor = (i === 1) ? 'var(--teal)' : 'var(--gold)';
+    if(window.MathJax && MathJax.typesetPromise)
+      MathJax.typesetPromise([document.getElementById('gm-desc')]);
+  }
+
+  sel.onchange = dibujar;
+  dibujar();
+})();
+
+/* ==================================================================
+   Simulador 2 · el algoritmo completo, paso a paso
+   ================================================================== */
+(function(){
+  var cont = document.getElementById('sd-tabla');
+  if(!cont) return;
+  var F = Q.F;
+
+  function clonar(T){ return T.map(function(r){ return r.map(function(v){ return F(v.n,v.d); }); }); }
+  function pivotear(T, r, c){
+    var S = clonar(T), p = S[r][c], j, i;
+    for(j=0;j<S[r].length;j++) S[r][j] = Q.div(S[r][j], p);
+    for(i=0;i<S.length;i++){
+      if(i === r || Q.cero(S[i][c])) continue;
+      var f = S[i][c];
+      for(j=0;j<S[i].length;j++) S[i][j] = Q.resta(S[i][j], Q.mult(f, S[r][j]));
+    }
+    return S;
+  }
+
+  /* ---- estado inicial ---- */
+  var C0 = ['x\u2081','x\u2082','x\u2083','x\u2084'];
+  var N0 = ['z','x\u2082','x\u2081'];
+  var T0 = [
+    [F(0),F(0),F(63,22),F(31,22),F(133,2)],
+    [F(0),F(1),F(7,22), F(1,22), F(7,2)],
+    [F(1),F(0),F(-1,22),F(3,22), F(9,2)]
+  ];
+
+  /* ---- etapa 1: agregar corte I (fila x2) ---- */
+  var C1 = C0.concat(['s\u2081']);
+  var N1 = N0.concat(['s\u2081']);
+  var T1 = T0.map(function(r){ return r.slice(0,4).concat([F(0), r[4]]); });
+  T1.push([F(0),F(0),F(-7,22),F(-1,22),F(1),F(-1,2)]);
+
+  var T2 = pivotear(T1, 3, 2);                     /* entra x3 */
+  var N2 = ['z','x\u2082','x\u2081','x\u2083'];
+
+  /* ---- etapa 2: corte II desde la fila de x1 (índice 2) ---- */
+  var C3 = C1.concat(['s\u2082']);
+  var N3 = N2.concat(['s\u2082']);
+  var f4 = Q.frac(T2[2][3]), fs1 = Q.frac(T2[2][4]), f02 = Q.frac(T2[2][5]);
+  var T3 = T2.map(function(r){ return r.slice(0,5).concat([F(0), r[5]]); });
+  T3.push([F(0),F(0),F(0),Q.neg(f4),Q.neg(fs1),F(1),Q.neg(f02)]);
+
+  var T4 = pivotear(T3, 4, 3);                     /* entra x4 */
+  var N4 = ['z','x\u2082','x\u2081','x\u2083','x\u2084'];
+
+  function razones(T, cols, r){
+    var out = [];
+    for(var j=0;j<cols.length;j++){
+      if(T[r][j].n < 0) out.push({col:cols[j], j:j, q:Math.abs(Q.valor(T[0][j])/Q.valor(T[r][j])),
+                                  txt:'|' + Q.str(T[0][j]) + ' / ' + Q.str(T[r][j]) + '|'});
+    }
+    out.sort(function(a,b){ return a.q - b.q; });
+    return out;
+  }
+
+  var PASOS = [
+    {tit:'Tabla óptima de la relajación', T:T0, C:C0, N:N0, fila:-1, col:-1, raz:null,
+     z:'133/2', x1:'9/2', x2:'7/2', est:'Fraccional',
+     msg:'<b>Punto de partida.</b> El símplex ya resolvió la relajación: \u0078\u0304 = (9/2; 7/2) con z = 133/2 = 66,5. Las tres filas tienen lado derecho fraccionario, así que cualquiera sirve de fuente. Seguimos la de x\u2082.'},
+    {tit:'Se agrega el Corte I, generado desde la fila de x₂', T:T1, C:C1, N:N1, fila:3, col:-1, raz:null,
+     z:'133/2', x1:'9/2', x2:'7/2', est:'Primal infactible',
+     msg:'<b>La tabla se rompe de una forma muy específica.</b> El corte \u2212(7/22)x\u2083 \u2212 (1/22)x\u2084 + s\u2081 = \u22121/2 entra como fila nueva y su holgura s\u2081 queda básica con valor \u22121/2. La fila de z no se tocó: sus costos reducidos 63/22 y 31/22 siguen siendo los de una base óptima. Optimalidad conservada, factibilidad perdida — el punto de partida exacto del símplex dual.'},
+    {tit:'Símplex dual · elección de fila y columna', T:T1, C:C1, N:N1, fila:3, col:2, raz:razones(T1,C1,3),
+     z:'133/2', x1:'9/2', x2:'7/2', est:'Eligiendo pivote',
+     msg:'<b>Fila pivote:</b> la de s\u2081, única con lado derecho negativo. <b>Columna entrante:</b> se calculan los cocientes solo sobre las columnas con coeficiente negativo en esa fila, y entra la de menor cociente en valor absoluto. Gana x\u2083 con 9 frente a los 31 de x\u2084.'},
+    {tit:'Tras el primer pivote', T:T2, C:C1, N:N2, fila:-1, col:-1, raz:null,
+     z:'62', x1:'32/7', x2:'3', est:'x₁ aún fraccional',
+     msg:'<b>El corte hizo su trabajo a medias.</b> x\u2082 pasó de 7/2 a 3, ya es entera, y el valor bajó de 66,5 a 62. Pero x\u2081 = 32/7 \u2248 4,571 sigue fraccional, así que hace falta otra ronda. Verifique que la fila de z quedó con costos reducidos 1 y 9, ambos no negativos: la optimalidad se conservó, que era el punto.'},
+    {tit:'Se agrega el Corte II, generado desde la fila de x₁', T:T3, C:C3, N:N3, fila:4, col:-1, raz:null,
+     z:'62', x1:'32/7', x2:'3', est:'Primal infactible',
+     msg:'<b>Segunda ronda, mismo procedimiento.</b> La fila de x\u2081 se descompone como x\u2081 + (0+1/7)x\u2084 + (\u22121+6/7)s\u2081 = (4+4/7), de donde sale (1/7)x\u2084 + (6/7)s\u2081 \u2265 4/7. Note que el corte nuevo involucra a s\u2081, la holgura del corte anterior: los cortes se van apilando sobre cortes, y es una de las razones por las que se debilitan.'},
+    {tit:'Símplex dual · segunda elección', T:T3, C:C3, N:N3, fila:4, col:3, raz:razones(T3,C3,4),
+     z:'62', x1:'32/7', x2:'3', est:'Eligiendo pivote',
+     msg:'<b>Fila pivote:</b> la de s\u2082, con lado derecho \u22124/7. Los cocientes de las dos columnas candidatas son 7 para x\u2084 y 21/2 para s\u2081, así que entra x\u2084.'},
+    {tit:'Tabla final: solución entera', T:T4, C:C3, N:N4, fila:-1, col:-1, raz:null,
+     z:'58', x1:'4', x2:'3', est:'Óptimo entero',
+     msg:'<b>Terminado.</b> Todos los lados derechos son no negativos, así que el símplex dual cumplió su criterio de parada; y todos los valores básicos son enteros, así que no queda ninguna fila capaz de generar un corte nuevo. La solución óptima entera es x\u2081 = 4, x\u2082 = 3 con z* = 58 — el mismo punto que la Clase 10 alcanzó con dos facetas y que la Clase 08 certificó ramificando. Tres caminos, el mismo vértice.'}
+  ];
+
+  var p = 0;
+
+  function render(){
+    var P = PASOS[p];
+    document.getElementById('sd-tit').textContent = P.tit;
+    document.getElementById('sd-pos').textContent = (p+1) + ' / ' + PASOS.length;
+
+    var h = '<table><thead><tr><th>Básica</th><th class="num">z</th>';
+    P.C.forEach(function(c,j){
+      h += '<th class="num"' + (j === P.col ? ' style="background:var(--amber-soft)"' : '') + '>' + c + '</th>';
+    });
+    h += '<th class="num">Solución</th></tr></thead><tbody>';
+    P.T.forEach(function(row,i){
+      h += '<tr' + (i === P.fila ? ' class="sel"' : '') + '><td>' + P.N[i] + '</td>';
+      h += '<td class="num">' + (P.N[i] === 'z' ? '1' : '0') + '</td>';
+      row.forEach(function(v,j){
+        var est = (j === P.col && i === P.fila)
+          ? ' style="background:var(--amber);color:#fff;font-weight:700"'
+          : (j === P.col ? ' style="background:var(--amber-soft)"' : '');
+        h += '<td class="num"' + est + '>' + Q.str(v) + '</td>';
+      });
+      h += '</tr>';
+    });
+    cont.innerHTML = h + '</tbody></table>';
+
+    var r = document.getElementById('sd-razones');
+    if(P.raz && P.raz.length){
+      var t = '<p style="font-size:.92rem;margin:0 0 6px"><b>Cocientes de las columnas candidatas</b> ' +
+              '(solo las de coeficiente negativo en la fila pivote):</p><table><thead><tr>' +
+              '<th>Columna</th><th class="num">cociente</th><th class="num">valor</th><th>¿entra?</th></tr></thead><tbody>';
+      P.raz.forEach(function(x,k){
+        t += '<tr' + (k === 0 ? ' class="sel"' : '') + '><td>' + x.col + '</td>' +
+             '<td class="num">' + x.txt + '</td>' +
+             '<td class="num">' + fmt(x.q,3) + '</td>' +
+             '<td>' + (k === 0 ? 'Sí, menor cociente' : 'no') + '</td></tr>';
+      });
+      r.innerHTML = t + '</tbody></table>';
+    } else {
+      r.innerHTML = '';
+    }
+
+    document.getElementById('sd-z').textContent  = P.z;
+    document.getElementById('sd-x1').textContent = P.x1;
+    document.getElementById('sd-x2').textContent = P.x2;
+    var e = document.getElementById('sd-est');
+    e.textContent = P.est;
+    e.className = (P.est === 'Óptimo entero') ? 'ok' : (P.est === 'Primal infactible' ? 'mal' : '');
+    var m = document.getElementById('sd-msg');
+    m.innerHTML = P.msg;
+    m.style.borderLeftColor = (P.est === 'Primal infactible') ? 'var(--amber)'
+      : (P.est === 'Óptimo entero' ? 'var(--teal)' : 'var(--ink-3)');
+  }
+
+  document.getElementById('sd-sig').onclick = function(){
+    if(p < PASOS.length-1){ p++; render(); } else { aviso('Es el último paso del algoritmo.'); }
+  };
+  document.getElementById('sd-ant').onclick = function(){ if(p > 0){ p--; render(); } };
+  document.getElementById('sd-reset').onclick = function(){ p = 0; render(); aviso('De vuelta a la tabla inicial.'); };
+  render();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>
