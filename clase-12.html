@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cortes de cobertura · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* una sola medida de columna para todo el texto corrido:
+   así todas las cajas de párrafo tienen exactamente el mismo ancho */
+p{margin:0 0 15px;width:100%;max-width:var(--medida,74ch)}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:var(--medida,74ch)}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 12</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">12</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Cuando tres<br>no <em style="font-style:italic;color:var(--amber)">caben</em></h1>
+  <p class="lead">Si un grupo de ítems no cabe en la mochila, entonces al menos uno queda afuera. Esa frase, escrita como desigualdad, es uno de los cortes más usados de la programación entera.</p>
+  <div class="meta">
+    <span class="chip on">Coberturas</span>
+    <span class="chip">Cortes de mochila</span>
+    <span class="chip">Fortalecimiento</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>Cortes que salen del problema, no de la tabla</h2>
+  <p class="lead">Gomory fabricaba cortes desde la tabla símplex, sin mirar qué significaba el modelo. Hoy hacemos lo contrario: leer la estructura del problema y deducir de ahí una desigualdad que el álgebra sola no habría encontrado.</p>
+  <p>La Clase 11 terminó con un diagnóstico incómodo. Los cortes de Gomory son universales —sirven para cualquier PLE— y por eso mismo son genéricos: se derivan de una fila de números sin preguntar qué representa. El resultado es que se debilitan rápido, arrastran denominadores feos y producen desigualdades que no son facetas.</p>
+  <p>Los cortes de cobertura van por el camino opuesto. Se aplican solo a una estructura específica —restricciones de mochila con variables binarias— y a cambio de esa especificidad entregan desigualdades fuertes, de coeficientes enteros y chicos, con una interpretación que se puede explicar a alguien que no sabe optimización: <em>si estos cinco proyectos no caben en el presupuesto, hay que dejar al menos uno afuera</em>.</p>
+  <p>Esa estructura no es un caso raro de laboratorio. Aparece en la mochila de la Clase 01, en la selección de proyectos con presupuesto, en la asignación de capacidad, en el problema de la conservera de la Clase 10 y en prácticamente cualquier modelo donde un recurso escaso se reparte entre decisiones de sí o no. Por eso los solvers la buscan activamente en cada modelo que reciben.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Identificar</strong> una cobertura en una restricción de mochila y escribir el corte de cobertura asociado.</li>
+    <li><strong>Demostrar</strong> la admisibilidad del corte de cobertura con un argumento de una línea que no enumere soluciones.</li>
+    <li><strong>Distinguir</strong> una cobertura minimal de una que no lo es, y explicar por qué la minimal produce un corte más fuerte.</li>
+    <li><strong>Construir</strong> la cobertura extendida \(E(C)\) y justificar por qué agregar variables al corte no rompe su admisibilidad.</li>
+    <li><strong>Evaluar</strong> qué corte conviene agregar comparando cuánto baja efectivamente la cota de la relajación.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Cobertura y corte">
+  <div class="eyebrow">Primer bloque · la definición</div>
+  <h2>Un grupo que no cabe</h2>
+  <p class="lead">Toda la teoría de esta clase se deduce de una observación que un niño entendería. Lo interesante es cuánto rinde al escribirla formalmente.</p>
+
+  <div class="modelo">
+    <span class="et">Estructura de mochila y definiciones</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0 0 12px">
+      Sea \(N=\{1,\dots,n\}\) el conjunto de ítems, \(a_j &gt; 0\) el consumo de recurso del ítem \(j\in N\), \(b\) la capacidad disponible, y considérese la restricción
+    </p>
+    \[ \sum_{j\in N} a_j x_j \le b, \qquad x_j \in \{0,1\} \quad \forall j \in N \]
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:14px 0 10px">
+      Un subconjunto \(C \subseteq N\) es una <strong>cobertura</strong> si sus ítems, todos juntos, no caben:
+    </p>
+    \[ \sum_{j\in C} a_j > b \]
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:14px 0 10px">
+      El <strong>corte de cobertura</strong> asociado a \(C\) es entonces
+    </p>
+    \[ \sum_{j\in C} x_j \le |C| - 1 \]
+    <p class="glosa">En palabras: de los \(|C|\) ítems de la cobertura, a lo más \(|C|-1\) pueden elegirse. Al menos uno queda afuera. Note que el corte tiene todos sus coeficientes iguales a uno, sin importar cuán distintos sean los \(a_j\): la desigualdad no habla de cuánto pesa cada ítem sino de cuántos caben.</p>
+  </div>
+
+  <div class="nota libro">
+    <span class="et">La demostración de admisibilidad, completa</span>
+    <p>Supongamos que un punto entero factible tomara <em>todos</em> los ítems de \(C\), es decir \(x_j = 1\ \ \forall j \in C\). Entonces el recurso consumido sería al menos \(\sum_{j\in C} a_j\), que por definición de cobertura es mayor que \(b\), y la restricción de mochila quedaría violada. Contradicción. Luego ningún punto factible toma los \(|C|\) ítems, o sea \(\sum_{j\in C} x_j \le |C|-1\). \(\blacksquare\)</p>
+    <p style="margin-bottom:0">Dos observaciones sobre esta demostración. Primero, es de una línea y no enumera nada: sirve igual con \(n=6\) que con \(n=6000\). Segundo, usa que los \(a_j\) son positivos — con coeficientes negativos "tomar más ítems" no consume más recurso y el argumento se cae. Por eso la técnica se enuncia siempre sobre restricciones de tipo mochila con datos positivos.</p>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Minimal: quitar grasa al corte</span>
+    <p>Una cobertura \(C\) es <strong>minimal</strong> si al sacarle cualquier ítem deja de ser cobertura, es decir si \(\sum_{j\in C\setminus\{k\}} a_j \le b\ \ \forall k \in C\). Las coberturas no minimales también producen cortes admisibles, pero más débiles, y conviene ver por qué.</p>
+    <p>Conviene verlo con números. Sobre la mochila del simulador de la lámina siguiente —\(a=(5,2,3,2,7,8)\) con \(b=11\)— tome \(C=\{x_2,x_3,x_4,x_6\}\), que pesa \(2+3+2+8=15>11\) y por lo tanto es cobertura. Para decidir si es minimal hay que sacarle un ítem a la vez y mirar si lo que queda sigue sin caber:</p>
+    <div class="tabla-scroll"><table>
+      <thead><tr><th>Se saca</th><th class="num">Peso de lo que queda</th><th>¿Lo que queda sigue siendo cobertura?</th></tr></thead>
+      <tbody>
+        <tr class="sel"><td>x<sub>3</sub>, que pesa 3</td><td class="num">12</td><td>Sí, 12 &gt; 11: todavía no cabe</td></tr>
+        <tr><td>x<sub>2</sub>, que pesa 2</td><td class="num">13</td><td>Sí</td></tr>
+        <tr><td>x<sub>4</sub>, que pesa 2</td><td class="num">13</td><td>Sí</td></tr>
+        <tr><td>x<sub>6</sub>, que pesa 8</td><td class="num">7</td><td>No, 7 \(\le\) 11: ahora cabe</td></tr>
+      </tbody>
+    </table></div>
+    <p>Basta que <em>una</em> fila diga "sí" para que \(C\) no sea minimal: significa que había un subconjunto más chico que ya era cobertura. Sacando \(x_3\) queda \(C'=\{x_2,x_4,x_6\}\), con peso 12, y ahí sí se cumple la definición: quitando cualquiera de los tres se obtiene 10, 10 o 4, todos \(\le 11\). \(C'\) es minimal.</p>
+    <p>Y la diferencia no es cosmética. En \(\bar x = (0;\,\tfrac12;\,0;\,1;\,0;\,1)\), el corte de la grande, \(x_2+x_3+x_4+x_6\le3\), vale \(0{,}5+0+1+1=2{,}5\) y se cumple: <strong>no separa nada</strong>. El de la minimal, \(x_2+x_4+x_6\le2\), vale los mismos 2,5 contra un lado derecho de 2: <strong>sí separa</strong>. El ítem de más se cobró una unidad en el lado derecho y no aportó nada en el izquierdo, porque \(\bar x_3=0\). Arrastrar grasa no debilita el corte un poco: puede dejarlo inservible.</p>
+    <p style="margin-bottom:0">La razón de fondo es algebraica. Si \(C' \subset C\) ya es cobertura, el corte de \(C'\) dice \(\sum_{j\in C'} x_j \le |C'|-1\). Sumándole \(x_j \le 1\) para cada uno de los ítems que están en \(C\) pero no en \(C'\) se obtiene \(\sum_{j\in C} x_j \le |C'|-1 + (|C|-|C'|) = |C|-1\), que es exactamente el corte de \(C\). O sea: <strong>el corte de la cobertura grande se deduce del de la chica</strong> más restricciones que el modelo ya tenía. La chica es estrictamente más fuerte, y la grande no aporta nada nuevo.</p>
+  </div>
+
+  <div class="nota">
+    <span class="et">Y el problema de separación</span>
+    <p>Con \(n\) ítems hay \(2^n\) subconjuntos, así que enumerar coberturas no es una opción. En la mochila del simulador, que tiene apenas seis ítems, 40 de los 64 subconjuntos son cobertura y solo 9 de ellos son minimales. Lo que se necesita es distinto y más modesto: dada una solución fraccional \(\bar x\), encontrar <em>una</em> cobertura cuyo corte la viole, o certificar que no existe. Eso se llama el <strong>problema de separación</strong>, y para cortes de cobertura resulta ser, él mismo, un problema de mochila — pequeño y que se resuelve rápido, o que se ataca con una heurística cuando el tamaño aprieta. Es lo que las diapositivas originales resumen como "requiere de una heurística para identificar el conjunto \(C\)".</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Simulador: arma tu cobertura">
+  <div class="eyebrow">Primer bloque · simulador</div>
+  <h2>Elige los ítems y el modelo juzga el corte</h2>
+  <p class="lead">Haz clic en los ítems para formar \(C\). El simulador te dice si es cobertura, si es minimal, si su corte viola la solución relajada, y cuánto baja la cota al agregarlo.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>\(\max 7x_1+3x_2+x_3+5x_4+8x_5+13x_6\) sujeto a \(5x_1+2x_2+3x_3+2x_4+7x_5+8x_6 \le 11\)</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">La relajación lineal de esta mochila entrega \(\bar x = (0;\,\tfrac12;\,0;\,1;\,0;\,1)\) con \(z_{\mathrm{PL}0}^* = 19{,}5\). El óptimo entero es tomar los ítems 4 y 6, con \(z^*=18\).</p>
+      <div id="cb-items" class="tabla-scroll"></div>
+      <div class="botonera">
+        <button class="btn ghost" data-cob="1,3,5">La cobertura violada</button>
+        <button class="btn ghost" data-cob="0,1,2,3">Una cobertura minimal que no separa</button>
+        <button class="btn ghost" data-cob="1,2,3,5">Una cobertura no minimal</button>
+        <button class="btn ghost" data-cob="3,5">Un grupo que sí cabe</button>
+        <button class="btn ghost" data-cob="">Vaciar</button>
+      </div>
+      <div class="marcador">
+        <div><span>Recurso de \(C\)</span><b id="cb-suma">—</b></div>
+        <div><span>¿Es cobertura?</span><b id="cb-cob" style="font-size:1.15rem">—</b></div>
+        <div><span>¿Es minimal?</span><b id="cb-min" style="font-size:1.15rem">—</b></div>
+        <div><span>El corte en \(\bar x\)</span><b id="cb-val">—</b></div>
+        <div><span>Cota con el corte</span><b id="cb-z">19,5</b></div>
+      </div>
+      <p id="cb-corte" style="margin-top:12px;font-size:1.02rem;text-align:center;padding:12px;border-radius:10px;background:var(--paper-2)">—</p>
+      <p id="cb-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">El resultado que sorprende</span>
+    <p>Esta mochila tiene <strong>nueve</strong> coberturas minimales, y ocho de ellas producen cortes perfectamente admisibles que no sirven de nada aquí: \(\bar x\) los satisface, así que agregarlos deja la relajación clavada en 19,5. Una sola, \(C=\{x_2,x_4,x_6\}\), tiene su corte violado — vale 2,5 contra un máximo de 2.</p>
+    <p style="margin-bottom:0">Es la distinción de la Clase 10 apareciendo con toda su fuerza: <em>admisible</em> y <em>separadora</em> son condiciones independientes, y la admisibilidad es abundante mientras que la separación es escasa. Por eso el problema de separación no pregunta "¿cuáles son las coberturas?" sino "¿cuál de ellas separa <em>este</em> punto?".</p>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Pausa 1">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre coberturas y su corte.</p>
+
+  <div class="quiz" data-correcta="1" data-retro='["El corte no depende de los pesos individuales: sus coeficientes son todos uno, y el lado derecho solo cuenta cuántos ítems hay.","Correcto. Si los \\(|C|\\) ítems se tomaran todos, el recurso consumido superaría \\(b\\) y la restricción de mochila quedaría violada. Por lo tanto a lo más \\(|C|-1\\) pueden tomarse.","Eso describe la condición de separación, no la de admisibilidad, y además no toda cobertura separa al óptimo relajado.","La minimalidad hace al corte más fuerte, pero una cobertura no minimal también produce un corte admisible."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">¿Por qué el corte \(\sum_{j\in C} x_j \le |C|-1\) es admisible cuando \(C\) es una cobertura?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Porque los pesos \(a_j\) de \(C\) son los mayores del problema.</span></button>
+      <button><span class="k">B</span><span>Porque tomarlos todos violaría la restricción de mochila.</span></button>
+      <button><span class="k">C</span><span>Porque el óptimo relajado no lo satisface.</span></button>
+      <button><span class="k">D</span><span>Porque \(C\) es minimal.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="2" data-retro='["Sí es cobertura: 2+2+8 = 12 &gt; 11, que es exactamente la definición.","El corte es \\(x_2+x_4+x_6 \\le 2\\), no \\(\\le 3\\): el lado derecho es \\(|C|-1\\).","Correcto. En \\(\\bar x = (0;\\,1/2;\\,0;\\,1;\\,0;\\,1)\\) la suma vale \\(0{,}5+1+1 = 2{,}5\\), que supera el límite de 2. La desigualdad es violada, así que es un corte útil.","Al contrario: es la única de las nueve coberturas minimales cuyo corte sí resulta violado por \\(\\bar x\\)."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">Con \(a=(5,2,3,2,7,8)\), \(b=11\) y \(\bar x = (0;\,\tfrac12;\,0;\,1;\,0;\,1)\), ¿qué ocurre con \(C=\{2,4,6\}\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>No es cobertura, porque \(2+2+8 = 12\) es casi 11.</span></button>
+      <button><span class="k">B</span><span>Es cobertura y su corte es \(x_2+x_4+x_6 \le 3\).</span></button>
+      <button><span class="k">C</span><span>Es cobertura y su corte, que vale 2,5 en \(\bar x\), resulta violado.</span></button>
+      <button><span class="k">D</span><span>Es cobertura pero su corte no separa a \(\bar x\).</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Fortalecer el corte">
+  <div class="eyebrow">Segundo bloque · fortalecer</div>
+  <h2>Agregar variables sin perder admisibilidad</h2>
+  <p class="lead">El corte de cobertura no es faceta casi nunca. Hay una forma barata de fortalecerlo que consiste, contra toda intuición, en meterle más variables al lado izquierdo.</p>
+
+  <div class="modelo">
+    <span class="et">Cobertura extendida</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0 0 12px">
+      Dada una cobertura minimal \(C\), su <strong>extensión</strong> agrega todos los ítems que pesan al menos tanto como el más pesado de \(C\):
+    </p>
+    \[ E(C) = C \cup \Big\{\, j \in N \;:\; a_j \ge \max_{k\in C} a_k \,\Big\} \]
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:14px 0 10px">
+      y el <strong>corte de cobertura extendida</strong> conserva el mismo lado derecho:
+    </p>
+    \[ \sum_{j\in E(C)} x_j \le |C| - 1 \]
+    <p class="glosa">Es un corte estrictamente más fuerte: el lado izquierdo creció con términos no negativos y el lado derecho se quedó igual, así que toda solución que satisfaga el extendido satisface el original, y no al revés.</p>
+  </div>
+
+
+  <div class="nota ojo">
+    <span class="et">La extensión, con números</span>
+    <p>Sobre la misma mochila —\(a=(5,2,3,2,7,8)\), \(b=11\)— tome la cobertura minimal \(C=\{x_1,x_2,x_3,x_4\}\), que pesa \(5+2+3+2=12>11\). Su corte es \(x_1+x_2+x_3+x_4\le3\).</p>
+    <p>El ítem más pesado de \(C\) es \(x_1\), con \(a_1=5\). La pregunta de la definición es quién más pesa al menos 5, y la responden \(x_5\) con 7 y \(x_6\) con 8. Entran los dos, y el lado derecho no se mueve:</p>
+    \[ E(C) = \{x_1,x_2,x_3,x_4\} \cup \{x_5,x_6\} = N, \qquad x_1+x_2+x_3+x_4+x_5+x_6 \le 3 \]
+    <p>Que el extendido sea <em>estrictamente</em> más fuerte se comprueba exhibiendo un punto que el original admite y el extendido deja afuera. Tome \(p = (0;\,1;\,1;\,1;\,0;\,\tfrac12)\), que consume \(0+2+3+2+0+4=11\) — justo la capacidad, así que es factible para la relajación. El corte original vale \(0+1+1+1=3\) y se cumple con igualdad. El extendido vale \(3{,}5 > 3\) y queda violado. Esa franja de la región relajada la recorta solo el extendido, y es exactamente lo que se ganó al agregar las dos variables.</p>
+    <p style="margin-bottom:0">Y el aviso honesto, porque las dos condiciones siguen siendo independientes: <strong>fortalecer no es separar</strong>. En el \(\bar x\) de esta instancia el corte original vale \(0+0{,}5+0+1=1{,}5\) y el extendido vale 2,5, los dos contra un lado derecho de 3. La extensión se comió dos tercios de la holgura y sigue sin separar. Eso no se arregla haciendo el corte más fuerte sino eligiendo otra cobertura — en esta mochila, \(\{x_2,x_4,x_6\}\).</p>
+  </div>
+
+  <div class="nota libro">
+    <span class="et">Por qué sigue siendo admisible</span>
+    <p>Hay que mostrar que ningún punto factible toma \(|C|\) ítems de \(E(C)\). Tome un subconjunto cualquiera \(S \subseteq E(C)\) con \(|S| = |C|\) y compare su peso con el de \(C\). Cada ítem de \(S\) que no está en \(C\) pesa, por construcción de \(E(C)\), al menos tanto como el ítem más pesado de \(C\), y por lo tanto al menos tanto como cualquier ítem de \(C\) al que reemplace. Entonces \(\sum_{j\in S} a_j \ge \sum_{j\in C} a_j > b\): \(S\) también es cobertura y tampoco cabe. Como esto vale para <em>todo</em> \(S\) de tamaño \(|C|\), ningún punto factible puede tomar \(|C|\) ítems de \(E(C)\). \(\blacksquare\)</p>
+    <p style="margin-bottom:0">El argumento descansa por completo en el \(\max\) de la definición. Si se agregara un ítem más liviano que el mayor de \(C\), el intercambio podría aligerar el grupo, \(S\) podría caber, y el corte extendido sería <strong>inadmisible</strong>. Es un buen ejemplo de una definición donde cada palabra está haciendo un trabajo.</p>
+    <p style="margin-bottom:0">Con números, para que se vea el daño. \(C=\{x_1,x_5\}\) pesa \(5+7=12>11\) y es minimal; su ítem más pesado pesa 7, así que \(E(C)=\{x_1,x_5,x_6\}\) y el corte extendido es \(x_1+x_5+x_6\le1\), que es correcto. Si alguien agregara además \(x_4\), que pesa 2 y no llega a 7, el corte diría \(x_1+x_4+x_5+x_6\le1\) — y lo violan <strong>seis</strong> soluciones enteras factibles. Entre ellas \(\{x_4,x_6\}\), que consume \(2+8=10\le11\) y vale \(z=5+13=18\): el óptimo entero de la mochila. Un solo ítem liviano de más y el corte amputa la solución del problema, sin que nada avise.</p>
+  </div>
+
+  <div class="nota">
+    <span class="et">Fuera de programa, pero conviene saber que existe</span>
+    <p>La extensión es el caso más simple de una familia de técnicas llamada <strong>lifting</strong>. La idea general es tomar un corte admisible para un subproblema —aquí, el que solo mira los ítems de \(C\)— y "levantarlo" al problema completo calculando, variable por variable, el mayor coeficiente que se le puede dar sin perder admisibilidad. La extensión equivale a asignarle coeficiente 1 a los ítems pesados; el lifting hace el cálculo bien y muchas veces consigue coeficientes mayores, llegando a facetas de verdad.</p>
+    <p style="margin-bottom:0">No es materia del curso ni entra en evaluaciones. Si te interesa, busca "lifted cover inequalities" y "sequential lifting": es de lo más elegante que hay en poliedros combinatorios, y explica por qué los solvers modernos generan cortes de mochila bastante mejores que los que vamos a escribir a mano hoy.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Simulador: rondas de corte">
+  <div class="eyebrow">Segundo bloque · simulador</div>
+  <h2>Ronda a ronda, con y sin extensión</h2>
+  <p class="lead">En cada ronda el simulador busca todas las coberturas cuyo corte separa la solución actual y te deja elegir cuál agregar. Con la versión extendida, la cobertura se separa primero y se extiende después, como en la lámina anterior. El gráfico muestra cómo baja la cota hacia el óptimo entero.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Algoritmo de planos cortantes con cortes de cobertura</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl">
+          <label style="display:block">Versión del corte que se agrega</label>
+          <select id="rd-modo">
+            <option value="simple">Corte de cobertura simple</option>
+            <option value="ext">Corte de cobertura extendida</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-size:.94rem">Solución actual de la relajación: <b id="rd-sol">—</b></p>
+      <div id="rd-cand" class="tabla-scroll"></div>
+      <div class="botonera">
+        <button class="btn ghost" id="rd-undo" disabled>Deshacer</button>
+        <button class="btn ghost" id="rd-reset">Reiniciar</button>
+      </div>
+      <div class="marcador">
+        <div><span>Ronda</span><b id="rd-ronda">0</b></div>
+        <div><span>Cota actual</span><b id="rd-cota">19,5</b></div>
+        <div><span>Óptimo entero</span><b class="ok">18</b></div>
+        <div><span>Brecha restante</span><b id="rd-brecha">1,5</b></div>
+      </div>
+      <svg id="g-rondas" viewBox="0 0 900 280" style="width:100%;max-width:900px;height:auto;display:block;margin:0 auto"></svg>
+      <div class="leyenda">
+        <span><i style="background:var(--teal)"></i>Cota de la relajación tras cada ronda</span>
+        <span><i style="background:var(--amber)"></i>Óptimo entero: 18</span>
+      </div>
+      <p id="rd-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Lo que hay que probar</span>
+    <p>Haz las rondas con el corte simple, eligiendo siempre la minimal. En la primera la única cobertura que separa es \(\{x_2,x_4,x_6\}\) y la cota baja de 19,5 a <strong>19,4</strong>. En la segunda aparece \(\{x_1,x_6\}\) y llega a <strong>19,14</strong>. En la tercera, \(\{x_5,x_6\}\), y queda en <strong>18,83</strong>. Ahí se acaban las coberturas que separan, y la brecha de 0,83 que queda es trabajo para la ramificación de la Clase 13.</p>
+    <p>Ahora reinicia y repite con <strong>cobertura extendida</strong>. Vas a obtener exactamente las mismas cotas, y no es un error. Las tres coberturas que se separan contienen a \(x_6\), que pesa 8 y es el ítem más pesado de toda la mochila: nadie fuera de \(C\) pesa 8 o más, así que \(E(C) = C\) en las tres rondas. La extensión rinde cuando la cobertura separada está hecha de ítems intermedios y los pesados quedaron afuera. El caso de la lámina siguiente es justamente así, y ahí la extensión cierra el doble de brecha que el corte simple.</p>
+    <p style="margin-bottom:0"><strong>Lo que la regla no ve.</strong> Mira la segunda ronda: \(x_5\) pesa 7 y no entra a la extensión de \(\{x_1,x_6\}\), porque no alcanza los 8 de \(x_6\). Pero si se toma \(x_5\), quedan 4 de capacidad y no cabe ni \(x_1\) ni \(x_6\). Entonces \(x_1+x_5+x_6\le1\) también es admisible, y con él la cota baja a <strong>18,33</strong> en vez de 19,14. Siguiendo ese razonamiento en cada ronda se llega a <strong>18 exacto</strong> en tres cortes, sin abrir un solo nodo. La regla de \(E(C)\) es <em>suficiente</em> para garantizar la admisibilidad, pero no <em>necesaria</em>: la cuenta exacta, ítem por ítem, es el <em>lifting</em> de la nota anterior. Queda fuera de programa, pero este es el ejemplo de lo que gana.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Pausa 2">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre fortalecimiento.</p>
+
+  <div class="quiz" data-correcta="3" data-retro='["El lado derecho no cambia al extender: sigue siendo \\(|C|-1\\), y eso es justamente lo que vuelve más fuerte al corte.","La extensión agrega ítems pesados, no livianos; agregar livianos rompería la admisibilidad.","La extensión no elimina nada de \\(C\\): solo agrega.","Correcto. \\(E(C)\\) agrega los ítems cuyo peso es mayor o igual al del más pesado de \\(C\\), conservando el lado derecho \\(|C|-1\\)."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">¿En qué consiste la cobertura extendida \(E(C)\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>En subir el lado derecho a \(|C|\).</span></button>
+      <button><span class="k">B</span><span>En agregar los ítems más livianos del problema.</span></button>
+      <button><span class="k">C</span><span>En quitar de \(C\) los ítems más livianos.</span></button>
+      <button><span class="k">D</span><span>En agregar los ítems que pesan al menos tanto como el más pesado de \(C\), manteniendo \(|C|-1\).</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. Un ítem más liviano podría entrar reemplazando a uno pesado de \\(C\\) y dejar un grupo que sí cabe, con lo cual habría un punto factible tomando \\(|C|\\) ítems de \\(E(C)\\) y el corte sería inadmisible.","El tamaño del corte no es el problema: un corte con más términos puede ser perfectamente admisible, como muestra la propia extensión.","La cantidad de coberturas no cambia por cómo se escriba un corte.","El corte extendido se cumple con igualdad en más puntos, no en menos; el problema de agregar livianos es de admisibilidad, no de holgura."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">¿Qué pasaría si \(E(C)\) incluyera un ítem <em>más liviano</em> que el más pesado de \(C\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>El corte podría volverse inadmisible.</span></button>
+      <button><span class="k">B</span><span>El corte tendría demasiados términos y sería lento.</span></button>
+      <button><span class="k">C</span><span>Se reduciría el número de coberturas del problema.</span></button>
+      <button><span class="k">D</span><span>El corte quedaría con holgura en todos los puntos.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Caso de aplicación">
+  <div class="eyebrow">Aplicación · Chile</div>
+  <h2>La cartera del FNDR y el corte que la gobernanza ya usaba</h2>
+
+  <div class="widget">
+    <header><span class="tag caso">Caso</span><h4>Priorización de inversión regional en el Biobío</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">El Fondo Nacional de Desarrollo Regional asigna un presupuesto anual entre proyectos que compiten. Cada proyecto se ejecuta completo o no se ejecuta, tiene un costo conocido y un puntaje de evaluación social. Es una mochila binaria con siete ítems y 3.000 millones de presupuesto.</p>
+
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Proyecto</th><th class="num">Costo (MM$)</th><th class="num">Puntaje</th><th class="num">Puntaje por MM$</th></tr></thead>
+        <tbody>
+          <tr class="sel"><td>\(x_1\) · Agua potable rural</td><td class="num">850</td><td class="num">62</td><td class="num">0,073</td></tr>
+          <tr class="sel"><td>\(x_2\) · Hospital de día</td><td class="num">1.200</td><td class="num">85</td><td class="num">0,071</td></tr>
+          <tr><td>\(x_3\) · Ciclovía</td><td class="num">400</td><td class="num">31</td><td class="num">0,078</td></tr>
+          <tr class="sel"><td>\(x_4\) · Alumbrado público</td><td class="num">650</td><td class="num">48</td><td class="num">0,074</td></tr>
+          <tr><td>\(x_5\) · Puente</td><td class="num">1.500</td><td class="num">100</td><td class="num">0,067</td></tr>
+          <tr class="sel"><td>\(x_6\) · Biblioteca</td><td class="num">300</td><td class="num">24</td><td class="num">0,080</td></tr>
+          <tr><td>\(x_7\) · Alcantarillado</td><td class="num">900</td><td class="num">66</td><td class="num">0,073</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="marcador">
+        <div><span>Cota de la relajación</span><b>223,71</b></div>
+        <div><span>Óptimo entero</span><b class="ok">219</b></div>
+        <div><span>Cartera óptima</span><b style="font-size:1.02rem">\(x_1, x_2, x_4, x_6\)</b></div>
+        <div><span>Presupuesto usado</span><b>3.000 de 3.000</b></div>
+      </div>
+
+      <p style="font-size:.94rem">La relajación entrega \(x_1 = 0{,}88\) y todo lo demás binario salvo los dos proyectos grandes, que quedan en cero: promete 223,71 tomando una fracción del agua potable rural. La cobertura minimal violada es \(C = \{x_1, x_3, x_4, x_6, x_7\}\), cuyos cinco proyectos suman 3.100 millones y por lo tanto no caben. Su corte es \(x_1+x_3+x_4+x_6+x_7 \le 4\), que en la solución relajada vale 4,88.</p>
+
+      <p style="font-size:.94rem">Agregándolo, la cota baja a 222,13. Su versión extendida es más interesante: el más pesado de \(C\) es el alcantarillado con 900, y los proyectos que pesan igual o más son el hospital y el puente, de modo que \(E(C)\) resulta ser <strong>el conjunto completo</strong> y el corte extendido dice \(\sum_{j\in N} x_j \le 4\). Baja la cota a 220,5.</p>
+
+      <div class="nota ojo" style="margin-bottom:0">
+        <span class="et">Lo que dice ese corte en castellano</span>
+        <p style="margin-bottom:0"><strong>"Con este presupuesto no financias más de cuatro proyectos."</strong> No hace falta saber programación entera para entenderlo, verificarlo o discutirlo: basta sumar los cinco costos más baratos —300+400+650+850+900 = 3.100— y notar que ya se pasan. Es una restricción que cualquier equipo de planificación habría escrito en una servilleta, y que el modelo matemático <em>no tenía</em> hasta que alguien la agregó. Ese es el aporte real de los cortes de cobertura en la práctica: formalizan el conocimiento operacional que la formulación ingenua deja implícito.</p>
+      </div>
+
+      <details class="explica">
+        <summary>Una advertencia sobre este modelo, que no es de optimización</summary>
+        <div class="contenido">
+          <p>La cartera óptima gasta exactamente los 3.000 millones y deja fuera al puente y al alcantarillado, que son los dos proyectos de mayor puntaje absoluto después del hospital. Eso es correcto dado el modelo: maximiza puntaje total sujeto a presupuesto, y los proyectos caros tienen peor puntaje por millón.</p>
+          <p style="margin-bottom:0">Pero el modelo supone que los puntajes son <strong>comparables y sumables</strong>, y eso es una decisión política disfrazada de decisión técnica. Un puente que conecta una localidad aislada y una biblioteca no producen beneficios de la misma naturaleza, y sumar sus puntajes equivale a afirmar que ocho bibliotecas valen más que un puente. La optimización no toma esa decisión: la hereda de cómo se construyó el puntaje. Vale la pena tenerlo presente cada vez que un modelo de priorización se presenta como objetivo — la matemática es impecable y los supuestos son discutibles, y confundir esas dos cosas es un error caro.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l9" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>Un conjunto \(C\) es <strong>cobertura</strong> de una restricción de mochila si \(\sum_{j\in C} a_j > b\); su corte es \(\sum_{j\in C} x_j \le |C|-1\).</li>
+    <li>La <strong>admisibilidad</strong> se demuestra en una línea: tomarlos todos violaría la mochila, luego al menos uno queda afuera.</li>
+    <li>Una cobertura <strong>minimal</strong> da un corte estrictamente más fuerte; el de una no minimal se deduce del de la minimal más las cotas \(x_j\le1\).</li>
+    <li>La <strong>extensión</strong> \(E(C)\) agrega los ítems que pesan al menos tanto como el mayor de \(C\), conservando el lado derecho: corta más y sigue siendo admisible.</li>
+    <li>Hay muchas coberturas y casi ninguna corta: el trabajo no es enumerarlas sino <strong>separar</strong> la que viole el punto fraccional actual.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>Los mejores cortes no salen del álgebra sino de mirar qué significa el modelo. "Estos cinco proyectos no caben en el presupuesto" es una frase que cualquiera entiende, y escrita como desigualdad hace por la relajación lo que ninguna manipulación de tabla consigue.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l10" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Cortes de cobertura y ramificación</h4></div>
+    <div class="enunciado">
+      <p>Considere el problema</p>
+      \[
+      \begin{aligned}
+      \max\;\; & z = 6x_1+2x_2+5x_3+8x_4+4x_5\\
+      \text{s.a.}\;\; & 5x_1+3x_2+4x_3+7x_4+2x_5 \le 8\\
+      & x_j \in \{0,1\} \qquad \forall j \in N=\{1,\dots,5\}
+      \end{aligned}
+      \]
+      <p><strong>a)</strong> Resuelva \(\mathrm{PL}_0\), la relajación lineal, explicando el orden de llenado que usa.<br>
+      <strong>b)</strong> Identifique un corte de cobertura que cumpla los requisitos para ser admisible <em>y</em> separador, es decir, un corte válido. Muestre que la cobertura es minimal.<br>
+      <strong>c)</strong> Agregue el corte y resuelva \(\mathrm{PL}_1\). ¿Es posible agregar otro corte de cobertura? Identifique todos los que quedan violados.<br>
+      <strong>d)</strong> Los dos cortes disponibles en (c) no son igual de buenos. Calcule la cota que deja cada uno y elija.<br>
+      <strong>e)</strong> Ramifique desde \(\mathrm{PL}_1\) sobre la variable fraccional y comente: ¿qué le aportaron los cortes al árbol?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Nueve coberturas, un solo corte</h4></div>
+    <div class="enunciado">
+      <p>Sobre la mochila de la clase —\(a=(5,2,3,2,7,8)\), \(b=11\), \(c=(7,3,1,5,8,13)\), con \(\bar x = (0;\,\tfrac12;\,0;\,1;\,0;\,1)\) y \(z_{\mathrm{PL}0}^* = 19{,}5\)—:</p>
+      <p><strong>a)</strong> Verifique que \(\{x_1,x_5\}\), \(\{x_5,x_6\}\) y \(\{x_2,x_4,x_6\}\) son coberturas minimales, y escriba el corte de cada una.<br>
+      <strong>b)</strong> Evalúe los tres cortes en \(\bar x\) y determine cuáles están violados. ¿Cuántos de los tres son cortes válidos <em>en este momento</em>?<br>
+      <strong>c)</strong> Los que no cortan, ¿son inútiles siempre o solo ahora? Justifique pensando en qué pasaría si el óptimo relajado fuera otro.<br>
+      <strong>d)</strong> Construya \(E(C)\) para las tres coberturas de (a). Una de ellas no se extiende: explique por qué, mirando los pesos.<br>
+      <strong>e)</strong> De las nueve coberturas minimales que tiene esta mochila, ocho producen cortes que \(\bar x\) satisface. ¿Qué dice eso sobre la estrategia de "generar todas las coberturas y agregarlas todas"? Compare con la estrategia de separación.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Demostrar, generalizar y romper</h4></div>
+    <div class="enunciado">
+      <p><strong>a)</strong> Demuestre que si \(C\) es cobertura y \(C \subseteq D\), entonces \(D\) también es cobertura. ¿Qué dice eso sobre cuántas coberturas hay una vez encontrada una minimal?<br>
+      <strong>b)</strong> Demuestre que el corte de una cobertura no minimal \(D\) se obtiene del corte de una cobertura minimal \(C \subset D\) sumándole desigualdades que el modelo ya contiene. Escriba la suma explícitamente.<br>
+      <strong>c)</strong> Demuestre la admisibilidad del corte de cobertura extendida, identificando dónde se usa que los ítems agregados son los más pesados.<br>
+      <strong>d)</strong> Construya un contraejemplo concreto: una mochila con datos numéricos, una cobertura minimal \(C\), y un ítem <em>liviano</em> cuya inclusión en el corte extendido lo vuelva inadmisible. Exhiba el punto entero factible que lo viola.<br>
+      <strong>e)</strong> Los cortes de cobertura se definen sobre restricciones \(\le\) con \(a_j &gt; 0\). Analice qué pasa con una restricción \(\sum_{j\in N} a_j x_j \ge d\) con \(a_j &gt; 0\): ¿existe un corte análogo? Enúncielo y demuéstrelo.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · La cartera del FNDR, decisión por decisión</h4></div>
+    <div class="enunciado">
+      <p>Retome el caso de la clase: siete proyectos con costos \((850, 1200, 400, 650, 1500, 300, 900)\) en millones, puntajes \((62, 85, 31, 48, 100, 24, 66)\) y presupuesto \(B = 3.000\).</p>
+      <p><strong>a)</strong> Formule el modelo declarando conjunto, parámetros, la binaria con su complemento y el dominio.<br>
+      <strong>b)</strong> Resuelva la relajación lineal explicando el orden de llenado. Reporte la solución y la cota.<br>
+      <strong>c)</strong> La cobertura minimal violada es \(C=\{x_1,x_3,x_4,x_6,x_7\}\). Verifique que es cobertura, que es minimal y que su corte está violado. Construya \(E(C)\) y escriba el corte extendido.<br>
+      <strong>d)</strong> El corte extendido resulta ser \(\sum_{j\in N} x_j \le 4\). Verifique esa desigualdad <em>sin usar el modelo</em>, solo con aritmética sobre los costos, como lo haría un jefe de planificación.<br>
+      <strong>e)</strong> El óptimo entero financia \(x_1, x_2, x_4, x_6\) con 219 puntos y gasta exactamente los 3.000 millones. El puente \(x_5\), que tiene el mayor puntaje individual, queda fuera. Explique por qué el modelo lo descarta y evalúe si esa conclusión debería aceptarse sin discusión.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Determine la cota que deja el corte simple de \(C\) y la que deja el extendido, y compárelas con la cota original y con el óptimo entero.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E5 · Volver a la conservera con otras herramientas</h4></div>
+    <div class="enunciado">
+      <p>En la Clase 10 el modelo de la conservera se fortaleció reemplazando \(q_j \le M_j y_j\) por \(q_j \le U_j y_j\), y la brecha pasó de 30,3% a 1,9%. Los datos eran \(J=\{1,2,3\}\), márgenes \(c=(9,7,12)\), costos fijos \(f=(40,25,70)\), lotes mínimos \(L=(10,8,12)\), capacidades \(U=(30,25,20)\) y capacidad común \(K=45\).</p>
+      <p><strong>a)</strong> La restricción \(\sum_{j\in J} q_j \le K\) no es de mochila binaria: sus variables son continuas. Explique por qué no se le pueden aplicar directamente los cortes de esta clase.<br>
+      <strong>b)</strong> Construya, a partir de los lotes mínimos, una restricción de mochila <em>binaria</em> implícita en el modelo. Demuestre que es admisible.<br>
+      <strong>c)</strong> Sobre esa restricción, determine todas las coberturas minimales. ¿Alguna produce un corte no trivial para esta instancia?<br>
+      <strong>d)</strong> Modifique la capacidad común a \(K=25\) y repita (c). ¿Qué cortes aparecen ahora y qué dicen en palabras sobre la operación de la planta?<br>
+      <strong>e)</strong> Generalice el procedimiento de (b) como una receta: dado un modelo con costo fijo y lote mínimo sobre un recurso compartido, ¿cómo se obtiene la mochila binaria de la que salen los cortes de cobertura? ¿Qué se pierde al hacerlo?</p>
+    </div>
+  </div>
+
+  <div class="nota libro" style="margin-top:30px">
+    <span class="et">Para leer, si el tema te interesa</span>
+    <p><strong>Dónde está esto en el libro.</strong> Hillier &amp; Lieberman tratan las desigualdades válidas —lo que en este curso llamamos admisibles— y los planos cortantes para programación binaria en la sección <strong>11.8</strong>, la misma que cubre el preprocesamiento de la Clase 13. Los cortes de cobertura aparecen ahí como ejemplo de desigualdad admisible generada a partir de la estructura del modelo.</p>
+    <p style="margin-bottom:0">Dos hilos para tirar por cuenta propia, ninguno materia del curso. El primero es el <strong>lifting</strong> que mencionamos en clase: busca "lifted cover inequalities" y, si quieres ver hasta dónde llega la idea, "sequence independent lifting". El segundo es el <strong>poliedro de la mochila</strong>, es decir la caracterización completa de la envoltura convexa de las soluciones de una sola restricción de mochila: es uno de los objetos mejor estudiados de la optimización combinatoria y explica por qué los solvers dedican tanto esfuerzo a detectar esta estructura dentro de modelos que no parecen mochilas.</p>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ==================================================================
+   Clase 12 · símplex compacto para mochilas con cortes.
+   Los cortes de cobertura destruyen la estructura de mochila, así que
+   el llenado codicioso deja de servir y hace falta resolver un PL de
+   verdad. Son a lo más 7 variables y unas pocas restricciones: un
+   símplex denso con base de holguras alcanza y sobra.
+   max c'x  sujeto a  Ax <= b, x >= 0, con b >= 0 en todas las filas.
+   ================================================================== */
+var SX = (function(){
+  function resolver(c, A, b){
+    var m = A.length, n = c.length, i, j;
+    /* tableau: m filas de restricciones + fila objetivo; columnas
+       n estructurales + m holguras + término independiente */
+    var T = [];
+    for(i=0;i<m;i++){
+      var fila = A[i].slice();
+      for(j=0;j<m;j++) fila.push(i === j ? 1 : 0);
+      fila.push(b[i]);
+      T.push(fila);
+    }
+    var obj = [];
+    for(j=0;j<n;j++) obj.push(-c[j]);
+    for(j=0;j<m;j++) obj.push(0);
+    obj.push(0);
+    T.push(obj);
+
+    var base = [];
+    for(i=0;i<m;i++) base.push(n + i);
+
+    var guardia = 0;
+    while(guardia++ < 500){
+      /* columna entrante: la más negativa de la fila objetivo */
+      var ent = -1, mejor = -1e-9;
+      for(j=0;j<n+m;j++){
+        if(T[m][j] < mejor){ mejor = T[m][j]; ent = j; }
+      }
+      if(ent < 0) break;                       /* óptimo alcanzado */
+
+      /* razón mínima */
+      var sal = -1, razon = Infinity;
+      for(i=0;i<m;i++){
+        if(T[i][ent] > 1e-9){
+          var r = T[i][n+m] / T[i][ent];
+          if(r < razon - 1e-9){ razon = r; sal = i; }
+        }
+      }
+      if(sal < 0) return null;                 /* no acotado */
+
+      var p = T[sal][ent];
+      for(j=0;j<=n+m;j++) T[sal][j] /= p;
+      for(i=0;i<=m;i++){
+        if(i === sal || Math.abs(T[i][ent]) < 1e-12) continue;
+        var f = T[i][ent];
+        for(j=0;j<=n+m;j++) T[i][j] -= f * T[sal][j];
+      }
+      base[sal] = ent;
+    }
+
+    var x = [];
+    for(j=0;j<n;j++) x.push(0);
+    for(i=0;i<m;i++) if(base[i] < n) x[base[i]] = T[i][n+m];
+    return {x:x, z:T[m][n+m]};
+  }
+  return {resolver:resolver};
+})();
+
+/* ==================================================================
+   Instancia de la clase y utilidades de coberturas
+   ================================================================== */
+var K12 = (function(){
+  var A = [5,2,3,2,7,8];        /* consumo de recurso */
+  var C = [7,3,1,5,8,13];       /* aporte al objetivo */
+  var B = 11;                   /* capacidad */
+  var N = A.length;
+
+  /* arma el sistema Ax<=b: mochila + cotas superiores + cortes */
+  function sistema(cortes){
+    var M = [A.slice()], rhs = [B], j;
+    for(j=0;j<N;j++){
+      var f = [];
+      for(var k=0;k<N;k++) f.push(k === j ? 1 : 0);
+      M.push(f); rhs.push(1);
+    }
+    (cortes || []).forEach(function(ct){
+      var f = [];
+      for(var k=0;k<N;k++) f.push(ct.S.indexOf(k) >= 0 ? 1 : 0);
+      M.push(f); rhs.push(ct.rhs);
+    });
+    return {M:M, rhs:rhs};
+  }
+
+  function relajacion(cortes){
+    var s = sistema(cortes);
+    return SX.resolver(C, s.M, s.rhs);
+  }
+
+  function esCobertura(S){
+    var t = 0;
+    S.forEach(function(j){ t += A[j]; });
+    return t > B;
+  }
+  function suma(S){ var t=0; S.forEach(function(j){ t += A[j]; }); return t; }
+  function esMinimal(S){
+    if(!esCobertura(S)) return false;
+    for(var i=0;i<S.length;i++){
+      var R = S.filter(function(_,k){ return k !== i; });
+      if(esCobertura(R)) return false;
+    }
+    return true;
+  }
+  function extendida(S){
+    var m = 0;
+    S.forEach(function(j){ if(A[j] > m) m = A[j]; });
+    var E = S.slice();
+    for(var j=0;j<N;j++) if(A[j] >= m && E.indexOf(j) < 0) E.push(j);
+    return E.sort(function(a,b){ return a-b; });
+  }
+  /* todas las coberturas minimales, por enumeración: 2^6 = 64 subconjuntos */
+  function minimales(){
+    var out = [];
+    for(var m=1; m<(1<<N); m++){
+      var S = [];
+      for(var j=0;j<N;j++) if(m & (1<<j)) S.push(j);
+      if(esMinimal(S)) out.push(S);
+    }
+    return out;
+  }
+  /* todas las coberturas, minimales o no */
+  function coberturas(){
+    var out = [];
+    for(var m=1; m<(1<<N); m++){
+      var S = [];
+      for(var j=0;j<N;j++) if(m & (1<<j)) S.push(j);
+      if(esCobertura(S)) out.push(S);
+    }
+    return out;
+  }
+  /* reduce una cobertura a una minimal contenida en ella, sacando ítems
+     mientras lo que queda siga siendo cobertura; devuelve lo sacado y lo que queda */
+  function reducir(S){
+    var R = S.slice(), sac = [], cambio = true;
+    while(cambio){
+      cambio = false;
+      for(var i=0;i<R.length;i++){
+        var T = R.filter(function(_,k){ return k !== i; });
+        if(esCobertura(T)){ sac.push(R[i]); R = T; cambio = true; break; }
+      }
+    }
+    return {queda:R, sacados:sac};
+  }
+  function nombre(S){
+    return '{' + S.map(function(j){ return 'x' + (j+1); }).join(', ') + '}';
+  }
+  function escribeCorte(S, rhs){
+    return S.map(function(j){ return 'x' + (j+1); }).join(' + ') + ' ≤ ' + rhs;
+  }
+  return {A:A, C:C, B:B, N:N, relajacion:relajacion, esCobertura:esCobertura,
+          suma:suma, esMinimal:esMinimal, extendida:extendida, minimales:minimales,
+          coberturas:coberturas, reducir:reducir,
+          nombre:nombre, escribeCorte:escribeCorte};
+})();
+
+/* ==================================================================
+   Simulador 1 · constructor de coberturas
+   ================================================================== */
+(function(){
+  var cont = document.getElementById('cb-items');
+  if(!cont) return;
+  var sel = [];
+  var REL = K12.relajacion([]);
+
+  function pintarTabla(){
+    var h = '<table><thead><tr><th>Ítem</th><th class="num">a<sub>j</sub></th>' +
+            '<th class="num">c<sub>j</sub></th><th class="num">x̄<sub>j</sub></th>' +
+            '<th>¿en C?</th></tr></thead><tbody>';
+    for(var j=0;j<K12.N;j++){
+      var dentro = sel.indexOf(j) >= 0;
+      h += '<tr' + (dentro ? ' class="sel"' : '') + ' data-j="' + j +
+           '" style="cursor:pointer"><td>x' + (j+1) + '</td>' +
+           '<td class="num">' + K12.A[j] + '</td>' +
+           '<td class="num">' + K12.C[j] + '</td>' +
+           '<td class="num">' + fmt(REL.x[j],2) + '</td>' +
+           '<td>' + (dentro ? '<b>sí</b>' : '—') + '</td></tr>';
+    }
+    cont.innerHTML = h + '</tbody></table>';
+    [].slice.call(cont.querySelectorAll('tr[data-j]')).forEach(function(tr){
+      tr.onclick = function(){
+        var j = +tr.getAttribute('data-j');
+        var i = sel.indexOf(j);
+        if(i >= 0) sel.splice(i,1); else sel.push(j);
+        sel.sort(function(a,b){ return a-b; });
+        marcarPreset(null);
+        actualizar();
+      };
+    });
+  }
+
+  function actualizar(){
+    pintarTabla();
+    var s = K12.suma(sel);
+    var cob = sel.length > 0 && K12.esCobertura(sel);
+    var min = cob && K12.esMinimal(sel);
+    var rhs = sel.length - 1;
+    var valor = 0;
+    sel.forEach(function(j){ valor += REL.x[j]; });
+
+    document.getElementById('cb-suma').textContent = sel.length ? s + ' de ' + K12.B : '—';
+    var bc = document.getElementById('cb-cob'), bm = document.getElementById('cb-min');
+    bc.textContent = sel.length === 0 ? '—' : (cob ? 'Sí' : 'No');
+    bc.className = sel.length === 0 ? '' : (cob ? 'ok' : 'mal');
+    bm.textContent = !cob ? '—' : (min ? 'Sí' : 'No');
+    bm.className = !cob ? '' : (min ? 'ok' : 'mal');
+    document.getElementById('cb-val').textContent = cob ? fmt(valor,2) + ' de ' + rhs : '—';
+
+    var pc = document.getElementById('cb-corte');
+    pc.innerHTML = cob ? '<b>' + K12.escribeCorte(sel, rhs) + '</b>'
+                       : (sel.length ? 'No hay corte: ' + K12.nombre(sel) + ' no es cobertura.'
+                                     : 'Selecciona ítems en la tabla para formar C.');
+
+    var viola = cob && valor > rhs + 1e-9;
+    var nuevo = cob ? K12.relajacion([{S:sel, rhs:rhs}]) : REL;
+    var bz = document.getElementById('cb-z');
+    bz.textContent = fmt(nuevo.z,3);
+    bz.className = (cob && nuevo.z < REL.z - 1e-9) ? 'ok' : '';
+
+    var m = document.getElementById('cb-msg'), t, color = 'var(--teal)';
+    if(sel.length === 0){
+      t = 'Haz clic en las filas de la tabla para armar un conjunto C. El simulador evalúa las dos condiciones de la Clase 10 por separado: primero si el corte es admisible, y después si separa.';
+      color = 'var(--ink-3)';
+    } else if(!cob){
+      t = '<b>' + K12.nombre(sel) + ' no es cobertura.</b> Sus ítems consumen ' + s +
+          ' de los ' + K12.B + ' disponibles, así que caben todos juntos y no hay nada que prohibir. Sin cobertura no hay corte.';
+      color = 'var(--ink-3)';
+    } else if(!min){
+      var sobra = [];
+      sel.forEach(function(j){
+        var R = sel.filter(function(k){ return k !== j; });
+        if(K12.esCobertura(R)) sobra.push('x' + (j+1));
+      });
+      t = '<b>Es cobertura, pero no es minimal.</b> Consume ' + s + ' &gt; ' + K12.B +
+          ', así que el corte es admisible. Pero puedes sacarle ' + sobra.join(' o ') +
+          ' y lo que queda sigue siendo cobertura, de modo que existe un corte más fuerte. ' +
+          'Recuerde que el corte de la grande se deduce del de la chica más las cotas xⱼ ≤ 1.';
+      color = 'var(--gold)';
+    } else if(!viola){
+      t = '<b>Cobertura minimal, corte admisible — pero no separa.</b> En x̄ la suma vale ' +
+          fmt(valor,2) + ', que no supera el límite de ' + rhs +
+          '. Agregarlo deja la relajación intacta en ' + fmt(nuevo.z,3) +
+          '. Admisible no es lo mismo que útil: esto le pasa a ocho de las nueve coberturas minimales de esta mochila.';
+      color = 'var(--ink-3)';
+    } else {
+      t = '<b>Corte válido.</b> Cobertura minimal, corte admisible, y x̄ lo viola: la suma vale ' +
+          fmt(valor,2) + ' contra un máximo de ' + rhs + '. Al agregarlo la cota baja de ' +
+          fmt(REL.z,3) + ' a <b>' + fmt(nuevo.z,3) + '</b>, contra un óptimo entero de 18.';
+      color = 'var(--teal)';
+    }
+    m.innerHTML = t;
+    m.style.borderLeftColor = color;
+    if(window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([cont]);
+  }
+
+  function marcarPreset(activo){
+    [].slice.call(document.querySelectorAll('[data-cob]')).forEach(function(x){
+      x.classList.toggle('ghost', x !== activo);
+    });
+  }
+  [].slice.call(document.querySelectorAll('[data-cob]')).forEach(function(b){
+    b.onclick = function(){
+      var v = b.getAttribute('data-cob');
+      sel = v === '' ? [] : v.split(',').map(Number);
+      marcarPreset(v === '' ? null : b);
+      actualizar();
+    };
+  });
+  actualizar();
+})();
+
+/* ==================================================================
+   Simulador 2 · rondas de corte, con y sin extensión
+   ================================================================== */
+(function(){
+  var cand = document.getElementById('rd-cand');
+  if(!cand) return;
+  var svg = document.getElementById('g-rondas');
+  var OPT = 18;
+  var cortes, historia;
+
+  function reiniciar(){
+    cortes = [];
+    historia = [K12.relajacion([]).z];
+    render();
+  }
+
+  function violadas(sol){
+    var modo = document.getElementById('rd-modo').value;
+    var out = [];
+    /* la extensión se define sobre coberturas minimales; en modo simple
+       se listan también las no minimales, para poder comparar su efecto */
+    var lista = (modo === 'ext') ? K12.minimales() : K12.coberturas();
+    lista.forEach(function(S){
+      var rhs = S.length - 1;
+      /* paso 1: la cobertura C tiene que separar a x̄ por sí misma */
+      var vC = 0;
+      S.forEach(function(j){ vC += sol.x[j]; });
+      if(vC <= rhs + 1e-7) return;
+      /* paso 2: recién entonces se extiende, si se eligió esa versión */
+      var conj = (modo === 'ext') ? K12.extendida(S) : S;
+      var v = 0;
+      conj.forEach(function(j){ v += sol.x[j]; });
+      var o = {base:S, S:conj, rhs:rhs, valor:v, min:K12.esMinimal(S)};
+      if(!o.min) o.red = K12.reducir(S);
+      out.push(o);
+    });
+    /* si dos coberturas distintas producen el mismo conjunto extendido,
+       basta con una */
+    var vistos = {}, unicos = [];
+    out.forEach(function(o){
+      var clave = o.S.join(',') + '|' + o.rhs;
+      if(vistos[clave]) return;
+      vistos[clave] = true; unicos.push(o);
+    });
+    unicos.sort(function(a,b){
+      if(a.min !== b.min) return a.min ? -1 : 1;
+      return (b.valor - b.rhs) - (a.valor - a.rhs);
+    });
+    return unicos;
+  }
+
+  function grafico(){
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    var W=900, H=280, ML=70, MR=30, MT=20, MB=42;
+    var nmax = Math.max(4, historia.length);
+    var zmin = 17.5, zmax = 19.8;
+    function X(i){ return ML + i*(W-ML-MR)/(nmax-1); }
+    function Y(z){ return H - MB - (z-zmin)*(H-MB-MT)/(zmax-zmin); }
+    for(var z=18; z<=19.5; z+=0.5){
+      svg.appendChild(svgEl('line',{x1:ML,y1:Y(z),x2:W-MR,y2:Y(z),stroke:'rgba(20,24,31,.10)'}));
+      var t=svgEl('text',{x:ML-12,y:Y(z)+5,'text-anchor':'end'});
+      t.setAttribute('style',"font-family:'Archivo',sans-serif;font-size:12px;fill:#6B7683");
+      t.textContent = fmt(z,1); svg.appendChild(t);
+    }
+    svg.appendChild(svgEl('line',{x1:ML,y1:Y(OPT),x2:W-MR,y2:Y(OPT),
+      stroke:'#C8551E','stroke-width':2,'stroke-dasharray':'7 5'}));
+    var to=svgEl('text',{x:W-MR-4,y:Y(OPT)-8,'text-anchor':'end'});
+    to.setAttribute('style',"font-family:'Archivo',sans-serif;font-size:12.5px;fill:#C8551E;font-weight:700");
+    to.textContent='óptimo entero = 18'; svg.appendChild(to);
+
+    svg.appendChild(svgEl('line',{x1:ML,y1:Y(zmin),x2:W-MR,y2:Y(zmin),stroke:'#14181F','stroke-width':1.5}));
+    svg.appendChild(svgEl('line',{x1:ML,y1:Y(zmin),x2:ML,y2:Y(zmax),stroke:'#14181F','stroke-width':1.5}));
+
+    var d = '';
+    historia.forEach(function(z,i){
+      d += (i === 0 ? 'M' : ' L') + X(i) + ',' + Y(z);
+      var tx=svgEl('text',{x:X(i),y:Y(zmin)+20,'text-anchor':'middle'});
+      tx.setAttribute('style',"font-family:'Archivo',sans-serif;font-size:12px;fill:#6B7683");
+      tx.textContent = i; svg.appendChild(tx);
+    });
+    svg.appendChild(svgEl('path',{d:d,fill:'none',stroke:'#0F6E63','stroke-width':2.8,
+      'stroke-linejoin':'round'}));
+    historia.forEach(function(z,i){
+      svg.appendChild(svgEl('circle',{cx:X(i),cy:Y(z),r:5,fill:'#0F6E63',stroke:'#fff','stroke-width':2}));
+      var tv=svgEl('text',{x:X(i),y:Y(z)-13,'text-anchor':'middle'});
+      tv.setAttribute('style',"font-family:'Archivo',sans-serif;font-size:12.5px;fill:#0F6E63;font-weight:700");
+      tv.textContent = fmt(z,3); svg.appendChild(tv);
+    });
+    var te=svgEl('text',{x:(ML+W-MR)/2,y:H-8,'text-anchor':'middle'});
+    te.setAttribute('style',"font-family:'Archivo',sans-serif;font-size:13px;fill:#3C4551");
+    te.textContent='Rondas de corte'; svg.appendChild(te);
+  }
+
+  function render(){
+    var sol = K12.relajacion(cortes);
+    document.getElementById('rd-sol').textContent =
+      '(' + sol.x.map(function(v){ return fmt(v,2); }).join('; ') + ')  con z = ' + fmt(sol.z,3);
+    document.getElementById('rd-ronda').textContent = cortes.length;
+    document.getElementById('rd-cota').textContent = fmt(sol.z,3);
+    var br = document.getElementById('rd-brecha');
+    br.textContent = fmt(sol.z - OPT, 3);
+    br.className = (sol.z - OPT < 1e-6) ? 'ok' : '';
+
+    var V = violadas(sol);
+    var modo = document.getElementById('rd-modo').value;
+    if(!V.length){
+      cand.innerHTML = '<p style="font-size:.94rem;margin:0"><b>No queda ninguna cobertura violada.</b> ' +
+        'El algoritmo de separación no encuentra más cortes de esta familia, así que aquí se detiene.</p>';
+    } else {
+      var h = '<p style="font-size:.92rem;margin:0 0 6px"><b>Coberturas cuyo corte está violado ahora</b> ' +
+              '(elige una para agregarla):</p><table><thead><tr><th>Cobertura C</th>' +
+              '<th>Corte que se agrega</th><th class="num">vale</th><th class="num">límite</th>' +
+              '<th>Agregar</th></tr></thead><tbody>';
+      V.forEach(function(o,i){
+        var etiqueta = (modo === 'ext' && o.S.length > o.base.length)
+          ? K12.nombre(o.base) + ' → E(C) = ' + K12.nombre(o.S)
+          : K12.nombre(o.base);
+        var corte = K12.escribeCorte(o.S, o.rhs);
+        if(modo === 'ext' && o.S.length === o.base.length){
+          var mx = o.base.reduce(function(p,j){ return K12.A[j] > K12.A[p] ? j : p; }, o.base[0]);
+          corte += '<br><span style="font-size:.82em;color:var(--ink-3)">E(C) = C: nadie fuera de C pesa ' +
+                   K12.A[mx] + ' o más, que es lo que pesa x' + (mx+1) + '</span>';
+        }
+        if(!o.min){
+          etiqueta += '<br><span style="font-size:.82em">no minimal</span>';
+          corte += '<br><span style="font-size:.82em">sacando ' +
+                   o.red.sacados.map(function(j){ return 'x' + (j+1); }).join(' y ') +
+                   ' queda ' + K12.nombre(o.red.queda) + ', que ya es cobertura</span>';
+        }
+        h += '<tr' + (i === 0 ? ' class="sel"' : '') +
+             (o.min ? '' : ' style="color:var(--ink-3)"') + '><td>' + etiqueta + '</td>' +
+             '<td>' + corte + '</td>' +
+             '<td class="num">' + fmt(o.valor,3) + '</td>' +
+             '<td class="num">' + o.rhs + '</td>' +
+             '<td><button class="btn' + (o.min ? '' : ' ghost') + '" data-i="' + i + '">Agregar</button></td></tr>';
+      });
+      cand.innerHTML = h + '</tbody></table>';
+      [].slice.call(cand.querySelectorAll('button[data-i]')).forEach(function(b){
+        b.onclick = function(){
+          var o = V[+b.getAttribute('data-i')];
+          var c = {S:o.S, rhs:o.rhs, min:o.min};
+          if(!o.min){
+            c.red = o.red.queda;
+            c.zAlt = K12.relajacion(cortes.concat([{S:o.red.queda, rhs:o.red.queda.length - 1}])).z;
+          }
+          cortes.push(c);
+          historia.push(K12.relajacion(cortes).z);
+          render();
+        };
+      });
+    }
+
+    grafico();
+    document.getElementById('rd-undo').disabled = !cortes.length;
+
+    var m = document.getElementById('rd-msg'), t, color='var(--teal)';
+    var nMin = V.filter(function(o){ return o.min; }).length;
+    var ult = cortes.length ? cortes[cortes.length - 1] : null;
+    var comparacion = '';
+    if(ult && !ult.min){
+      var zAhora = K12.relajacion(cortes).z;
+      comparacion = ' <b>El último corte venía de una cobertura no minimal.</b> Con él la cota quedó en ' + fmt(zAhora,3) +
+        '; con el de la minimal contenida, ' + K12.escribeCorte(ult.red, ult.red.length - 1) +
+        ', habría quedado en ' + fmt(ult.zAlt,3) + '. ' +
+        (Math.abs(zAhora - ult.zAlt) < 1e-6
+          ? 'Esta vez dan lo mismo, pero el de la minimal es más fuerte: el otro se obtiene de él sumando cotas \\(x_j \\le 1\\).'
+          : 'La diferencia es lo que costó la grasa.');
+    }
+    if(cortes.length === 0){
+      t = '<b>Ronda 0.</b> La relajación vale 19,5 y el óptimo entero es 18: hay 1,5 de brecha que cerrar. De las nueve coberturas minimales de esta mochila, solo una tiene su corte violado.';
+      color = 'var(--ink-3)';
+    } else if(!V.length){
+      var cerrado = (19.5 - sol.z) / 1.5 * 100;
+      t = '<b>' + cortes.length + ' corte(s) y no quedan más.</b> La cota quedó en ' + fmt(sol.z,3) +
+          ', o sea se cerró un ' + fmt(cerrado,0) + '% de la brecha inicial. ' +
+          (sol.z - OPT < 1e-6
+            ? 'Se alcanzó el óptimo entero: el PL entrega una solución binaria y el problema está resuelto sin ramificar.'
+            : 'Queda ' + fmt(sol.z - OPT,3) + ' de brecha que esta familia de cortes no logra cerrar. Ahí es donde entra la ramificación, y es el tema de la Clase 13.');
+      color = (sol.z - OPT < 1e-6) ? 'var(--teal)' : 'var(--gold)';
+    } else {
+      t = '<b>Ronda ' + cortes.length + '.</b> La cota bajó a ' + fmt(sol.z,3) +
+          ' y todavía hay ' + nMin + ' cobertura(s) minimal(es) con su corte violado' +
+          (V.length > nMin ? ', más ' + (V.length - nMin) + ' no minimal(es) que las contienen' : '') + '. ' +
+          'Prueba a cambiar el selector a cobertura extendida y comparar cuánto baja cada versión.';
+      color = 'var(--gold)';
+    }
+    t += comparacion;
+    m.innerHTML = t;
+    m.style.borderLeftColor = color;
+    if(window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([cand, m]);
+  }
+
+  document.getElementById('rd-modo').onchange = render;
+  document.getElementById('rd-undo').onclick = function(){
+    if(!cortes.length) return;
+    cortes.pop();
+    historia.pop();
+    render();
+    aviso('Se quitó el último corte.');
+  };
+  document.getElementById('rd-reset').onclick = function(){
+    reiniciar(); aviso('De vuelta a la relajación sin cortes.');
+  };
+  reiniciar();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>
