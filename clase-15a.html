@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flujo de costo mínimo · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* el texto corrido usa todo el ancho de la lámina, igual que las cajas:
+   párrafos, lead y cajas comparten el mismo borde derecho */
+p{margin:0 0 15px;width:100%;max-width:none}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:none}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.pie-nota{flex-basis:100%;border-top:1px solid var(--line);padding-top:12px}
+.pie-nota p{margin:0 0 4px;font-size:.8rem}
+.pie a{color:var(--ink-3)}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 15a</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">15a</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Mover<br>al menor <em style="font-style:italic;color:var(--amber)">costo</em></h1>
+  <p class="lead">El plan de envío más económico por una red que ya existe. Es el modelo que contiene a casi todos los demás problemas de la unidad, y su relajación lineal entrega flujos enteros sin que nadie se lo pida.</p>
+  <div class="meta">
+    <span class="chip on">Flujo de costo mínimo</span>
+    <span class="chip">Soluciones enteras</span>
+    <span class="chip">Casos particulares</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>Un problema de operación</h2>
+  <p class="lead">La Clase 14 dejó dos familias de problemas de redes: los de flujo, donde la red ya existe y se decide cuánto circula, y los de diseño, donde se decide qué construir. Hoy vemos el representante más importante de la primera; la Clase 15b se ocupa de la segunda.</p>
+  <p>El <strong>flujo de costo mínimo</strong> responde a una pregunta de operación: dada una red con ofertas, demandas, costos y capacidades, cómo enviar todo al menor costo. Es la conservación de flujo de la Clase 14 con una función objetivo, y su matriz es la matriz de incidencia: totalmente unimodular, relajación entera, símplex basta.</p>
+  <p>Además es el <strong>modelo madre</strong> de la unidad. Transporte, asignación, trasbordo, ruta más corta y flujo máximo son casos particulares suyos; las Clases 16 y 17 estudian los dos últimos porque son tan frecuentes que tienen algoritmos propios, pero la razón por la que todos entregan soluciones enteras está en el modelo de hoy.</p>
+  <p>Esa integralidad es un regalo de la estructura, y desaparece con una restricción de más: basta exigir una proporción entre dos arcos. Lo veremos en vivo, y veremos también cómo reformular un problema desbalanceado o con mínimos contratados sin perder la estructura.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Formular</strong> el problema de flujo de costo mínimo con los conjuntos \(\delta^+(i)\) y \(\delta^-(i)\), ofertas, demandas, costos y cotas.</li>
+    <li><strong>Explicar</strong> por qué, con datos enteros, la relajación lineal entrega flujos enteros.</li>
+    <li><strong>Reformular</strong> un problema desbalanceado o con cotas inferiores para que conserve la estructura de flujo.</li>
+    <li><strong>Reconocer</strong> el transporte, la asignación, el trasbordo, la ruta más corta y el flujo máximo como casos particulares del flujo de costo mínimo.</li>
+    <li><strong>Distinguir</strong> una restricción que conserva la estructura de flujo de una que la rompe, y anticipar su efecto sobre la solución.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Flujo de costo mínimo">
+  <div class="eyebrow">Primer bloque · el modelo</div>
+  <h2>El modelo madre de la unidad</h2>
+  <p class="lead">Ahora la red existe. Algunos nodos ofrecen, otros demandan, cada arco tiene un costo por unidad y una capacidad. Hay que decidir cuánto enviar por cada arco para satisfacer todo al menor costo.</p>
+
+  <div class="modelo">
+    <span class="et">Flujo de costo mínimo · conjuntos y parámetros</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0">
+      \(N\): nodos. \(A\): arcos dirigidos. \(\delta^+(i)\) y \(\delta^-(i)\): arcos que salen y entran de \(i\), para todo \(i\in N\).<br>
+      \(b_i\): flujo neto que genera el nodo \(i\): oferta si \(b_i&gt;0\), demanda si \(b_i&lt;0\), trasbordo si \(b_i=0\), para todo \(i\in N\).<br>
+      \(c_{ij}\): costo por unidad enviada por el arco \((i,j)\); \(l_{ij}\ge0\) y \(u_{ij}\): cotas inferior y superior de su flujo, para todo \((i,j)\in A\).<br>
+      \(x_{ij}\): unidades enviadas por el arco \((i,j)\), para todo \((i,j)\in A\).</p>
+    \[
+    \begin{aligned}
+    \min\;\; & z=\sum_{(i,j)\in A} c_{ij}\,x_{ij}\\
+    \text{s.a.}\;\; & \sum_{(i,j)\in\delta^+(i)} x_{ij} \;-\; \sum_{(j,i)\in\delta^-(i)} x_{ji} \;=\; b_i && \forall i\in N\\
+    & l_{ij}\le x_{ij}\le u_{ij} && \forall (i,j)\in A\\
+    & x_{ij}\ge 0 && \forall (i,j)\in A
+    \end{aligned}
+    \]
+    <p class="glosa">Las restricciones de nodo son las de la Clase 14: su matriz es la de incidencia, y agregarle las cotas mantiene la unimodularidad total. Si los \(b_i\), \(l_{ij}\) y \(u_{ij}\) son enteros, el óptimo de la relajación es entero sin pedirlo. Hillier &amp; Lieberman lo llaman la propiedad de soluciones enteras.</p>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Igualdad solo si la oferta cuadra con la demanda</span>
+    <p>Sumando todas las restricciones de nodo, el lado izquierdo da cero: la igualdad exige \(\sum_{i\in N} b_i = 0\). Si la oferta total supera a la demanda, hay dos salidas. Una es escribir las restricciones de los nodos de oferta con \(\le\). La otra, la que usa el libro, es agregar un <strong>nodo de demanda ficticio</strong> que absorbe el excedente, con arcos de costo cero desde cada nodo de oferta.</p>
+    <p style="margin-bottom:0">Las dos son correctas. La segunda tiene la ventaja de dejar el modelo como una red pura, con igualdades en todos los nodos.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Simulador: flujo de costo mínimo">
+  <div class="eyebrow">Primer bloque · simulador</div>
+  <h2>Cambia la red y mira si el flujo sigue entero</h2>
+  <p class="lead">Un ejemplo con dos nodos de oferta, tres de demanda y tres de trasbordo. El modelo se resuelve en vivo con un símplex general, que no sabe nada de redes, y aun así entrega flujos enteros. Hasta que se le agrega una restricción que no es de conservación de flujo.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Flujo de costo mínimo con ocho nodos y once arcos</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.88rem;color:var(--ink-3);margin:0 0 10px">Haz clic en un arco o en un nodo para modificar sus datos.</p>
+      <div class="controles" id="fc-controles"></div>
+      <div class="botonera">
+        <label style="display:flex;gap:8px;align-items:center;font-size:.9rem;cursor:pointer"><input type="checkbox" id="fc-lateral"> Exigir que los dos arcos que llegan al nodo 7 lleven lo mismo: \(x_{47}=x_{57}\)</label>
+      </div>
+      <div class="botonera" style="margin-top:8px">
+        <button class="btn ghost" id="fc-orig">Datos originales</button>
+      </div>
+      <svg id="g-fc" viewBox="0 0 900 400" style="width:100%;max-width:900px;height:auto;display:block;margin:12px auto 0"></svg>
+      <div class="marcador">
+        <div><span>Costo total</span><b id="fc-z">—</b></div>
+        <div><span>Oferta − demanda</span><b id="fc-bal">0</b></div>
+        <div><span>¿Flujo entero?</span><b id="fc-ent">—</b></div>
+        <div><span>Arcos a capacidad</span><b id="fc-cap">—</b></div>
+      </div>
+      <div class="leyenda">
+        <span><i style="background:var(--ink)"></i>Arco con flujo; el grosor es proporcional</span>
+        <span><i style="background:var(--amber)"></i>Flujo fraccional</span>
+        <span><i style="background:#CFC8B8"></i>Arco sin flujo</span>
+      </div>
+      <p id="fc-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Dos experimentos</span>
+    <p>Con los datos originales el costo es 270. Cambia costos, capacidades y ofertas a gusto: mientras los datos sean enteros y la red siga balanceada, el flujo sale entero, siempre. El símplex no sabe que está en una red; la estructura hace el trabajo.</p>
+    <p style="margin-bottom:0">Ahora activa la restricción \(x_{47}=x_{57}\): un acuerdo para repartir por igual la carga de los dos transportistas que llegan al nodo 7. El costo sube a 282,5 y aparecen flujos de 7,5 y 2,5. La fila nueva no representa el balance de ningún nodo: no es una fila de la matriz de incidencia, y con ella la matriz dejó de ser TU. Con la exigencia de flujos enteros el óptimo sería 288, y habría que obtenerlo con la Unidad 2.</p>
+  </div>
+</section>
+
+
+<section class="lamina" id="l4" data-titulo="Pausa">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre el flujo de costo mínimo.</p>
+
+  <div class="quiz" data-correcta="1" data-retro='["Reducir capacidades cambia el problema y puede dejar demandas sin atender; no corrige la suma de las ofertas y demandas.","Correcto. El nodo ficticio recibe exactamente el excedente, sin costo, y el modelo queda con igualdades en todos los nodos: sigue siendo un flujo de costo mínimo puro, con su matriz de incidencia intacta.","Declarar enteras las variables no hace factible un sistema cuyas ecuaciones suman una contradicción: el lado izquierdo sigue sumando cero y el derecho 10.","Escalar las demandas cambia los datos del problema real: se atendería a los clientes con cantidades que no pidieron."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">En una red de distribución la oferta total supera en 10 unidades a la demanda total. ¿Qué reformulación conserva la estructura de flujo y el problema original?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Reducir la capacidad de algunos arcos hasta que cuadre.</span></button>
+      <button><span class="k">B</span><span>Agregar un nodo de demanda ficticio con \(b=-10\) y arcos de costo cero desde las ofertas.</span></button>
+      <button><span class="k">C</span><span>Declarar enteras las variables de flujo.</span></button>
+      <button><span class="k">D</span><span>Multiplicar las demandas por un factor que iguale la oferta.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="3" data-retro='["El símplex no redondea: 7,5 es el valor exacto de un vértice de la nueva región factible.","Los datos siguen siendo enteros; lo único que cambió fue la estructura de la matriz.","La restricción no hace infactible el problema: el simulador encuentra una solución de costo 282,5.","Correcto. La fila de x47 = x57 no tiene la forma de una columna de incidencia —no representa salir de un nodo y entrar a otro—, y con ella la matriz ya no es totalmente unimodular. El teorema deja de garantizar vértices enteros."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">En el simulador, al exigir \(x_{47}=x_{57}\) aparecen flujos de 7,5. ¿Cuál es la explicación?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Un error de redondeo del símplex.</span></button>
+      <button><span class="k">B</span><span>Que las demandas dejaron de ser enteras.</span></button>
+      <button><span class="k">C</span><span>Que el problema se volvió infactible.</span></button>
+      <button><span class="k">D</span><span>Que la nueva restricción no es de conservación de flujo y la matriz dejó de ser totalmente unimodular.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+
+<section class="lamina" id="l5" data-titulo="Casos particulares">
+  <div class="eyebrow">Segundo bloque · el modelo madre</div>
+  <h2>Casi todo es un flujo de costo mínimo</h2>
+  <p class="lead">El modelo del primer bloque contiene, como casos particulares, a los problemas que ocupan el resto de la unidad. Basta elegir bien los nodos, los \(b_i\), los costos y las capacidades.</p>
+  <div class="tabla-scroll"><table>
+    <thead><tr><th>Problema</th><th>Cómo se escribe como flujo de costo mínimo</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Transporte</strong></td><td>Un nodo por origen con \(b_i&gt;0\), un nodo por destino con \(b_i&lt;0\), arcos solo de origen a destino, sin capacidades.</td></tr>
+      <tr><td><strong>Asignación</strong> · Clase 01</td><td>Un transporte con \(b_i=1\) en cada persona y \(b_i=-1\) en cada tarea.</td></tr>
+      <tr><td><strong>Trasbordo</strong></td><td>El modelo completo, con nodos intermedios, pero sin capacidades en los arcos.</td></tr>
+      <tr><td><strong>Ruta más corta</strong> · Clase 16</td><td>\(b=1\) en el origen, \(b=-1\) en el destino, \(b=0\) en el resto, capacidades infinitas. Cada arista se reemplaza por dos arcos opuestos.</td></tr>
+      <tr><td><strong>Flujo máximo</strong> · Clase 17</td><td>Costo cero en todos los arcos y un arco de retorno del destino al origen con costo \(-1\): minimizar el costo es maximizar lo que circula.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Por eso la unidad tiene esta forma: las Clases 16 y 17 estudian dos casos particulares tan frecuentes que tienen algoritmos propios, más rápidos que el símplex. Pero la razón por la que todos entregan soluciones enteras es la misma, y está en este modelo.</p>
+
+  <details class="explica">
+    <summary>Dos transformaciones útiles: cotas inferiores y arcos en ambos sentidos</summary>
+    <div class="contenido">
+      <p><strong>Cotas inferiores.</strong> Si un contrato obliga a enviar al menos \(l_{ij}\) unidades por el arco \((i,j)\), se sustituye \(x_{ij}=l_{ij}+x'_{ij}\) con \(0\le x'_{ij}\le u_{ij}-l_{ij}\). En la ecuación del nodo \(i\) el término \(l_{ij}\) pasa al lado derecho, que queda \(b_i-l_{ij}\); en la del nodo \(j\), queda \(b_j+l_{ij}\); y la función objetivo suma la constante \(c_{ij}l_{ij}\). El resultado es un flujo de costo mínimo sin cotas inferiores. El E3 lo aplica.</p>
+      <p style="margin-bottom:0"><strong>Aristas.</strong> Si el flujo puede ir en cualquier sentido, la arista \(\{i,j\}\) se reemplaza por los arcos \((i,j)\) y \((j,i)\), cada uno con el costo y la capacidad de la arista. En el óptimo nunca conviene usar los dos a la vez si los costos son positivos: se podría cancelar el flujo opuesto y ahorrar.</p>
+    </div>
+  </details>
+
+  <div class="nota libro">
+    <span class="et">Cómo se resuelve en la práctica</span>
+    <p style="margin-bottom:0">Cualquier símplex lo resuelve. Pero existe una versión especializada, el <strong>símplex de redes</strong> (Hillier &amp; Lieberman, sección 9.7, página 359), que aprovecha que cada base corresponde a un árbol de expansión de la red y hace los pivotes sobre el grafo en vez de sobre una tabla; en redes grandes es mucho más rápido. Existen además algoritmos de cancelación de ciclos y de caminos más cortos sucesivos. Ninguno es materia del curso ni entra en evaluaciones.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>El <strong>flujo de costo mínimo</strong> envía ofertas a demandas al menor costo, con conservación de flujo en cada nodo y cotas en cada arco.</li>
+    <li>Su matriz es la de incidencia más las cotas: <strong>totalmente unimodular</strong>. Con datos enteros, la relajación lineal entrega flujos enteros.</li>
+    <li>Un desbalance se corrige con un <strong>nodo ficticio</strong>, y una cota inferior con un <strong>cambio de variable</strong>: el modelo sigue siendo de flujo.</li>
+    <li>Transporte, asignación, trasbordo, ruta más corta y flujo máximo son <strong>casos particulares</strong> suyos.</li>
+    <li>Una restricción que no es de conservación de flujo, como \(x_{47}=x_{57}\), <strong>rompe la estructura</strong> y hace aparecer fracciones.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>El símplex entrega enteros sin que nadie se lo pida, y no es mérito del algoritmo: viene de la forma de la matriz. Por eso, antes de agregar una restricción a un modelo de flujo, conviene preguntarse qué se pierde con ella.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Cosecha forestal en el Biobío</h4></div>
+    <div class="enunciado">
+      <p>Tres predios forestales —Santa Juana, Florida y Yumbel— cosechan diariamente 12, 8 y 10 cargas de camión de trozos. Una cancha de acopio en Hualqui recibe y reexpide carga sin quedarse con nada. La planta de celulosa necesita 15 cargas diarias y el puerto de Coronel, 10. Los envíos posibles, con su costo en UF por carga y su capacidad diaria cuando la hay, son:</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>De</th><th>A</th><th class="num">Costo</th><th class="num">Capacidad</th></tr></thead>
+        <tbody>
+          <tr><td>Santa Juana</td><td>Acopio</td><td class="num">2</td><td class="num">—</td></tr>
+          <tr><td>Santa Juana</td><td>Puerto</td><td class="num">5</td><td class="num">6</td></tr>
+          <tr><td>Florida</td><td>Acopio</td><td class="num">3</td><td class="num">—</td></tr>
+          <tr><td>Florida</td><td>Planta</td><td class="num">6</td><td class="num">—</td></tr>
+          <tr><td>Yumbel</td><td>Planta</td><td class="num">3</td><td class="num">7</td></tr>
+          <tr><td>Yumbel</td><td>Acopio</td><td class="num">4</td><td class="num">—</td></tr>
+          <tr><td>Acopio</td><td>Planta</td><td class="num">2</td><td class="num">12</td></tr>
+          <tr><td>Acopio</td><td>Puerto</td><td class="num">3</td><td class="num">10</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Dibuje la red, defina \(N\), \(A\) y el vector \(b\), e identifique el tipo de cada nodo.<br>
+      <strong>b)</strong> Compruebe si la red está balanceada. Si no lo está, reformúlela agregando un nodo ficticio, indicando su \(b\) y sus arcos.<br>
+      <strong>c)</strong> Escriba el modelo de flujo de costo mínimo completo, con conjuntos, parámetros, restricciones de nodo usando \(\delta^+(i)\) y \(\delta^-(i)\), cotas y dominio.<br>
+      <strong>d)</strong> Explique por qué no es necesario declarar enteras las variables, aunque en la realidad no se envían fracciones de camión.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la formulación. Si quiere, resuelva el modelo con un solver y reporte el costo mínimo y el plan de envío.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E2 · Tres problemas, un modelo</h4></div>
+    <div class="enunciado">
+      <p>Considere el Seervada Park, con las distancias de sus caminos —O–A 2, O–B 5, O–C 4, A–B 2, A–D 7, B–C 1, B–D 4, B–E 3, C–E 4, D–E 1, D–T 5 y E–T 7— para las aristas y, para el flujo, los arcos dirigidos y capacidades O→A 5, O→B 7, O→C 4, A→B 1, A→D 3, B→C 2, B→D 4, B→E 5, C→E 4, D→T 9, E→D 1 y E→T 6.</p>
+      <p><strong>a)</strong> Escriba el problema de la ruta más corta de O a T como un flujo de costo mínimo: indique \(N\), \(A\), \(b_i\), \(c_{ij}\) y \(u_{ij}\). Explique qué hace con las aristas y por qué la variable, que debería ser binaria, puede declararse continua.<br>
+      <strong>b)</strong> Escriba el problema del flujo máximo de O a T como un flujo de costo mínimo usando un arco de retorno de T a O. Indique su costo, su capacidad y los \(b_i\).<br>
+      <strong>c)</strong> Hillier &amp; Lieberman proponen otra versión: ofertas \(\bar F\) en O y \(-\bar F\) en T, costo cero en los arcos de la red y un arco directo de O a T con un costo grande "\(M\)". Proponga un valor de \(\bar F\) justificado desde los datos, y determine el menor costo válido para ese arco directo.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Lo evaluado son las formulaciones. Si quiere comprobarlas, resuelva (a) y (b) con un solver.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Un contrato de flujo mínimo</h4></div>
+    <div class="enunciado">
+      <p>En la red del simulador del primer bloque, un contrato con el transportista del arco \((5,6)\) obliga a enviarle al menos 5 unidades. Todos los demás datos se mantienen.</p>
+      <p><strong>a)</strong> Escriba la nueva restricción como cota inferior del modelo de flujo de costo mínimo.<br>
+      <strong>b)</strong> Aplique el cambio de variable \(x_{56}=5+x'_{56}\) y escriba explícitamente las dos restricciones de nodo que cambian, sus nuevos lados derechos y la nueva cota de \(x'_{56}\). ¿Qué constante aparece en la función objetivo?<br>
+      <strong>c)</strong> Verifique que el modelo transformado sigue siendo un flujo de costo mínimo puro y que sigue balanceado.<br>
+      <strong>d)</strong> Interprete el cambio: ¿qué "ve" el modelo transformado en los nodos 5 y 6?<br>
+      <strong>e)</strong> Si el contrato obligara a 25 unidades por \((5,6)\), ¿qué ocurriría? Responda con los datos, sin resolver.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la transformación. Si quiere, resuelva el modelo original con la cota y el transformado, y compare.</p>
+    </div>
+  </div>
+
+  <div class="nota libro" style="margin-top:30px">
+    <span class="et">Dónde está esto en el libro</span>
+    <p style="margin-bottom:0">El flujo de costo mínimo es la sección <strong>9.6</strong> de Hillier &amp; Lieberman, desde la página 351: la formulación y la propiedad de soluciones factibles están en la 354, la de soluciones enteras en la 355, y los casos especiales en las 357 y 358. El símplex de redes, sección 9.7, queda fuera del curso.</p>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+  <div class="pie-nota">
+    <p>Clases, simuladores y ejercicios desarrollados con apoyo de ChatGPT (GPT-5.5 Sol) y Claude (Opus 5.5). Contenidos revisados y validados por el profesor.</p>
+    <p>Versión del 21-10-2026 · ¿Encontraste un error? Escríbeme a <a href="mailto:pablogonzalez@udd.cl">pablogonzalez@udd.cl</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" rel="noopener">Licencia CC BY-NC-SA 4.0</a></p>
+  </div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ==================================================================
+   Clase 15a · motores.
+   PL15.resolver: símplex de dos fases con regla de Bland (el mismo de
+   la clase anterior). min c'x s.a. A_eq x = b_eq, A_le x <= b_le, x >= 0.
+   ================================================================== */
+var PL15 = (function(){
+  var EPS = 1e-9;
+  function resolver(c, Aeq, beq, Ale, ble){
+    var n = c.length, me = Aeq.length, ml = Ale.length, i, j;
+    var nc = n + ml + me, T = [], base = [];
+    for(i=0;i<me;i++){
+      var s = beq[i] < 0 ? -1 : 1, f = [];
+      for(j=0;j<n;j++) f.push(s*Aeq[i][j]);
+      for(j=0;j<ml;j++) f.push(0);
+      for(j=0;j<me;j++) f.push(j===i ? 1 : 0);
+      f.push(s*beq[i]); T.push(f); base.push(n+ml+i);
+    }
+    for(i=0;i<ml;i++){
+      if(ble[i] < -EPS) return {estado:'infactible'};
+      var g = [];
+      for(j=0;j<n;j++) g.push(Ale[i][j]);
+      for(j=0;j<ml;j++) g.push(j===i ? 1 : 0);
+      for(j=0;j<me;j++) g.push(0);
+      g.push(ble[i]); T.push(g); base.push(n+i);
+    }
+    function pivotear(r, k){
+      var p = T[r][k], jj, ii;
+      for(jj=0;jj<=nc;jj++) T[r][jj] /= p;
+      for(ii=0;ii<T.length;ii++){
+        if(ii===r) continue;
+        var f = T[ii][k];
+        if(Math.abs(f) < 1e-14) continue;
+        for(jj=0;jj<=nc;jj++) T[ii][jj] -= f*T[r][jj];
+      }
+      base[r] = k;
+    }
+    function iterar(w, permitida){
+      var guardia = 0;
+      while(guardia++ < 20000){
+        var ent = -1;
+        for(var k=0;k<nc;k++){
+          if(!permitida(k) || base.indexOf(k) >= 0) continue;
+          var rc = w[k];
+          for(var r=0;r<T.length;r++) rc -= w[base[r]]*T[r][k];
+          if(rc < -EPS){ ent = k; break; }
+        }
+        if(ent < 0) return 'optimo';
+        var sal = -1, razon = Infinity;
+        for(var r2=0;r2<T.length;r2++){
+          if(T[r2][ent] > EPS){
+            var q = T[r2][nc]/T[r2][ent];
+            if(q < razon - EPS || (Math.abs(q-razon) <= EPS && base[r2] < base[sal])){ razon = q; sal = r2; }
+          }
+        }
+        if(sal < 0) return 'no acotado';
+        pivotear(sal, ent);
+      }
+      return 'limite';
+    }
+    var w1 = [];
+    for(j=0;j<nc;j++) w1.push(j >= n+ml ? 1 : 0);
+    iterar(w1, function(){ return true; });
+    var art = 0;
+    for(i=0;i<T.length;i++) if(base[i] >= n+ml) art += T[i][nc];
+    if(art > 1e-7) return {estado:'infactible'};
+    for(i=T.length-1;i>=0;i--){
+      if(base[i] < n+ml) continue;
+      var k2 = -1;
+      for(j=0;j<n+ml;j++) if(Math.abs(T[i][j]) > 1e-9){ k2 = j; break; }
+      if(k2 >= 0) pivotear(i, k2);
+      else { T.splice(i,1); base.splice(i,1); }
+    }
+    var w2 = [];
+    for(j=0;j<nc;j++) w2.push(j < n ? c[j] : 0);
+    var est = iterar(w2, function(k){ return k < n+ml; });
+    if(est !== 'optimo') return {estado:est};
+    var x = [];
+    for(j=0;j<n;j++) x.push(0);
+    for(i=0;i<T.length;i++) if(base[i] < n) x[base[i]] = T[i][nc];
+    var z = 0;
+    for(j=0;j<n;j++){ if(Math.abs(x[j]) < 1e-10) x[j] = 0; z += c[j]*x[j]; }
+    return {estado:'optimo', x:x, z:z};
+  }
+  return {resolver:resolver};
+})();
+
+/* ------------------------------------------------------------------
+   utilidades de dibujo
+   ------------------------------------------------------------------ */
+var DIB15 = (function(){
+  function marcadores(svg, pref){
+    var defs = svgEl('defs', {});
+    [['ink','#14181F'],['amber','#C8551E'],['teal','#0F6E63'],['gris','#B7AE9C']].forEach(function(c){
+      var m = svgEl('marker', {id:pref+'-'+c[0], viewBox:'0 0 10 10', refX:'9', refY:'5', markerWidth:'11', markerHeight:'11', markerUnits:'userSpaceOnUse', orient:'auto-start-reverse'});
+      m.appendChild(svgEl('path', {d:'M0,0 L10,5 L0,10 z', fill:c[1]}));
+      defs.appendChild(m);
+    });
+    svg.appendChild(defs);
+  }
+  function recorte(p, q, r1, r2){
+    var dx = q[0]-p[0], dy = q[1]-p[1], L = Math.sqrt(dx*dx+dy*dy) || 1, ux = dx/L, uy = dy/L;
+    return [[p[0]+ux*r1, p[1]+uy*r1], [q[0]-ux*r2, q[1]-uy*r2]];
+  }
+  function texto(svg, x, y, t, estilo, ancla){
+    var e = svgEl('text', {x:x, y:y, 'text-anchor':ancla||'start', style:estilo});
+    e.textContent = t; svg.appendChild(e); return e;
+  }
+  function vaciar(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+  return {marcadores:marcadores, recorte:recorte, texto:texto, vaciar:vaciar};
+})();
+var EST15_NODO = 'font:700 15px Archivo,sans-serif;fill:#fff';
+var EST15_ETQ = 'font:600 12.5px Archivo,sans-serif;fill:var(--ink)';
+
+/* ==================================================================
+   Primer bloque · flujo de costo mínimo del ejemplo
+   ================================================================== */
+var FC15 = (function(){
+  var ORIG_ARCOS = [[2,1,1,10],[1,4,2,15],[2,3,0,10],[3,4,1,5],[2,6,6,10],[3,5,4,10],[4,7,5,10],[5,6,2,20],[5,7,7,15],[6,8,8,10],[7,8,9,15]];
+  var ORIG_B = [10,20,0,-5,0,0,-15,-10];
+  /* arcos: [[i,j,c,u]], b: [b1..b8], lateral: exigir x47 = x57 */
+  function resolver(arcos, b, lateral){
+    var n = arcos.length, c = arcos.map(function(a){ return a[2]; });
+    var Aeq = [], beq = [];
+    for(var v=1; v<=b.length; v++){
+      Aeq.push(arcos.map(function(a){ return a[0]===v ? 1 : (a[1]===v ? -1 : 0); }));
+      beq.push(b[v-1]);
+    }
+    if(lateral){
+      Aeq.push(arcos.map(function(a){ return (a[0]===4 && a[1]===7) ? 1 : ((a[0]===5 && a[1]===7) ? -1 : 0); }));
+      beq.push(0);
+    }
+    var Ale = [], ble = [];
+    arcos.forEach(function(a, k){
+      var f = arcos.map(function(){ return 0; }); f[k] = 1; Ale.push(f); ble.push(a[3]);
+    });
+    return PL15.resolver(c, Aeq, beq, Ale, ble);
+  }
+  return {resolver:resolver, ORIG_ARCOS:ORIG_ARCOS, ORIG_B:ORIG_B};
+})();
+
+(function(){
+  var svg = document.getElementById('g-fc');
+  if(!svg) return;
+  var POS = {1:[80,200], 2:[250,75], 3:[420,200], 4:[250,330], 5:[580,200], 6:[740,75], 7:[740,330], 8:[850,200]};
+  var arcos, b, sel = {tipo:'arco', k:4};
+
+  function cargar(){
+    arcos = FC15.ORIG_ARCOS.map(function(a){ return a.slice(); });
+    b = FC15.ORIG_B.slice();
+  }
+  function controles(){
+    var cont = document.getElementById('fc-controles'), h;
+    if(sel.tipo === 'arco'){
+      var a = arcos[sel.k];
+      h = '<div class="ctrl"><label>Costo de (' + a[0] + ',' + a[1] + ') <b id="fc-cv">' + a[2] + '</b></label><input type="range" id="fc-c" min="0" max="15" value="' + a[2] + '"></div>' +
+          '<div class="ctrl"><label>Capacidad de (' + a[0] + ',' + a[1] + ') <b id="fc-uv">' + a[3] + '</b></label><input type="range" id="fc-u" min="0" max="25" value="' + a[3] + '"></div>';
+    } else {
+      h = '<div class="ctrl"><label>Flujo neto b del nodo ' + sel.k + ' <b id="fc-bv">' + b[sel.k-1] + '</b></label><input type="range" id="fc-b" min="-25" max="25" value="' + b[sel.k-1] + '"></div>';
+    }
+    cont.innerHTML = h;
+    if(sel.tipo === 'arco'){
+      document.getElementById('fc-c').oninput = function(){ arcos[sel.k][2] = +this.value; document.getElementById('fc-cv').textContent = this.value; render(); };
+      document.getElementById('fc-u').oninput = function(){ arcos[sel.k][3] = +this.value; document.getElementById('fc-uv').textContent = this.value; render(); };
+    } else {
+      document.getElementById('fc-b').oninput = function(){ b[sel.k-1] = +this.value; document.getElementById('fc-bv').textContent = this.value; render(); };
+    }
+  }
+  function render(){
+    var lateral = document.getElementById('fc-lateral').checked;
+    var suma = b.reduce(function(s,v){ return s+v; }, 0);
+    var R = suma === 0 ? FC15.resolver(arcos, b, lateral) : {estado:'desbalance'};
+    var x = R.estado === 'optimo' ? R.x : arcos.map(function(){ return 0; });
+
+    DIB15.vaciar(svg);
+    DIB15.marcadores(svg, 'fc');
+    arcos.forEach(function(a, k){
+      var p = POS[a[0]], q = POS[a[1]], s = DIB15.recorte(p, q, 24, 26), f = x[k];
+      var frac = Math.abs(f - Math.round(f)) > 1e-7, usado = f > 1e-7;
+      var col = frac ? '#C8551E' : (usado ? '#14181F' : '#B7AE9C');
+      var e = svgEl('line', {x1:s[0][0], y1:s[0][1], x2:s[1][0], y2:s[1][1], stroke:col,
+        'stroke-width': usado ? (2 + 5*f/20).toFixed(1) : '1.6', 'marker-end':'url(#fc-' + (frac ? 'amber' : (usado ? 'ink' : 'gris')) + ')', style:'cursor:pointer'});
+      if(sel.tipo === 'arco' && sel.k === k) e.setAttribute('stroke-dasharray', '8 4');
+      e.onclick = function(){ sel = {tipo:'arco', k:k}; controles(); render(); };
+      svg.appendChild(e);
+      var mx = (p[0]+q[0])/2, my = (p[1]+q[1])/2, dx = q[0]-p[0], dy = q[1]-p[1], L = Math.sqrt(dx*dx+dy*dy);
+      var ox = -dy/L*16, oy = dx/L*16;
+      var et = DIB15.texto(svg, mx+ox, my+oy+4, '(' + a[2] + ', ' + a[3] + ')', 'font:500 11.5px "JetBrains Mono",monospace;fill:var(--ink-3)', 'middle');
+      et.style.cursor = 'pointer'; et.onclick = e.onclick;
+      if(usado) DIB15.texto(svg, mx-ox, my-oy+5, fmt(f,1), 'font:700 14px Archivo,sans-serif;fill:' + (frac ? '#C8551E' : '#0F6E63'), 'middle');
+    });
+    for(var v=1; v<=8; v++){
+      (function(v){
+        var p = POS[v], bv = b[v-1];
+        var col = bv > 0 ? '#0F6E63' : (bv < 0 ? '#C8551E' : '#14181F');
+        var c = svgEl('circle', {cx:p[0], cy:p[1], r:21, fill:col, stroke: (sel.tipo==='nodo' && sel.k===v) ? '#B8892B' : 'none', 'stroke-width':'4', style:'cursor:pointer'});
+        c.onclick = function(){ sel = {tipo:'nodo', k:v}; controles(); render(); };
+        svg.appendChild(c);
+        var t = DIB15.texto(svg, p[0], p[1]+5, String(v), EST15_NODO, 'middle'); t.style.pointerEvents = 'none';
+        DIB15.texto(svg, p[0], p[1] + (p[1] < 150 ? -30 : 40), 'b = ' + bv, 'font:600 12.5px Archivo,sans-serif;fill:' + col, 'middle');
+      })(v);
+    }
+
+    document.getElementById('fc-bal').textContent = (suma > 0 ? '+' : '') + suma;
+    document.getElementById('fc-bal').className = suma === 0 ? 'ok' : 'mal';
+    var m = document.getElementById('fc-msg'), t, color = 'var(--teal)';
+    if(R.estado === 'desbalance'){
+      document.getElementById('fc-z').textContent = '—'; document.getElementById('fc-ent').textContent = '—'; document.getElementById('fc-cap').textContent = '—';
+      color = 'var(--amber)';
+      t = '<b>La red no está balanceada:</b> la oferta total ' + (suma > 0 ? 'supera a la demanda en ' + suma : 'es menor que la demanda en ' + (-suma)) +
+          '. Con igualdades en todos los nodos no existe ningún flujo factible, porque las ecuaciones suman 0 = ' + suma + '. Habría que agregar un nodo ficticio.';
+    } else if(R.estado !== 'optimo'){
+      document.getElementById('fc-z').textContent = '—'; document.getElementById('fc-ent').textContent = '—'; document.getElementById('fc-cap').textContent = '—';
+      color = 'var(--amber)';
+      t = '<b>Infactible.</b> La red está balanceada, pero las capacidades no alcanzan para llevar toda la oferta a las demandas' + (lateral ? ' respetando la restricción x47 = x57' : '') + '. Aumenta alguna capacidad.';
+    } else {
+      var entero = x.every(function(f){ return Math.abs(f - Math.round(f)) < 1e-7; });
+      var llenos = arcos.filter(function(a, k){ return x[k] > 1e-7 && Math.abs(x[k] - a[3]) < 1e-7; }).map(function(a){ return '(' + a[0] + ',' + a[1] + ')'; });
+      document.getElementById('fc-z').textContent = fmt(R.z, 1);
+      var be = document.getElementById('fc-ent'); be.textContent = entero ? 'sí' : 'no'; be.className = entero ? 'ok' : 'mal';
+      document.getElementById('fc-cap').textContent = llenos.length;
+      if(entero) t = '<b>Costo ' + fmt(R.z,1) + ', flujo entero.</b> ' + (lateral ? 'Aun con la restricción lateral, esta vez el vértice óptimo resultó entero; cambia algún dato y verás que no está garantizado.' :
+        'El símplex no sabe que es una red; es la matriz de incidencia, totalmente unimodular, la que garantiza que el vértice óptimo sea entero.') +
+        (llenos.length ? ' Arcos a capacidad: ' + llenos.join(', ') + '.' : '');
+      else { color = 'var(--amber)'; t = '<b>Costo ' + fmt(R.z,1) + ', con flujos fraccionales.</b> La restricción x47 = x57 no es una fila de incidencia: con ella la matriz dejó de ser totalmente unimodular y el vértice óptimo ya no tiene por qué ser entero.'; }
+    }
+    m.innerHTML = t; m.style.borderLeftColor = color;
+  }
+  document.getElementById('fc-lateral').onchange = render;
+  document.getElementById('fc-orig').onclick = function(){ cargar(); document.getElementById('fc-lateral').checked = false; sel = {tipo:'arco', k:4}; controles(); render(); };
+  cargar(); controles(); render();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>

@@ -413,16 +413,13 @@ body.editando .aviso-edicion{display:flex}
 }
 </style>
 </head>
-<body data-modo="docente">
+<body data-modo="alumnos">
 
 <div class="topbar">
   <div class="marca">Tópicos de <em>Optimización</em></div>
   <div class="clase-id">Clase 14</div>
   <div class="progreso"><i id="barra"></i></div>
-  <button id="editar" title="Editar los textos directamente sobre la lamina">Editar</button>
-  <button id="guardar" title="Descarga el archivo HTML con tus cambios aplicados">Guardar</button>
-  <button id="modo-pauta" title="Muestra u oculta todas las pautas">Pautas</button>
-  <button id="proyectar" title="Modo proyeccion: cada lamina se ajusta completa a la pantalla (tecla P)">Proyectar</button>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
   <button id="indice-toggle">Índice</button>
 </div>
 
@@ -452,8 +449,8 @@ body.editando .aviso-edicion{display:flex}
   <h2>La estructura que hace el trabajo</h2>
   <p class="lead">En la Unidad 2 vimos técnicas generales para resolver problemas enteros: ramificación, planos cortantes y preprocesamiento. Sirven para cualquier modelo, pero pueden costar mucho. En esta unidad estudiamos una familia de problemas con una estructura tan favorable que esas técnicas casi no hacen falta, y conviene entender exactamente por qué.</p>
   <p>En todas esas técnicas la relajación lineal cumplía el mismo papel: una cota optimista que había que ir ajustando, ramificando o cortando, hasta llegar a una solución entera. En la Clase 08 anotamos un hecho que parecía casi anecdótico — <strong>si la relajación sale entera, el problema está resuelto</strong> — y agregamos que ocurre poco. En la Clase 10 vimos que ocurriría siempre si el modelo describiera la envoltura convexa de sus puntos enteros, y que en general eso es tan difícil como resolver el problema.</p>
-  <p>Los <strong>problemas de flujo en redes</strong> son la gran excepción. Transporte de carga, distribución eléctrica, rutas en una ciudad, flujos de datos: se escriben con nodos, arcos, una ecuación de conservación en cada nodo y capacidades en los arcos. Esa estructura produce una matriz con una propiedad que tiene nombre, <strong>unimodularidad total</strong>, que garantiza que cada vértice de la relajación es entero. En estos modelos el símplex basta, y existen además algoritmos especializados —las Clases 15, 16 y 17— que ni siquiera necesitan el símplex. Ojo: la propiedad es de los problemas de flujo, no de todos los problemas de redes.</p>
-  <p>Hay problemas de redes que no tienen esa estructura. El <strong>árbol de mínima expansión</strong> de la Clase 15 es uno: sus restricciones no son de conservación de flujo y sus formulaciones habituales no tienen una matriz totalmente unimodular, pero se resuelve igual de fácil por otra razón, un algoritmo voraz que funciona gracias a la propiedad del corte. El <strong>vendedor viajero</strong> —recorrer un conjunto de ciudades volviendo al origen al menor costo— es el caso opuesto: un problema de redes que está entre los problemas enteros más difíciles que existen, igual que su generalización, el ruteo de vehículos de reparto. Hoy lo usamos para ver dónde termina la estructura de flujo. Si se escribe solo con las restricciones de salir y de entrar una vez a cada ciudad, la matriz es totalmente unimodular y la relajación sale entera, pero la solución puede ser varios recorridos separados en vez de uno solo. Para impedirlo hay que agregar restricciones que no son de conservación de flujo: la matriz deja de ser totalmente unimodular, la relajación vuelve a entregar fracciones y el problema se resuelve con las técnicas de la Unidad 2.</p>
+  <p>Los <strong>problemas de flujo en redes</strong> son la gran excepción. Transporte de carga, distribución eléctrica, rutas en una ciudad, flujos de datos: se escriben con nodos, arcos, una ecuación de conservación en cada nodo y capacidades en los arcos. Esa estructura produce una matriz con una propiedad que tiene nombre, <strong>unimodularidad total</strong>, que garantiza que cada vértice de la relajación es entero. En estos modelos el símplex basta, y existen además algoritmos especializados —las Clases 15b, 16 y 17— que ni siquiera necesitan el símplex. Ojo: la propiedad es de los problemas de flujo, no de todos los problemas de redes.</p>
+  <p>Hay problemas de redes que no tienen esa estructura. El <strong>árbol de mínima expansión</strong> de la Clase 15b es uno: sus restricciones no son de conservación de flujo y sus formulaciones habituales no tienen una matriz totalmente unimodular, pero se resuelve igual de fácil por otra razón, un algoritmo voraz que funciona gracias a la propiedad del corte. El <strong>vendedor viajero</strong> —recorrer un conjunto de ciudades volviendo al origen al menor costo— es el caso opuesto: un problema de redes que está entre los problemas enteros más difíciles que existen, igual que su generalización, el ruteo de vehículos de reparto. Hoy lo usamos para ver dónde termina la estructura de flujo. Si se escribe solo con las restricciones de salir y de entrar una vez a cada ciudad, la matriz es totalmente unimodular y la relajación sale entera, pero la solución puede ser varios recorridos separados en vez de uno solo. Para impedirlo hay que agregar restricciones que no son de conservación de flujo: la matriz deja de ser totalmente unimodular, la relajación vuelve a entregar fracciones y el problema se resuelve con las técnicas de la Unidad 2.</p>
 
   <h3>Redes en todas partes</h3>
   <p>Modelar una red es responder tres preguntas: qué son los <strong>nodos</strong>, qué son los <strong>arcos</strong> y qué es lo que <strong>fluye</strong> por ellos. Las respuestas cambian de una aplicación a otra; la ecuación de conservación, no. Con eso definido, cada contexto plantea su propia pregunta de optimización.</p>
@@ -467,7 +464,7 @@ body.editando .aviso-edicion{display:flex}
       <p style="font-size:.86rem;margin:0 0 5px;line-height:1.45"><span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-right:6px">Arcos</span>Vuelos directos entre dos aeropuertos, con asientos disponibles y un costo.</p>
       <p style="font-size:.86rem;margin:0 0 5px;line-height:1.45"><span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-right:6px">Flujo</span>Pasajeros, o los mismos aviones.</p>
       <p style="font-size:.86rem;margin:4px 0 6px;line-height:1.45;padding:7px 9px;border-radius:8px;background:var(--paper-2);font-style:italic;color:var(--ink)"><span style="font-family:var(--fm);font-style:normal;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:2px">Pregunta</span>¿Qué combinación de vuelos lleva de Concepción a Punta Arenas al menor costo?</p>
-      <span style="margin-top:auto;padding-top:6px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">En el curso · Clases 15 y 16</span>
+      <span style="margin-top:auto;padding-top:6px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">En el curso · Clases 15a y 16</span>
     </div>
     <div class="tarjeta" style="padding:16px 17px;display:flex;flex-direction:column">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--teal);background:var(--teal-soft);border-radius:10px;padding:5px;box-sizing:content-box"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14"/><circle cx="9" cy="13.5" r=".9" fill="currentColor"/><circle cx="15" cy="13.5" r=".9" fill="currentColor"/><path d="M8 17l-2.5 4M16 17l2.5 4M7 20h10"/></svg><span class="icono" style="margin:0;line-height:1.35">TRANSPORTE URBANO</span></div>
@@ -485,7 +482,7 @@ body.editando .aviso-edicion{display:flex}
       <p style="font-size:.86rem;margin:0 0 5px;line-height:1.45"><span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-right:6px">Arcos</span>Enlaces de fibra óptica o de radio, con capacidad en Gb/s.</p>
       <p style="font-size:.86rem;margin:0 0 5px;line-height:1.45"><span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-right:6px">Flujo</span>Paquetes de datos.</p>
       <p style="font-size:.86rem;margin:4px 0 6px;line-height:1.45;padding:7px 9px;border-radius:8px;background:var(--paper-2);font-style:italic;color:var(--ink)"><span style="font-family:var(--fm);font-style:normal;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:2px">Pregunta</span>¿Qué enlaces de fibra conviene construir para conectar todas las antenas al menor costo?</p>
-      <span style="margin-top:auto;padding-top:6px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">En el curso · Clases 15 y 17</span>
+      <span style="margin-top:auto;padding-top:6px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">En el curso · Clases 15b y 17</span>
     </div>
     <div class="tarjeta" style="padding:16px 17px;display:flex;flex-direction:column">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--teal);background:var(--teal-soft);border-radius:10px;padding:5px;box-sizing:content-box"><path d="M12 2.8s-5 5.8-5 9.2a5 5 0 0 0 10 0c0-3.4-5-9.2-5-9.2z"/><path d="M2 21h20M4 21v-3h4v3M16 21v-3h4v3"/></svg><span class="icono" style="margin:0;line-height:1.35">SERVICIOS SANITARIOS</span></div>
@@ -494,7 +491,7 @@ body.editando .aviso-edicion{display:flex}
       <p style="font-size:.86rem;margin:0 0 5px;line-height:1.45"><span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-right:6px">Arcos</span>Tuberías y colectores.</p>
       <p style="font-size:.86rem;margin:0 0 5px;line-height:1.45"><span style="font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-right:6px">Flujo</span>Litros por segundo; en las aguas servidas, todo converge a la planta de tratamiento.</p>
       <p style="font-size:.86rem;margin:4px 0 6px;line-height:1.45;padding:7px 9px;border-radius:8px;background:var(--paper-2);font-style:italic;color:var(--ink)"><span style="font-family:var(--fm);font-style:normal;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:2px">Pregunta</span>¿Cómo llevar el agua desde las captaciones a cada sector al menor costo de bombeo, sin exceder la capacidad de las tuberías?</p>
-      <span style="margin-top:auto;padding-top:6px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">En el curso · Clase 15</span>
+      <span style="margin-top:auto;padding-top:6px;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)">En el curso · Clase 15a</span>
     </div>
     <div class="tarjeta" style="padding:16px 17px;display:flex;flex-direction:column">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--teal);background:var(--teal-soft);border-radius:10px;padding:5px;box-sizing:content-box"><circle cx="12" cy="5.5" r="2.3"/><circle cx="5" cy="17.5" r="2.3"/><circle cx="19" cy="17.5" r="2.3"/><path d="M10.9 7.5 6.2 15.4M13.1 7.5l4.7 7.9M7.3 17.5h9.4"/></svg><span class="icono" style="margin:0;line-height:1.35">REDES SOCIALES</span></div>
@@ -598,7 +595,7 @@ body.editando .aviso-edicion{display:flex}
     <div class="tarjeta">
       <span class="icono">ÁRBOLES</span>
       <h4>Conexa y sin ciclos</h4>
-      <p>Un <strong>árbol</strong> es una red conexa sin ciclos. Un <strong>árbol de expansión</strong> de \(G\) usa todos sus nodos y exactamente \(|N|-1\) arcos: uno menos y se desconecta, uno más y aparece un ciclo. Es el objeto de la Clase 15.</p>
+      <p>Un <strong>árbol</strong> es una red conexa sin ciclos. Un <strong>árbol de expansión</strong> de \(G\) usa todos sus nodos y exactamente \(|N|-1\) arcos: uno menos y se desconecta, uno más y aparece un ciclo. Es el objeto de la Clase 15b.</p>
     </div>
   </div>
 
@@ -631,7 +628,7 @@ body.editando .aviso-edicion{display:flex}
     <div class="tarjeta">
       <span class="icono">PROBLEMAS DE DISEÑO</span>
       <h4>Hay que decidir la red</h4>
-      <p>Se decide qué arcos construir o recorrer, y las variables son binarias: árbol de mínima expansión, vendedor viajero. Que sean binarias no condena al problema a ser difícil: el árbol de la Clase 15 se resuelve con un algoritmo voraz.</p>
+      <p>Se decide qué arcos construir o recorrer, y las variables son binarias: árbol de mínima expansión, vendedor viajero. Que sean binarias no condena al problema a ser difícil: el árbol de la Clase 15b se resuelve con un algoritmo voraz.</p>
     </div>
   </div>
 </section>
@@ -780,7 +777,7 @@ body.editando .aviso-edicion{display:flex}
       <p><strong>Miller, Tucker y Zemlin (MTZ).</strong> Se numeran las ciudades \(N=\{1,\dots,n\}\), con la ciudad 1 como origen, y se agrega una variable continua \(u_i\) que representa la posición de la ciudad \(i\) en el recorrido. Las restricciones de asignación se conservan y las DFJ se reemplazan por</p>
       \[ u_i - u_j + 1 \le (n-1)(1-x_{ij}) \quad \forall (i,j)\in A,\; i\ne1,\; j\ne1 \qquad\quad 2\le u_i\le n \quad \forall i\in N\setminus\{1\} \]
       <p>Si \(x_{ij}=1\), la restricción obliga a \(u_j\ge u_i+1\): la ciudad \(j\) va después de \(i\). Si \(x_{ij}=0\), debe quedar inactiva; el mayor valor posible del lado izquierdo es \(n-2+1=n-1\), así que \(M=n-1\) es el menor coeficiente válido. Son solo \((n-1)(n-2)\) restricciones, pero su relajación es mucho más floja que la de DFJ; el E5 lo mide.</p>
-      <p style="margin-bottom:0"><strong>Gavish y Graves (GG).</strong> Se agrega una variable de flujo \(y_{ij}\ge0\) en cada arco: la ciudad 1 despacha \(n-1\) unidades, cada otra ciudad consume una, y el flujo solo puede circular por arcos usados, \(y_{ij}\le(n-1)x_{ij}\) para todo \((i,j)\in A\). Un subtour que no pase por la ciudad 1 no puede recibir flujo, y queda prohibido. Es un modelo de flujo de un solo producto, la idea que desarrollamos en la Clase 15.</p>
+      <p style="margin-bottom:0"><strong>Gavish y Graves (GG).</strong> Se agrega una variable de flujo \(y_{ij}\ge0\) en cada arco: la ciudad 1 despacha \(n-1\) unidades, cada otra ciudad consume una, y el flujo solo puede circular por arcos usados, \(y_{ij}\le(n-1)x_{ij}\) para todo \((i,j)\in A\). Un subtour que no pase por la ciudad 1 no puede recibir flujo, y queda prohibido. Es un modelo de flujo de un solo producto, la idea que desarrollamos en la Clase 15a.</p>
     </div>
   </details>
 </section>
@@ -947,23 +944,6 @@ body.editando .aviso-edicion{display:flex}
       <strong>d)</strong> Usando las restricciones de asignación, demuestre que para cualquier \(S\subset N\) la restricción DFJ de \(S\) equivale a \(\sum_{(i,j)\in A:\, i\in S,\, j\notin S} x_{ij}\ge 1\). Explique qué dice esta segunda forma en palabras.<br>
       <strong>e)</strong> ¿Son realmente distintas las dos restricciones de (b)? Use (d) para responder.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> Siguiendo los arcos: CA→UT→CO→ID→CA es un ciclo sobre \(S_1=\{\text{CA},\text{UT},\text{CO},\text{ID}\}\), y TX→KY→NY→MN→MO→TX es otro sobre \(S_2=\{\text{TX},\text{KY},\text{NY},\text{MN},\text{MO}\}\). Son dos subtours que juntos cubren las nueve ciudades.</p>
-      <p><strong>b)</strong> Para \(S_1\), con \(|S_1|=4\), la suma recorre los \(4\cdot3=12\) arcos internos:</p>
-      \[ x_{\text{CA,ID}}+x_{\text{CA,UT}}+x_{\text{CA,CO}}+x_{\text{ID,CA}}+x_{\text{ID,UT}}+x_{\text{ID,CO}}+x_{\text{UT,CA}}+x_{\text{UT,ID}}+x_{\text{UT,CO}}+x_{\text{CO,CA}}+x_{\text{CO,ID}}+x_{\text{CO,UT}} \le 3 \]
-      <p>Para \(S_2\), con \(|S_2|=5\), son \(5\cdot4=20\) arcos internos:</p>
-      \[
-      \begin{aligned}
-      & x_{\text{TX,MN}}+x_{\text{TX,MO}}+x_{\text{TX,KY}}+x_{\text{TX,NY}}+x_{\text{MN,TX}}+x_{\text{MN,MO}}+x_{\text{MN,KY}}+x_{\text{MN,NY}}+x_{\text{MO,TX}}+x_{\text{MO,MN}}\\
-      &+x_{\text{MO,KY}}+x_{\text{MO,NY}}+x_{\text{KY,TX}}+x_{\text{KY,MN}}+x_{\text{KY,MO}}+x_{\text{KY,NY}}+x_{\text{NY,TX}}+x_{\text{NY,MN}}+x_{\text{NY,MO}}+x_{\text{NY,KY}} \le 4
-      \end{aligned}
-      \]
-      <p><strong>c)</strong> En \(S_1\) valen 1 los arcos CA→UT, UT→CO, CO→ID e ID→CA: la suma es \(4 &gt; 3\). En \(S_2\) valen 1 TX→KY, KY→NY, NY→MN, MN→MO y MO→TX: la suma es \(5 &gt; 4\). Ambas están violadas. Como dato, esta solución recorre 8.872 millas, exactamente la cota de la segunda ronda del simulador.</p>
-      <p><strong>d)</strong> Sumando la restricción "salir una vez" sobre todos los \(i\in S\) se obtiene \(|S|\). Cada arco que sale de un nodo de \(S\) termina dentro o fuera de \(S\), así que</p>
-      \[ |S| \;=\; \sum_{(i,j)\in A(S)} x_{ij} \;+\; \sum_{(i,j)\in A:\, i\in S,\, j\notin S} x_{ij}. \]
-      <p>Luego \(\sum_{(i,j)\in A(S)} x_{ij}\le |S|-1\) si y solo si \(\sum_{(i,j)\in A:\, i\in S,\, j\notin S} x_{ij}\ge 1\). En palabras: <strong>el recorrido debe salir de \(S\) al menos una vez</strong>. Es la forma de corte de la restricción, y deja claro qué prohíbe: quedarse encerrado en un grupo.</p>
-      <p><strong>e)</strong> No lo son. Repitiendo el argumento con "entrar una vez", los arcos que entran a \(S\) también suman \(|S|-\sum_{(i,j)\in A(S)}x_{ij}\); o sea, en toda asignación lo que sale de \(S\) es igual a lo que entra a \(S\). Pero lo que entra a \(S_1\) es exactamente lo que sale de \(S_2=N\setminus S_1\). Entonces, bajo las restricciones de asignación, la DFJ de \(S_1\) y la de \(S_2\) dicen lo mismo: "debe haber al menos un arco entre los dos grupos". Una sola basta para eliminar esta solución. Escribir las dos no es un error, pero la segunda es redundante.</p>
-    </div></details>
   </div>
 
   <div class="ejercicio">
@@ -976,40 +956,6 @@ body.editando .aviso-edicion{display:flex}
       <strong>d)</strong> ¿Cuál de estos dos conjuntos de arcos es un árbol de expansión de la red? \(T_1=\{(1,3),(2,3),(3,4),(4,5),(4,6)\}\) y \(T_2=\{(1,3),(1,4),(3,4),(4,5),(4,6)\}\). Justifique con las definiciones.<br>
       <strong>e)</strong> La Planta Talcahuano amplía su producción a 40 unidades. Explique por qué el modelo con igualdades se vuelve infactible y proponga dos formas de reformularlo.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> \(N=\{1,2,3,4,5,6\}\) y \(A=\{(1,3),(2,3),(1,4),(3,4),(3,6),(4,5),(4,6),(2,6)\}\).</p>
-      <div class="tabla-scroll"><table>
-        <thead><tr><th>Nodo</th><th>δ<sup>+</sup>(i) · salen</th><th>δ<sup>−</sup>(i) · entran</th></tr></thead>
-        <tbody>
-          <tr><td>1 · Planta Coronel</td><td>\(\{(1,3),(1,4)\}\)</td><td>\(\varnothing\)</td></tr>
-          <tr><td>2 · Planta Talcahuano</td><td>\(\{(2,3),(2,6)\}\)</td><td>\(\varnothing\)</td></tr>
-          <tr><td>3 · CD Hualpén</td><td>\(\{(3,4),(3,6)\}\)</td><td>\(\{(1,3),(2,3)\}\)</td></tr>
-          <tr><td>4 · Local Concepción</td><td>\(\{(4,5),(4,6)\}\)</td><td>\(\{(1,4),(3,4)\}\)</td></tr>
-          <tr><td>5 · Local Chiguayante</td><td>\(\varnothing\)</td><td>\(\{(4,5)\}\)</td></tr>
-          <tr><td>6 · Local Tomé</td><td>\(\varnothing\)</td><td>\(\{(3,6),(4,6),(2,6)\}\)</td></tr>
-        </tbody>
-      </table></div>
-      <p><strong>b)</strong> Con las columnas en el orden de \(A\):</p>
-      \[ E=\begin{pmatrix}
-      1&0&1&0&0&0&0&0\\
-      0&1&0&0&0&0&0&1\\
-      -1&-1&0&1&1&0&0&0\\
-      0&0&-1&-1&0&1&1&0\\
-      0&0&0&0&0&-1&0&0\\
-      0&0&0&0&-1&0&-1&-1
-      \end{pmatrix} \]
-      <p>Cada columna tiene un \(+1\), un \(-1\) y cuatro ceros: suma cero.</p>
-      <p><strong>c)</strong> \(b=(50,\,30,\,0,\,-35,\,-25,\,-20)\), y \(50+30+0-35-25-20=0\). Las restricciones, con \(x_{ij}\ge0\) para todo \((i,j)\in A\):</p>
-      \[
-      \begin{aligned}
-      \text{nodo 1:}\;& x_{13}+x_{14}=50 &\qquad \text{nodo 4:}\;& x_{45}+x_{46}-x_{14}-x_{34}=-35\\
-      \text{nodo 2:}\;& x_{23}+x_{26}=30 &\qquad \text{nodo 5:}\;& -x_{45}=-25\\
-      \text{nodo 3:}\;& x_{34}+x_{36}-x_{13}-x_{23}=0 &\qquad \text{nodo 6:}\;& -x_{36}-x_{46}-x_{26}=-20
-      \end{aligned}
-      \]
-      <p><strong>d)</strong> \(T_1\) es un árbol de expansión: tiene \(5=|N|-1\) arcos, toca los seis nodos y es conexo (1 y 2 llegan a 3, 3 a 4, y 4 a 5 y 6), así que no puede tener ciclos. \(T_2\) no lo es por dos razones: los arcos \((1,3)\), \((3,4)\) y \((1,4)\) forman un ciclo, ignorando la dirección, y el nodo 2 no aparece, así que no es conexo. Tener \(|N|-1\) arcos es necesario pero no suficiente.</p>
-      <p><strong>e)</strong> Con 40 unidades, \(\sum_{i\in N} b_i=10&gt;0\). Pero sumando todas las ecuaciones de balance el lado izquierdo da cero, porque cada columna de \(E\) suma cero: no existe ningún flujo que cumpla todas las igualdades. Dos reformulaciones: (1) cambiar las restricciones de los nodos de oferta a \(\le b_i\), permitiendo que las plantas no despachen todo; o (2) agregar un <strong>nodo de demanda ficticio</strong> con \(b=-10\) y arcos de costo cero desde cada planta, que absorbe el excedente y mantiene la estructura de flujo. La segunda es la que usa Hillier &amp; Lieberman en la sección 9.6, y tiene la ventaja de que el modelo sigue siendo de red pura, con su matriz de incidencia intacta.</p>
-    </div></details>
   </div>
 
   <div class="ejercicio">
@@ -1022,25 +968,6 @@ body.editando .aviso-edicion{display:flex}
       <strong>d)</strong> Repita (a) para el cuadrado con \(N=\{1,2,3,4\}\) y \(A=\{\{1,2\},\{2,3\},\{3,4\},\{4,1\}\}\). Argumente por qué su matriz sí es totalmente unimodular sin calcular sus determinantes, y compare el valor del punto con todas sus variables en \(\tfrac12\) con el mejor emparejamiento entero.<br>
       <strong>e)</strong> Oriente las aristas del triángulo como arcos \((1,2)\), \((2,3)\), \((3,1)\) y escriba su matriz de incidencia dirigida. ¿Cuál es su determinante? ¿Qué le enseña este ejercicio sobre el papel del signo en la matriz de incidencia?</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> Para cada \(e\in A\):</p>
-      \[ x_e=\begin{cases}1 & \text{si la arista } e \text{ forma parte del emparejamiento}\\ 0 & \text{en otro caso}\end{cases} \]
-      \[
-      \begin{aligned}
-      \max\;\; & z=\sum_{e\in A} x_e\\
-      \text{s.a.}\;\; & \sum_{e\in\delta(i)} x_e \le 1 && \forall i\in N\\
-      & x_e\in\{0,1\} && \forall e\in A
-      \end{aligned}
-      \]
-      <p><strong>b)</strong> Con filas en el orden de los nodos y columnas en el orden \(\{1,2\},\{1,3\},\{2,3\}\):</p>
-      \[ M=\begin{pmatrix}1&1&0\\1&0&1\\0&1&1\end{pmatrix}, \qquad \det M = 1\cdot(0-1)-1\cdot(1-0)+0 = -2. \]
-      <p>Tiene una submatriz cuadrada —la matriz completa— con determinante \(-2\): <strong>no es totalmente unimodular</strong>.</p>
-      <p><strong>c)</strong> Cada nodo toca dos aristas, así que cada restricción vale \(\tfrac12+\tfrac12=1\le1\): el punto es factible, y su valor es \(\tfrac32\). Un emparejamiento entero, en cambio, tiene a lo más una arista, porque dos aristas cualesquiera del triángulo comparten un nodo: su valor máximo es 1. La relajación promete \(\tfrac32\) donde solo se puede lograr 1. Es exactamente la regla de Cramer del segundo bloque: el determinante 2 permitió un vértice con denominador 2, y de hecho \((\tfrac12,\tfrac12,\tfrac12)\) es el óptimo de la relajación.</p>
-      <p><strong>d)</strong> El modelo es el mismo con \(N=\{1,2,3,4\}\) y las cuatro aristas del cuadrado. El cuadrado es <strong>bipartito</strong>: los nodos \(\{1,3\}\) forman un grupo, \(\{2,4\}\) el otro, y toda arista une ambos grupos. La matriz de incidencia de una red bipartita no dirigida es TU: multiplicando por \(-1\) las filas de un grupo, cada columna queda con un \(+1\) y un \(-1\), que es una matriz de incidencia dirigida, y cambiar el signo de filas no altera los valores absolutos de los determinantes. El punto con todo en \(\tfrac12\) vale 2, y el emparejamiento entero \(\{\{1,2\},\{3,4\}\}\) también vale 2: no hay brecha. Es la misma razón por la que la asignación de la Clase 01 —una red bipartita— sale entera.</p>
-      <p><strong>e)</strong> Con columnas \((1,2),(2,3),(3,1)\):</p>
-      \[ E=\begin{pmatrix}1&0&-1\\-1&1&0\\0&-1&1\end{pmatrix}, \qquad \det E = 1\cdot(1-0)-0+(-1)\cdot(1-0) = 0. \]
-      <p>El determinante es cero, y lo es siempre: las filas de una matriz de incidencia dirigida suman el vector nulo. Todas sus submatrices tienen determinante \(-1\), \(0\) o \(1\), así que es TU. La lección: la misma red, con las mismas conexiones, es TU con signos y no lo es sin ellos cuando tiene un ciclo impar. Lo que da la estructura no es el dibujo sino que cada arco <strong>salga</strong> de un nodo y <strong>entre</strong> a otro.</p>
-    </div></details>
   </div>
 
   <div class="ejercicio">
@@ -1055,37 +982,6 @@ body.editando .aviso-edicion{display:flex}
       <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
       <strong>Ejercicio extra, opcional.</strong> Lo evaluado en este ejercicio es la formulación. Si quiere ir más allá, resuelva el modelo con un solver agregando los cortes de subtour a demanda, y compare los kilómetros totales con los 202,8 km de una sola camioneta.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> En palabras:</p>
-      <p>· <em>Objetivo:</em> minimizar los kilómetros recorridos, sumados sobre las dos camionetas.<br>
-      · <em>R1:</em> cada comuna se asigna a exactamente una camioneta.<br>
-      · <em>R2:</em> en la camioneta que le toca, de cada comuna se sale exactamente una vez.<br>
-      · <em>R3:</em> en la camioneta que le toca, a cada comuna se entra exactamente una vez.<br>
-      · <em>R4:</em> cada camioneta sale una vez de la bodega en Concepción y vuelve una vez.<br>
-      · <em>R5:</em> cada camioneta lleva a lo más cinco pedidos, es decir, visita a lo más cinco comunas.<br>
-      · <em>R6:</em> ninguna camioneta cierra un ciclo que no pase por Concepción.<br>
-      · <em>Dominio:</em> todas las decisiones son binarias.</p>
-      <p><strong>b)</strong> Conjuntos: \(N\), \(C\), \(K\), \(A=\{(i,j): i\in N,\; j\in N,\; i\ne j\}\), \(\delta^+(i)\) y \(\delta^-(i)\) como en la clase, y \(A(S)\) para \(S\subseteq C\). Parámetro: \(c_{ij}\), distancia de \(i\) a \(j\) en km, para todo \((i,j)\in A\). Variables:</p>
-      \[ x_{ijk}=\begin{cases}1 & \text{si la camioneta } k \text{ va de } i \text{ directamente a } j\\ 0 & \text{en otro caso}\end{cases} \quad \forall (i,j)\in A,\; k\in K \]
-      \[ w_{ik}=\begin{cases}1 & \text{si la camioneta } k \text{ atiende la comuna } i\\ 0 & \text{en otro caso}\end{cases} \quad \forall i\in C,\; k\in K \]
-      <p><strong>c)</strong></p>
-      \[
-      \begin{aligned}
-      \min\;\; & z=\sum_{k\in K}\sum_{(i,j)\in A} c_{ij}\,x_{ijk}\\
-      \text{s.a.}\;\; & \sum_{k\in K} w_{ik}=1 && \forall i\in C &\text{(R1)}\\
-      & \sum_{(i,j)\in\delta^+(i)} x_{ijk}=w_{ik} && \forall i\in C,\; k\in K &\text{(R2)}\\
-      & \sum_{(j,i)\in\delta^-(i)} x_{jik}=w_{ik} && \forall i\in C,\; k\in K &\text{(R3)}\\
-      & \sum_{(0,j)\in\delta^+(0)} x_{0jk}=1,\quad \sum_{(j,0)\in\delta^-(0)} x_{j0k}=1 && \forall k\in K &\text{(R4)}\\
-      & \sum_{i\in C} w_{ik}\le 5 && \forall k\in K &\text{(R5)}\\
-      & \sum_{(i,j)\in A(S)} x_{ijk}\le |S|-1 && \forall S\subseteq C,\; |S|\ge2,\; k\in K &\text{(R6)}\\
-      & x_{ijk}\in\{0,1\} && \forall (i,j)\in A,\; k\in K\\
-      & w_{ik}\in\{0,1\} && \forall i\in C,\; k\in K
-      \end{aligned}
-      \]
-      <p><strong>d)</strong> La correspondencia es uno a uno: objetivo con la doble suma, R1 a R6 con las familias del mismo nombre, y el dominio con las dos últimas líneas. Un chequeo útil es preguntarse qué pasa si se borra cada familia. Sin R1 una comuna podría quedar sin visita o visitarse dos veces. Sin R2 y R3 las \(x\) quedarían desconectadas de las \(w\). Sin R4 una camioneta podría no salir del depósito. Sin R5 todo cabría en una camioneta. Y sin R6 la ruta de cada camioneta podría ser un conjunto de subtours, como en la clase. Note además que R4 obliga a que cada camioneta visite al menos una comuna: no existe el arco \((0,0)\), así que la salida de Concepción tiene que ir a alguna comuna.</p>
-      <p><strong>e)</strong> Un subtour es un ciclo que <em>no</em> pasa por el depósito; un ciclo que sí pasa por él es precisamente la ruta legítima de una camioneta. Si se escribiera la restricción para un \(S\) que contiene al nodo 0 —por ejemplo el conjunto de nodos de la ruta completa de una camioneta— se prohibiría cerrar ese recorrido y el modelo quedaría infactible o, con \(S=N\), eliminaría ambas rutas. Por eso \(S\subseteq C\). Y se escriben para cada \(k\in K\), porque un ciclo se cierra dentro de la ruta de una camioneta, con sus propias variables \(x_{ijk}\).</p>
-      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:rgba(255,255,255,.6);border-left:3px solid var(--ink-3)"><strong>Ejercicio extra.</strong> El óptimo recorre <strong>208,5 km</strong>: una camioneta por Talcahuano, Hualpén, Penco y Tomé (81,2 km) y otra por San Pedro de la Paz, Chiguayante, Hualqui, Coronel y Lota (127,3 km). Son 5,7 km más que la ruta única de 202,8 km. Es el precio de partir en dos, y es pequeño porque la conurbación se divide naturalmente en un eje norte, hacia la bahía, y un eje sur, hacia el Biobío y el golfo de Arauco.</p>
-    </div></details>
   </div>
 
   <div class="ejercicio">
@@ -1101,19 +997,11 @@ body.editando .aviso-edicion{display:flex}
       <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
       <strong>Ejercicio extra, opcional.</strong> Lo evaluado es el análisis de la formulación. Si quiere medirlo, resuelva con un solver la relajación lineal de MTZ para el caso del Gran Concepción y compárela con la de la asignación y con la de DFJ con todos sus cortes.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> \(u_i\) es la posición de la ciudad \(i\) en el recorrido: la ciudad 1 es la primera y las demás ocupan las posiciones 2 a \(n\). Si \(x_{ij}=1\), el lado derecho es cero y la restricción queda \(u_j\ge u_i+1\): la ciudad \(j\) viene al menos un lugar después de \(i\).</p>
-      <p><strong>b)</strong> Si \(x_{ij}=0\), la restricción debe cumplirse para cualquier par de posiciones. El lado izquierdo es máximo con \(u_i=n\) y \(u_j=2\), y vale \(n-2+1=n-1\). Luego el coeficiente debe ser al menos \(n-1\), y \(n-1\) basta: es el menor válido. Con \(n-2\) el modelo se vuelve infactible. En todo recorrido hay una ciudad en la posición \(n\) y otra en la posición 2, y de la última no se va a la segunda sino de vuelta a la ciudad 1: para ese par \(x_{ij}=0\), el lado izquierdo vale \(n-1\) y el derecho \(n-2\). Todos los recorridos quedarían prohibidos.</p>
-      <p><strong>c)</strong> Sea un subtour \(i_1\to i_2\to\cdots\to i_k\to i_1\) con \(k\ge2\) ciudades, ninguna igual a 1. Todos sus arcos tienen \(x=1\), así que para cada uno vale \(u_{i_r}-u_{i_{r+1}}+1\le0\). Sumando las \(k\) restricciones, las \(u\) se cancelan en cadena y queda \(k\le0\), que es imposible. El ciclo no puede existir. Si el ciclo pasa por la ciudad 1, la restricción de su arco de llegada a 1 no existe, la cadena no se cierra y no hay contradicción: por eso MTZ permite el recorrido completo y prohíbe todo lo demás.</p>
-      <p><strong>d)</strong> Tome \(u_i\) igual a la posición real de la ciudad \(i\) en el recorrido. Para cada arco usado entre dos ciudades distintas de 1, la posición sube exactamente en uno: \(u_j=u_i+1\), y la restricción se cumple con igualdad. Para cada arco no usado, (b) garantiza que se cumple. Las cotas \(2\le u_i\le n\) se cumplen porque las posiciones van de 2 a \(n\).</p>
-      <p><strong>e)</strong> Con \(n=10\), DFJ tiene \(2^{10}-10-2=\) <strong>1.012</strong> restricciones de subtour; MTZ tiene \((n-1)(n-2)=\) <strong>72</strong>, más nueve variables continuas. MTZ gana en tamaño: se escribe completo, de una vez, y crece de forma polinomial. Pierde en fuerza: su relajación permite valores de \(x\) fraccionales que "reparten" el orden, y la cota resultante es mucho más débil. DFJ es exponencial, pero como se agrega a demanda, casi nunca se escriben más que unas pocas decenas de sus restricciones, y su relajación es muy apretada. Es el mismo dilema de la Unidad 2 entre un modelo compacto y uno con relajación ajustada, y por eso los solvers especializados en el vendedor viajero usan DFJ con cortes.</p>
-      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:rgba(255,255,255,.6);border-left:3px solid var(--ink-3)"><strong>Ejercicio extra.</strong> Sobre las diez comunas, la relajación de la asignación vale 117,3 km, la de MTZ <strong>134,5 km</strong> y la de DFJ con todos sus cortes 202,8 km, que coincide con el óptimo. Medidas contra el óptimo, las brechas son de 42,2%, 33,7% y 0%. MTZ mejora poco sobre la asignación sola; DFJ cierra la brecha completa.</p>
-    </div></details>
   </div>
 
   <div class="nota libro" style="margin-top:30px">
     <span class="et">Dónde está esto en el libro</span>
-    <p>El capítulo 9 de Hillier &amp; Lieberman, <em>Modelos de optimización de redes</em>, es la referencia de la unidad. Para esta clase: la sección <strong>9.1</strong>, página 332, presenta el ejemplo del Seervada Park que usaremos en las Clases 15 a 17; la <strong>9.2</strong>, páginas 333 a 335, es la terminología de redes, y la <strong>propiedad de soluciones enteras</strong> está en la sección 9.6, página 355. El vendedor viajero aparece en la sección <strong>13.1</strong>, página 567, como ejemplo de metaheurísticas: volveremos a él en la Unidad 4.</p>
+    <p>El capítulo 9 de Hillier &amp; Lieberman, <em>Modelos de optimización de redes</em>, es la referencia de la unidad. Para esta clase: la sección <strong>9.1</strong>, página 332, presenta el ejemplo del Seervada Park que usaremos en las Clases 15a a 17; la <strong>9.2</strong>, páginas 333 a 335, es la terminología de redes, y la <strong>propiedad de soluciones enteras</strong> está en la sección 9.6, página 355. El vendedor viajero aparece en la sección <strong>13.1</strong>, página 567, como ejemplo de metaheurísticas: volveremos a él en la Unidad 4.</p>
     <p style="margin-bottom:0">Dos hilos para tirar por cuenta propia, ninguno materia del curso ni de evaluaciones. El primero es la caracterización completa de las matrices totalmente unimodulares; busca "teorema de Hoffman y Kruskal" y "Ghouila-Houri". El segundo es la historia del vendedor viajero resuelto a escala: busca "Concorde TSP solver", que resolvió instancias de decenas de miles de ciudades con cortes DFJ y ramificación, la misma receta de esta clase.</p>
   </div>
 </section>
@@ -1124,7 +1012,7 @@ body.editando .aviso-edicion{display:flex}
   <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
   <div class="pie-nota">
     <p>Clases, simuladores y ejercicios desarrollados con apoyo de ChatGPT (GPT-5.5 Sol) y Claude (Opus 5.5). Contenidos revisados y validados por el profesor.</p>
-    <p>Versión del 20-10-2026 · ¿Encontraste un error? Escríbeme a <a href="mailto:pablogonzalez@udd.cl">pablogonzalez@udd.cl</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" rel="noopener">Licencia CC BY-NC-SA 4.0</a></p>
+    <p>Versión del 21-10-2026 · ¿Encontraste un error? Escríbeme a <a href="mailto:pablogonzalez@udd.cl">pablogonzalez@udd.cl</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" rel="noopener">Licencia CC BY-NC-SA 4.0</a></p>
   </div>
 </footer>
 
@@ -2087,7 +1975,7 @@ var EST_NUM = 'font:600 12px "JetBrains Mono",monospace;fill:var(--amber)';
        return m;
      }},
     {id:'arbol', t:'Árbol de expansión',
-     def:'Un <b>árbol</b> es una red conexa y sin ciclos. Un <b>árbol de expansión</b> de una red usa todos sus nodos y exactamente |N| − 1 de sus arcos: con uno menos se desconecta, con uno más aparece un ciclo. Encontrar el más barato es el problema de la Clase 15.',
+     def:'Un <b>árbol</b> es una red conexa y sin ciclos. Un <b>árbol de expansión</b> de una red usa todos sus nodos y exactamente |N| − 1 de sus arcos: con uno menos se desconecta, con uno más aparece un ciclo. Encontrar el más barato es el problema de la Clase 15b.',
      red:{n:7, d:false, a:[[1,2],[1,3],[2,3],[3,4],[4,5],[5,6],[6,7],[7,4],[2,6]], f:null},
      marcar:function(){
        var arb = arbolExpansion(), C = componentes(), m = {arcos:{}, nodos:{}, dim:true};
