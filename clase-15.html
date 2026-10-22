@@ -413,16 +413,13 @@ body.editando .aviso-edicion{display:flex}
 }
 </style>
 </head>
-<body data-modo="docente">
+<body data-modo="alumnos">
 
 <div class="topbar">
   <div class="marca">Tópicos de <em>Optimización</em></div>
   <div class="clase-id">Clase 15</div>
   <div class="progreso"><i id="barra"></i></div>
-  <button id="editar" title="Editar los textos directamente sobre la lamina">Editar</button>
-  <button id="guardar" title="Descarga el archivo HTML con tus cambios aplicados">Guardar</button>
-  <button id="modo-pauta" title="Muestra u oculta todas las pautas">Pautas</button>
-  <button id="proyectar" title="Modo proyeccion: cada lamina se ajusta completa a la pantalla (tecla P)">Proyectar</button>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
   <button id="indice-toggle">Índice</button>
 </div>
 
@@ -809,13 +806,6 @@ body.editando .aviso-edicion{display:flex}
       <strong>c)</strong> Reporte las ciclovías a construir y su costo total. ¿Coinciden los dos algoritmos?<br>
       <strong>d)</strong> La ciclovía 4–6 resulta pasar por un humedal y su costo sube de 2 a 6. ¿Cambia el diseño? Si cambia, indique cuál arista la reemplaza y el nuevo costo total, justificando con la propiedad del corte.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> Kruskal, en orden de costo y con los empates por el número del primer nodo:</p>
-      <p>13–15 (1) sí · 4–6 (2) sí · 5–8 (2) sí · 1–2 (3) sí · 1–3 (4) sí · 3–6 (4) sí · 4–8 (4) sí · 6–9 (4) sí · 8–12 (4) sí · 14–15 (4) sí · 1–4 (5) <em>ciclo</em>, porque 1 y 4 ya están unidos por 1–3–6–4 · 4–7 (5) sí · 8–11 (5) sí · 11–14 (5) sí · 1–5 (6) <em>ciclo</em>, por 1–3–6–4–8–5 · 6–10 (6) sí. Con esta la red tiene 14 aristas, \(=|N|-1\), y el algoritmo se detiene. Las nueve restantes no se examinan.</p>
-      <p><strong>b)</strong> Prim desde 1: 1–2 (3) · 1–3 (4) · 3–6 (4) · 6–4 (2) · 4–8 (4) · 8–5 (2) · 6–9 (4) · 8–12 (4) · 4–7 (5) · 8–11 (5) · 11–14 (5) · 14–15 (4) · 15–13 (1) · 6–10 (6). Note cómo Prim toma 6–4 recién cuando 6 entra al árbol, aunque con costo 2 es de las más baratas de toda la red: Prim solo mira el corte entre el árbol y el resto.</p>
-      <p><strong>c)</strong> Los dos algoritmos eligen las mismas 14 ciclovías: 1–2, 1–3, 3–6, 4–6, 4–7, 4–8, 5–8, 6–9, 6–10, 8–11, 8–12, 11–14, 13–15 y 14–15, con un costo total de <strong>53 millones de pesos</strong>. Coinciden porque en esta red el árbol óptimo es único: cada arista que queda fuera es estrictamente más cara que todas las del camino del árbol que une sus extremos.</p>
-      <p><strong>d)</strong> Sí cambia. Si se retira 4–6 del árbol, este se parte en dos grupos: \(\{1,2,3,6,9,10\}\) y el resto. La propiedad del corte dice que hay que reconectarlos con la arista más barata que cruce entre ambos grupos. Las candidatas son 1–4 (5), 1–5 (6), 4–6 (ahora 6), 9–14 (6), 7–10 (8), 10–13 (8), 10–14 (8), 6–11 (9) y 9–13 (12); la más barata es <strong>1–4, de costo 5</strong>. El nuevo diseño cuesta \(53-2+5=\) <strong>56 millones</strong>.</p>
-    </div></details>
   </div>
 
   <div class="ejercicio">
@@ -842,22 +832,6 @@ body.editando .aviso-edicion{display:flex}
       <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
       <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la formulación. Si quiere, resuelva el modelo con un solver y reporte el costo mínimo y el plan de envío.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> \(N=\{\text{SJ},\text{FL},\text{YU},\text{AC},\text{PL},\text{PU}\}\) y \(A\) son los ocho arcos de la tabla. Nodos de oferta: SJ con \(b=12\), FL con \(b=8\), YU con \(b=10\). Trasbordo: AC con \(b=0\). Demanda: PL con \(b=-15\) y PU con \(b=-10\).</p>
-      <p><strong>b)</strong> La oferta es \(12+8+10=30\) y la demanda \(15+10=25\): sobran 5 cargas y la red no está balanceada. Se agrega un nodo ficticio FIC con \(b_{\text{FIC}}=-5\) y tres arcos (SJ, FIC), (FL, FIC) y (YU, FIC), con costo 0 y sin capacidad. Enviar a FIC significa, en la realidad, no cosechar esas cargas ese día.</p>
-      <p><strong>c)</strong> Con \(N'=N\cup\{\text{FIC}\}\), \(A'\) los once arcos, \(c_{ij}\) y \(u_{ij}\) de la tabla —\(u_{ij}=\infty\) donde no hay capacidad, y costo 0 en los arcos ficticios— y \(x_{ij}\) las cargas diarias por el arco \((i,j)\):</p>
-      \[
-      \begin{aligned}
-      \min\;\; & z=\sum_{(i,j)\in A'} c_{ij}\,x_{ij}\\
-      \text{s.a.}\;\; & \sum_{(i,j)\in\delta^+(i)} x_{ij}-\sum_{(j,i)\in\delta^-(i)} x_{ji}=b_i && \forall i\in N'\\
-      & x_{ij}\le u_{ij} && \forall (i,j)\in A'\\
-      & x_{ij}\ge0 && \forall (i,j)\in A'
-      \end{aligned}
-      \]
-      <p>con \(b=(12,\,8,\,10,\,0,\,-15,\,-10,\,-5)\) en el orden SJ, FL, YU, AC, PL, PU, FIC. Por ejemplo, la restricción del acopio es \(x_{\text{AC,PL}}+x_{\text{AC,PU}}-x_{\text{SJ,AC}}-x_{\text{FL,AC}}-x_{\text{YU,AC}}=0\).</p>
-      <p><strong>d)</strong> Porque es un flujo de costo mínimo con \(b\) y \(u\) enteros: su matriz es de incidencia, totalmente unimodular, y todo vértice de la relajación es entero. El símplex entrega cargas enteras sin pedirlo.</p>
-      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:rgba(255,255,255,.6);border-left:3px solid var(--ink-3)"><strong>Ejercicio extra.</strong> El costo mínimo es de <strong>109 UF</strong> diarias. Un plan óptimo: Santa Juana envía 6 al acopio y 6 al puerto; Florida, 6 al acopio; Yumbel, 7 a la planta; el acopio reexpide 8 a la planta y 4 al puerto. Florida deja sin cosechar 2 cargas y Yumbel 3. Puede haber otros planes con el mismo costo.</p>
-    </div></details>
   </div>
 
   <div class="ejercicio">
@@ -871,13 +845,6 @@ body.editando .aviso-edicion{display:flex}
       <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
       <strong>Ejercicio extra, opcional.</strong> Lo evaluado son las formulaciones. Si quiere comprobarlas, resuelva (a) y (b) con un solver.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> \(N=\{O,A,B,C,D,E,T\}\). Cada arista \(\{i,j\}\) se reemplaza por dos arcos, \((i,j)\) y \((j,i)\), ambos con la distancia de la arista como costo: \(A\) tiene 24 arcos. \(b_O=1\), \(b_T=-1\) y \(b_i=0\) en el resto; \(u_{ij}=\infty\) para todo \((i,j)\in A\). Una unidad de flujo que sale de O y llega a T recorre un camino, y el costo total es su largo. La variable puede ser continua porque la matriz es de incidencia: con \(b\) entero, el óptimo de la relajación es entero, y con una sola unidad circulando los valores enteros posibles son 0 y 1.</p>
-      <p><strong>b)</strong> Se usan los doce arcos con sus capacidades y costo \(c_{ij}=0\), más un arco \((T,O)\) con costo \(-1\) y capacidad infinita. Todos los nodos tienen \(b_i=0\): el flujo circula. Minimizar \(-x_{TO}\) es maximizar lo que vuelve de T a O, que es exactamente lo que llegó de O a T por la red.</p>
-      <p><strong>c)</strong> \(\bar F\) debe ser una cota segura del flujo máximo. Todo el flujo sale de O por O→A, O→B y O→C, así que \(\bar F=5+7+4=16\) sirve y sale directamente de los datos. Sobre el costo del arco directo: como los demás arcos cuestan cero, <strong>cualquier costo positivo funciona</strong>, incluso 1. Con costo positivo, cada unidad que va por el arco directo penaliza, así que el modelo manda por la red todo lo que la red soporta, y solo el resto va por el arco directo. El "\(M\) grande" es innecesario: el menor valor válido es cualquier número estrictamente positivo.</p>
-      <p><strong>d)</strong> No como un flujo de costo mínimo puro. El árbol es un problema de <em>diseño</em>: la decisión es binaria —construir o no la arista—, el costo es fijo por arista construida y no proporcional al flujo, y el requisito es de conectividad, no de balance. Se puede escribir con flujos agregando binarias de diseño, como la formulación de Gavish y Graves de la Clase 14 —un nodo despacha \(|N|-1\) unidades, cada otro consume una, y el flujo solo pasa por aristas construidas—, pero entonces las restricciones que acoplan flujo y diseño rompen la unimodularidad. Que el árbol se resuelva fácil no viene de ser un flujo, sino de la propiedad del corte.</p>
-      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:rgba(255,255,255,.6);border-left:3px solid var(--ink-3)"><strong>Ejercicio extra.</strong> La ruta más corta cuesta <strong>13</strong> millas, por ejemplo O–A–B–D–T. El flujo máximo es <strong>14</strong>. Con la versión de (c), \(\bar F=16\) y costo 1 en el arco directo, el óptimo manda 2 unidades por el arco directo y 14 por la red: el mismo resultado.</p>
-    </div></details>
   </div>
 
   <div class="ejercicio">
@@ -891,28 +858,6 @@ body.editando .aviso-edicion{display:flex}
       <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
       <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la formulación y el argumento. Si quiere medir el efecto, resuelva el modelo con un solver, ejecute el Kruskal modificado y compare los dos resultados.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> En palabras:</p>
-      <p>· <em>Objetivo:</em> minimizar el largo total de los tramos construidos.<br>
-      · <em>R1:</em> se construyen exactamente nueve tramos, uno menos que el número de comunas.<br>
-      · <em>R2:</em> ningún grupo de comunas contiene un ciclo de tramos.<br>
-      · <em>R3:</em> ninguna comuna queda conectada a más de tres tramos.<br>
-      · <em>Dominio:</em> construir o no cada tramo es una decisión binaria.</p>
-      <p><strong>b)</strong> \(N\): las diez comunas. \(A\): los 45 tramos posibles, uno por cada par de comunas. \(A(S)\) como en la clase, y \(\delta(i)=\{e\in A: i \text{ es extremo de } e\}\) para todo \(i\in N\). Parámetro \(c_e\): largo del tramo \(e\), en km.</p>
-      \[ x_e=\begin{cases}1 & \text{si se construye el tramo } e\\ 0 & \text{en otro caso}\end{cases} \qquad \forall e\in A \]
-      \[
-      \begin{aligned}
-      \min\;\; & z=\sum_{e\in A} c_e\,x_e\\
-      \text{s.a.}\;\; & \sum_{e\in A} x_e = |N|-1 &\text{(R1)}\\
-      & \sum_{e\in A(S)} x_e \le |S|-1 \qquad \forall S\subset N,\; 2\le|S|\le|N|-1 &\text{(R2)}\\
-      & \sum_{e\in\delta(i)} x_e \le 3 \qquad \forall i\in N &\text{(R3)}\\
-      & x_e\in\{0,1\} \qquad \forall e\in A
-      \end{aligned}
-      \]
-      <p><strong>c)</strong> Objetivo con la suma de largos; R1 fija el tamaño; R2 son las restricciones de ciclos; R3 es la única nueva, una por comuna; el dominio cierra el modelo. Nada sobra y nada falta: si se borra R3 se recupera el árbol del caso, con Concepción en cuatro tramos.</p>
-      <p><strong>d)</strong> La propiedad del corte decía que la arista más barata que cruza un corte pertenece a <em>algún</em> árbol óptimo. Eso se demostraba intercambiando aristas en un ciclo, y el intercambio puede aumentar el grado de un nodo por sobre tres: el árbol resultante sería más barato pero infactible. Sin esa propiedad, una elección codiciosa temprana puede cerrar puertas. En concreto, Kruskal modificado conecta muy pronto Concepción con sus vecinas más cercanas y agota sus tres cupos; más adelante, cuando necesita una conexión que solo Concepción ofrecía barata, tiene que usar una alternativa cara. La restricción de grado hace que las decisiones interactúen, y el problema pasa a ser un problema entero de verdad: de hecho, con tope 2 es el problema del camino hamiltoniano, pariente cercano del vendedor viajero.</p>
-      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:rgba(255,255,255,.6);border-left:3px solid var(--ink-3)"><strong>Ejercicio extra.</strong> El óptimo con tope 3 mide <strong>114,7 km</strong>: cambia el tramo Concepción–Hualpén (6,3) por Hualpén–San Pedro de la Paz (7,6), y cuesta solo 1,3 km más que el árbol sin tope. El Kruskal modificado entrega <strong>116,2 km</strong>: acepta Concepción–Hualpén, llega con Concepción ya en tres tramos y, al no poder usar Concepción–Penco (12,6), conecta Penco desde Hualpén, con 15,4 km. La diferencia es pequeña, pero existe, y basta para mostrar que el procedimiento dejó de ser exacto.</p>
-    </div></details>
   </div>
 
   <div class="ejercicio">
@@ -927,18 +872,6 @@ body.editando .aviso-edicion{display:flex}
       <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
       <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la transformación. Si quiere, resuelva el modelo original con la cota y el transformado, y compare.</p>
     </div>
-    <details class="pauta"><summary>Ver pauta</summary><div class="contenido">
-      <p><strong>a)</strong> \(5\le x_{56}\le 20\).</p>
-      <p><strong>b)</strong> El arco \((5,6)\) sale del nodo 5 y entra al nodo 6. Con \(x_{56}=5+x'_{56}\):</p>
-      <p>· Nodo 5: \(x_{56}+x_{57}-x_{35}=0\) pasa a \(x'_{56}+x_{57}-x_{35}=-5\). El nodo 5 queda con \(b'_5=-5\).<br>
-      · Nodo 6: \(x_{68}-x_{26}-x_{56}=0\) pasa a \(x_{68}-x_{26}-x'_{56}=5\). El nodo 6 queda con \(b'_6=+5\).<br>
-      · Cota: \(0\le x'_{56}\le 15\).<br>
-      · Objetivo: \(c_{56}x_{56}=2(5+x'_{56})=10+2x'_{56}\). Aparece la constante 10.</p>
-      <p><strong>c)</strong> Todas las restricciones de nodo siguen teniendo la forma "sale menos entra igual a \(b\)", las cotas son \(0\le x\le u\) y el objetivo es lineal más una constante que no afecta la decisión: es un flujo de costo mínimo puro. La suma de los \(b\) cambió en \(-5+5=0\): sigue balanceado.</p>
-      <p><strong>d)</strong> El modelo transformado ve al nodo 5 como un <strong>demandante</strong> de 5 unidades y al nodo 6 como un <strong>oferente</strong> de 5: las 5 unidades obligadas ya "viajaron" de 5 a 6 por contrato, así que 5 debe recibir 5 más de lo que reexpide y 6 dispone de 5 que nadie le envió por la red.</p>
-      <p><strong>e)</strong> La cota inferior superaría la capacidad del arco, 20: \(25\le x_{56}\le 20\) es imposible, y la nueva cota \(0\le x'_{56}\le -5\) lo hace evidente. El modelo sería infactible sin mirar el resto de la red. Habría que renegociar el contrato o ampliar el arco.</p>
-      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:rgba(255,255,255,.6);border-left:3px solid var(--ink-3)"><strong>Ejercicio extra.</strong> El modelo original con \(x_{56}\ge5\) cuesta <strong>280</strong>. El transformado cuesta 270, que más la constante 10 da los mismos 280. El contrato encarece la operación en 10 respecto del óptimo sin contrato, que también era 270; en ese óptimo el arco \((5,6)\) no se usaba.</p>
-    </div></details>
   </div>
 
   <div class="nota libro" style="margin-top:30px">
@@ -953,7 +886,7 @@ body.editando .aviso-edicion{display:flex}
   <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
   <div class="pie-nota">
     <p>Clases, simuladores y ejercicios desarrollados con apoyo de ChatGPT (GPT-5.5 Sol) y Claude (Opus 5.5). Contenidos revisados y validados por el profesor.</p>
-    <p>Versión del 20-10-2026 · ¿Encontraste un error? Escríbeme a <a href="mailto:pablogonzalez@udd.cl">pablogonzalez@udd.cl</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" rel="noopener">Licencia CC BY-NC-SA 4.0</a></p>
+    <p>Versión del 22-10-2026 · ¿Encontraste un error? Escríbeme a <a href="mailto:pablogonzalez@udd.cl">pablogonzalez@udd.cl</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" rel="noopener">Licencia CC BY-NC-SA 4.0</a></p>
   </div>
 </footer>
 
