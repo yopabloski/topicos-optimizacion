@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ruta más corta · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* el texto corrido usa todo el ancho de la lámina, igual que las cajas:
+   párrafos, lead y cajas comparten el mismo borde derecho */
+p{margin:0 0 15px;width:100%;max-width:none}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:none}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+/* los encabezados numéricos conservan el tamaño de los demás encabezados */
+th.num{font-size:10.5px}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.pie-nota{flex-basis:100%;border-top:1px solid var(--line);padding-top:12px}
+.pie-nota p{margin:0 0 4px;font-size:.8rem}
+.pie a{color:var(--ink-3)}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 16</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">16</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>El camino<br>más <em style="font-style:italic;color:var(--amber)">corto</em></h1>
+  <p class="lead">Uno de los problemas de redes con más aplicaciones: rutas, planes de inversión, pedidos y hasta puzzles. Veremos por qué es un flujo de costo mínimo con una sola unidad, cómo lo resuelve Dijkstra, y cuántos problemas que no parecen de rutas son en realidad una ruta más corta.</p>
+  <div class="meta">
+    <span class="chip on">Ruta más corta</span>
+    <span class="chip">Algoritmo de Dijkstra</span>
+    <span class="chip">Reemplazo de equipos</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>Un caso particular que merece algoritmo propio</h2>
+  <p class="lead">En la Clase 15 la ruta más corta apareció en una fila de la tabla de casos particulares del flujo de costo mínimo. Hoy le dedicamos la clase completa, porque es el caso particular más importante de todos.</p>
+  <p>La pregunta es simple: dado un origen y un destino en una red con distancias, costos o tiempos en los arcos, cuál es el camino de menor largo total. Como modelo, es un flujo de costo mínimo en el que una sola unidad sale del origen y llega al destino, y hereda todo lo de la Clase 14: la variable es binaria, pero la relajación sale entera sola. Se puede resolver con símplex, y durante años así se hizo.</p>
+  <p>Pero hay algo mucho mejor. El <strong>algoritmo de Dijkstra</strong> encuentra en una sola pasada las rutas más cortas desde el origen hacia <em>todos</em> los nodos, haciendo definitiva en cada iteración la distancia de un nodo más. Es la idea de base de los motores de rutas y del enrutamiento de datos en internet; los números de la Clase 14 salieron de un motor así. Su única exigencia es que ningún arco tenga costo negativo, y veremos qué se rompe si la exigencia no se cumple.</p>
+  <p>La segunda mitad de la clase es de modelamiento. Una red no tiene por qué ser un mapa: los nodos pueden ser instantes de tiempo y los arcos, decisiones. Reemplazar un equipo, decidir cuándo hacer los pedidos de una tienda, elegir la ruta más confiable o planificar con varios destinos son problemas de ruta más corta disfrazados, y reconocerlos es la habilidad que más rinde de esta clase.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Formular</strong> la ruta más corta como flujo de costo mínimo y justificar por qué sus variables pueden declararse continuas.</li>
+    <li><strong>Ejecutar</strong> el algoritmo de Dijkstra a mano, con los conjuntos de nodos permanentes y temporales y las etiquetas de distancia y predecesor.</li>
+    <li><strong>Reconstruir</strong> el árbol de rutas más cortas desde un origen y leer en él la ruta hacia cualquier destino.</li>
+    <li><strong>Explicar</strong> por qué Dijkstra exige costos no negativos y reconocer cuándo esa exigencia no se cumple.</li>
+    <li><strong>Modelar</strong> como ruta más corta problemas que no parecen de rutas, como el reemplazo de equipos, el plan de pedidos de una tienda de bicicletas o un problema de estados.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="El modelo y el algoritmo de Dijkstra">
+  <div class="eyebrow">Primer bloque · el algoritmo</div>
+  <h2>Una unidad de flujo, y una distancia definitiva por iteración</h2>
+  <p class="lead">Se definen \(N\) y \(A\), el origen \(s\in N\), el destino \(t\in N\), y \(c_{ij}\ge0\), el largo del arco \((i,j)\), para todo \((i,j)\in A\). Si la red es no dirigida, cada arista se reemplaza por dos arcos opuestos con el mismo largo.</p>
+
+  <div class="modelo">
+    <span class="et">Ruta más corta · modelo</span>
+    \[ x_{ij}=\begin{cases}1 & \text{si el arco } (i,j) \text{ forma parte de la ruta}\\ 0 & \text{en otro caso}\end{cases} \qquad \forall (i,j)\in A \]
+    \[
+    \begin{aligned}
+    \min\;\; & z=\sum_{(i,j)\in A} c_{ij}\,x_{ij}\\
+    \text{s.a.}\;\; & \sum_{(i,j)\in\delta^+(i)} x_{ij}-\sum_{(j,i)\in\delta^-(i)} x_{ji}=\begin{cases}1 & \text{si } i=s\\ -1 & \text{si } i=t\\ 0 & \text{en otro caso}\end{cases} && \forall i\in N\\
+    & x_{ij}\in\{0,1\} && \forall (i,j)\in A
+    \end{aligned}
+    \]
+    <p class="glosa">Es el flujo de costo mínimo con \(b_s=1\), \(b_t=-1\) y trasbordo en el resto. La matriz es de incidencia, así que la relajación con \(x_{ij}\ge0\) entrega un vértice entero: el dominio binario puede reemplazarse por la no negatividad sin cambiar el óptimo.</p>
+  </div>
+
+  <div class="modelo">
+    <span class="et">Algoritmo de Dijkstra · desde un origen \(s\) hacia todos los nodos</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0">
+      <b>Etiquetas.</b> \(d(i)\): la distancia más corta conocida desde \(s\) hasta \(i\). \(\mathrm{pred}(i)\): el nodo anterior a \(i\) en esa ruta. \(P\): nodos <em>permanentes</em>, cuya distancia ya es definitiva. \(T\): nodos <em>temporales</em>, cuya etiqueta es solo una cota.<br><br>
+      <b>Paso 0 · inicialización.</b> \(P=\{s\}\), \(T=N\setminus\{s\}\), \(d(s)=0\), \(\mathrm{pred}(s)=s\), y \(d(j)=\infty\) para todo \(j\in T\).<br><br>
+      <b>Paso 1 · actualizar cotas.</b> Sea \(i\) el último nodo que entró a \(P\). Para cada arco \((i,j)\in\delta^+(i)\) con \(j\in T\): si \(d(i)+c_{ij}&lt;d(j)\), hacer \(d(j)=d(i)+c_{ij}\) y \(\mathrm{pred}(j)=i\).<br><br>
+      <b>Paso 2 · hacer permanente.</b> Elegir \(k\in T\) con la menor etiqueta \(d(k)\). Pasarlo de \(T\) a \(P\).<br><br>
+      <b>Paso 3 · terminar.</b> Si \(T\) está vacío, detenerse; si no, volver al paso 1.
+    </p>
+    <p class="glosa">Al terminar, \(d(i)\) es el largo de la ruta más corta de \(s\) a \(i\), y siguiendo \(\mathrm{pred}\) hacia atrás desde \(i\) se reconstruye la ruta. Los arcos \((\mathrm{pred}(i),i)\) forman el <strong>árbol de rutas más cortas</strong>. Si solo interesa un destino \(t\), se puede parar cuando \(t\) entra a \(P\).</p>
+  </div>
+
+  <details class="explica">
+    <summary>Por qué funciona, y la relación con la dualidad</summary>
+    <div class="contenido">
+      <p>Cuando \(k\) es el temporal de menor etiqueta, cualquier otra ruta de \(s\) a \(k\) tiene que salir de \(P\) por algún temporal \(j\), cuya etiqueta ya es \(d(j)\ge d(k)\), y después recorrer más arcos, que no restan porque sus costos no son negativos. Ninguna ruta alternativa puede bajar de \(d(k)\): la etiqueta es definitiva. Es una propiedad del corte, como la de Prim, aplicada ahora a distancias acumuladas.</p>
+      <p style="margin-bottom:0">Las etiquetas finales cumplen \(d(j)\le d(i)+c_{ij}\) para todo arco \((i,j)\in A\), con igualdad en los arcos del árbol. Esas desigualdades son exactamente las restricciones del <strong>dual</strong> del modelo de arriba: las etiquetas de Dijkstra son una solución dual óptima, y \(d(t)-d(s)\) es el valor del dual, igual al largo de la ruta. Dijkstra construye a la vez la solución primal, el árbol, y el certificado de que es óptima. En la Clase 17 veremos la misma idea con el flujo máximo y el corte mínimo.</p>
+    </div>
+  </details>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Simulador: Dijkstra">
+  <div class="eyebrow">Primer bloque · simulador</div>
+  <h2>Dijkstra en el Seervada Park</h2>
+  <p class="lead">El ejemplo de Hillier &amp; Lieberman: cuál es el camino más corto para los tranvías desde la entrada O hasta el mirador T. Cada paso actualiza cotas desde el último permanente y hace permanente al temporal más cercano.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Etiquetas \([\,d(i),\ \mathrm{pred}(i)\,]\) paso a paso</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl"><label>Origen</label>
+          <select id="dj-s"><option>O</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>T</option></select></div>
+        <div class="ctrl"><label>Destino a resaltar</label>
+          <select id="dj-t"><option>O</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option selected>T</option></select></div>
+        <div class="ctrl"><label>Largo de <span id="dj-sel-n">B–D</span> <b id="dj-sel-v">4</b></label><input type="range" id="dj-peso" min="1" max="12" value="4"></div>
+      </div>
+      <p style="font-size:.86rem;color:var(--ink-3);margin:-6px 0 10px">Haz clic en el número de una arista para elegir cuál modificar.</p>
+      <div class="botonera">
+        <button class="btn" id="dj-paso">Siguiente iteración</button>
+        <button class="btn ghost" id="dj-todo">Hasta el final</button>
+        <button class="btn ghost" id="dj-reset">Reiniciar</button>
+        <button class="btn ghost" id="dj-orig">Largos originales</button>
+      </div>
+      <svg id="g-dj" viewBox="0 0 900 360" style="width:100%;max-width:900px;height:auto;display:block;margin:12px auto 0"></svg>
+      <div class="marcador">
+        <div><span>Iteración</span><b id="dj-k">0</b></div>
+        <div><span>Permanentes</span><b id="dj-np">1 / 7</b></div>
+        <div><span>Distancia al destino</span><b class="ok" id="dj-dt">—</b></div>
+        <div><span>Ruta</span><b id="dj-ruta" style="font-size:1.05rem">—</b></div>
+      </div>
+      <div class="leyenda">
+        <span><i style="background:var(--teal)"></i>Nodo permanente y arco del árbol</span>
+        <span><i style="background:var(--amber)"></i>Nodo que entró en esta iteración</span>
+        <span><i style="background:var(--gold)"></i>Ruta al destino</span>
+      </div>
+      <div class="tabla-scroll" id="dj-tabla"></div>
+      <p id="dj-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Dos detalles del ejemplo</span>
+    <p style="margin-bottom:0">En la segunda iteración B y C empatan con etiqueta 4: se puede hacer permanente cualquiera de los dos, o ambos, sin cambiar el resultado; el simulador toma el primero en orden alfabético. Y al final D llega con 8 desde B y también con 8 desde E: hay <strong>dos rutas más cortas</strong> a D, y por lo tanto dos a T, O–A–B–D–T y O–A–B–E–D–T, ambas de 13 millas. La tabla lo marca como empate en el predecesor.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Pausa 1">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre el algoritmo de Dijkstra.</p>
+
+  <div class="quiz" data-correcta="1" data-retro='["El número de arcos de un nodo no dice nada sobre su distancia al origen.","Correcto. Cualquier otra ruta hasta k tendría que pasar por algún nodo temporal, cuya etiqueta ya es al menos d(k), y luego sumar arcos que no restan. Ninguna alternativa puede bajar de d(k). Por eso Dijkstra exige costos no negativos.","El algoritmo no revisa todos los arcos antes de hacer permanente un nodo; justamente su eficiencia viene de no hacerlo.","Que las distancias sean enteras no tiene relación con el argumento; Dijkstra funciona igual con distancias fraccionarias."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">¿Qué garantiza que, al hacer permanente el nodo temporal \(k\) de menor etiqueta, su distancia \(d(k)\) ya no pueda mejorar?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Que \(k\) es el nodo con más arcos conectados.</span></button>
+      <button><span class="k">B</span><span>Que los costos no son negativos: toda otra ruta pasa por un temporal con etiqueta mayor o igual.</span></button>
+      <button><span class="k">C</span><span>Que ya se revisaron todos los arcos de la red.</span></button>
+      <button><span class="k">D</span><span>Que \(d(k)\) es un número entero.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. Los dos tienen distancia definitiva, así que el orden en que se hagan permanentes no cambia ninguna etiqueta final. En el ejemplo del Seervada Park se puede tomar B, C o ambos.","Un empate de etiquetas no significa que el problema tenga dificultades; el algoritmo sigue normalmente.","No existe ese criterio en Dijkstra: el único criterio es la menor etiqueta.","Las etiquetas no se combinan: cada una es la distancia a su propio nodo."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">En una iteración dos nodos temporales empatan con la menor etiqueta. ¿Qué corresponde hacer?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Hacer permanente cualquiera de los dos, o ambos: el resultado final no cambia.</span></button>
+      <button><span class="k">B</span><span>Detenerse, porque el problema tiene soluciones múltiples.</span></button>
+      <button><span class="k">C</span><span>Elegir el que tenga más arcos salientes.</span></button>
+      <button><span class="k">D</span><span>Sumar sus etiquetas y continuar desde el más cercano al destino.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Modelar con rutas más cortas">
+  <div class="eyebrow">Segundo bloque · modelamiento</div>
+  <h2>Problemas que no parecen rutas</h2>
+  <p class="lead">Hillier &amp; Lieberman distinguen tres usos: minimizar distancia, minimizar costo y minimizar tiempo de una secuencia de actividades. Los dos últimos casi nunca vienen con un mapa. La habilidad es ver la red.</p>
+
+  <h3>Reemplazo de equipos</h3>
+  <p>Una empresa necesita una camioneta durante los próximos \(H\) años y quiere decidir cuándo cambiarla. Una camioneta nueva cuesta \(p_i\) si se compra al inicio del año \(i\); su mantención en el año \(a\) de uso cuesta \(m_a\), y al venderla con \(a\) años de uso se recuperan \(r_a\). Nunca se usa por más de \(\bar a\) años.</p>
+
+  <div class="modelo">
+    <span class="et">La red del reemplazo de equipos</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0">
+      <b>Nodos.</b> \(N=\{1,2,\dots,H+1\}\): el nodo \(i\) es el inicio del año \(i\), y \(H+1\) es el fin del horizonte.<br>
+      <b>Arcos.</b> \(A=\{(i,j)\in N\times N: i&lt;j\le i+\bar a\}\): el arco \((i,j)\) es <em>comprar al inicio del año \(i\) y usar ese equipo hasta el inicio del año \(j\)</em>.<br>
+      <b>Costo del arco.</b> Lo que cuesta ese ciclo completo de compra, uso y venta:</p>
+    \[ c_{ij} \;=\; p_i \;+\; \sum_{a\in\{1,\dots,j-i\}} m_a \;-\; r_{j-i} \qquad \forall (i,j)\in A \]
+    <p class="glosa">Todo plan de reemplazo es un camino de 1 a \(H+1\): los nodos por los que pasa son los años en que se compra. Y todo camino es un plan. El plan más barato es la ruta más corta. La red es acíclica —los arcos solo avanzan en el tiempo— y la suma recorre las edades del equipo durante ese ciclo.</p>
+  </div>
+
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <span class="icono">RUTA MÁS CONFIABLE</span>
+      <h4>Maximizar un producto</h4>
+      <p>Si cada enlace de una red de comunicaciones funciona con probabilidad \(p_{ij}\), la ruta más confiable maximiza el producto de las probabilidades. Tomando logaritmos, maximizar \(\prod_{(i,j)\in R} p_{ij}\) sobre las rutas \(R\) equivale a minimizar \(\sum_{(i,j)\in R} -\ln p_{ij}\), y como \(0&lt;p_{ij}\le1\), los costos \(-\ln p_{ij}\) son no negativos. Es una ruta más corta, y Dijkstra sirve.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">VARIOS DESTINOS</span>
+      <h4>Un nodo ficticio</h4>
+      <p>Si basta llegar a <em>cualquiera</em> de varios destinos —la zona segura más cercana en una evacuación, la bencinera más cercana—, se agrega un destino ficticio con arcos de costo cero desde cada destino real. Si se necesita la ruta a cada uno de ellos por separado, basta un Dijkstra: entrega el árbol completo de rutas desde el origen. Recorrerlos todos en una sola vuelta, en cambio, ya no es una ruta más corta: es un vendedor viajero.</p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">Cuando hay costos negativos, Dijkstra se equivoca</span>
+    <p>Un costo negativo tiene sentido en muchos modelos: un tramo en que el camión recoge una carga pagada, un año en que el equipo genera más de lo que cuesta. Pero entonces el argumento del primer bloque falla. Ejemplo: arcos \(s\to a\) de largo 4, \(s\to b\) de largo 6 y \(b\to a\) de largo \(-3\). Dijkstra hace permanente \(a\) con \(d(a)=4\) antes de mirar \(b\), y nunca descubre que \(s\to b\to a\) cuesta 3. Tampoco sirve sumarle una misma constante a todos los arcos para eliminar el negativo: una ruta con \(k\) arcos aumenta \(k\) veces esa constante, así que las rutas con más arcos quedan más castigadas y el orden entre rutas cambia. El E4 lo muestra con números.</p>
+    <p style="margin-bottom:0">El modelo lineal sigue siendo correcto con costos negativos, siempre que no haya un <strong>ciclo de costo negativo</strong>: si lo hay, recorrerlo una y otra vez baja el costo sin límite, y el problema es no acotado. Existen algoritmos que admiten costos negativos y detectan esos ciclos; no son materia del curso ni entran en evaluaciones, pero si te interesa, busca "algoritmo de Bellman-Ford".</p>
+  </div>
+  <div class="nota">
+    <span class="et">Qué es "corto" es una decisión de modelamiento</span>
+    <p style="margin-bottom:0">La ruta más corta depende de lo que se ponga en los arcos. Las distancias de la Clase 14 vienen de un motor de rutas que elige la ruta <strong>más rápida</strong> y reporta sus kilómetros. De Concepción a Talcahuano, esa ruta mide 18,2 km y toma 21,7 minutos. Pasando por el centro de Hualpén son 17,4 km, pero 22,7 minutos. Con kilómetros en los arcos, Dijkstra elegiría pasar por Hualpén; con minutos, ir directo. Las dos respuestas son correctas: responden preguntas distintas.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Simulador: reemplazo de equipos">
+  <div class="eyebrow">Segundo bloque · simulador</div>
+  <h2>Cuándo cambiar la camioneta</h2>
+  <p class="lead">Mueve los precios, la mantención y el valor de reventa. La red se reconstruye, los costos de los arcos se recalculan y la ruta más corta —el plan óptimo— se resuelve en vivo.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Reemplazo de equipos como ruta más corta</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl"><label>Horizonte \(H\), en años <b id="re-h-v">5</b></label><input type="range" id="re-h" min="3" max="6" value="5"></div>
+        <div class="ctrl"><label>Precio año 1 \(p_1\), MM$ <b id="re-p-v">12</b></label><input type="range" id="re-p" min="6" max="20" value="12"></div>
+        <div class="ctrl"><label>Alza anual del precio, MM$ <b id="re-a-v">1</b></label><input type="range" id="re-a" min="0" max="3" value="1"></div>
+        <div class="ctrl"><label>Mantención \(m_1, m_2, m_3\) <b id="re-m-v">2 · 3 · 5</b></label><input type="range" id="re-m" min="0" max="4" value="1"></div>
+        <div class="ctrl"><label>Reventa \(r_1, r_2, r_3\) <b id="re-r-v">7 · 5 · 3</b></label><input type="range" id="re-r" min="0" max="4" value="2"></div>
+      </div>
+      <div class="botonera">
+        <button class="btn ghost" id="re-reset">Valores iniciales</button>
+      </div>
+      <svg id="g-re" viewBox="0 0 900 330" style="width:100%;max-width:900px;height:auto;display:block;margin:6px auto 0"></svg>
+      <div class="marcador">
+        <div><span>Costo del plan óptimo, MM$</span><b class="ok" id="re-z">—</b></div>
+        <div><span>Compras</span><b id="re-n">—</b></div>
+        <div><span>Arcos en la red</span><b id="re-na">—</b></div>
+        <div><span>Planes posibles</span><b id="re-np">—</b></div>
+      </div>
+      <p id="re-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Qué mirar</span>
+    <p style="margin-bottom:0">Con los datos iniciales —precio de 12 MM$ que sube 1 por año, mantención de 2, 3 y 5, reventa de 7, 5 y 3— el plan óptimo cuesta <strong>33 MM$</strong>: comprar al inicio del año 1, cambiar al inicio del año 3 y quedarse con la segunda camioneta hasta el final. De los 13 planes posibles, el siguiente mejor cuesta 34. Lleva la mantención a su nivel más alto y conviene cambiar más seguido: tres compras en vez de dos. Lo mismo ocurre al llevar la reventa a su nivel más alto. En los niveles intermedios aparecen empates, y el simulador los informa. La red nunca cambia de forma; solo cambian los costos de sus arcos.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Pausa 2">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre el modelamiento y los costos negativos.</p>
+
+  <div class="quiz" data-correcta="2" data-retro='["La mantención está incluida en el costo del arco, pero el arco representa una decisión de compra y reemplazo, no solo de mantención.","Los arcos no representan dos equipos en paralelo: en todo momento se tiene exactamente uno.","Correcto. El arco (2,5) es comprar un equipo al inicio del año 2 y usarlo durante tres años, hasta el inicio del año 5, cuando se vende y se compra otro. Su costo es el precio de compra más tres años de mantención menos la reventa con tres años de uso.","Vender en el año 2 y comprar en el 5 dejaría los años 2, 3 y 4 sin equipo, y eso no está permitido en el modelo."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">En la red del reemplazo de equipos, ¿qué decisión representa el arco \((2,5)\)?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Hacer mantención al equipo entre los años 2 y 5.</span></button>
+      <button><span class="k">B</span><span>Tener dos equipos entre los años 2 y 5.</span></button>
+      <button><span class="k">C</span><span>Comprar al inicio del año 2 y usar ese equipo hasta el inicio del año 5.</span></button>
+      <button><span class="k">D</span><span>Vender en el año 2 y volver a comprar en el año 5.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="3" data-retro='["Mientras no haya ciclos de costo negativo, el modelo lineal sigue teniendo solución óptima; lo que falla es el algoritmo, no el modelo.","Los costos negativos se suman como cualquier otro número; el problema no es aritmético.","Los costos no forman parte de la matriz de restricciones: la matriz sigue siendo de incidencia y totalmente unimodular.","Correcto. Dijkstra hace definitiva una etiqueta suponiendo que ninguna ruta que pase por otro temporal puede ser más corta. Un arco negativo puede hacer justamente eso, y el nodo ya permanente nunca se corrige."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">¿Por qué el algoritmo de Dijkstra puede entregar una respuesta equivocada si la red tiene un arco de costo negativo?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Porque el modelo lineal deja de tener solución.</span></button>
+      <button><span class="k">B</span><span>Porque los costos negativos no se pueden sumar a las etiquetas.</span></button>
+      <button><span class="k">C</span><span>Porque la matriz del modelo deja de ser totalmente unimodular.</span></button>
+      <button><span class="k">D</span><span>Porque puede hacer permanente un nodo cuya etiqueta todavía se podía mejorar.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Caso de aplicación">
+  <div class="eyebrow">Aplicación · Concepción</div>
+  <h2>Cuándo hacer los pedidos</h2>
+
+  <div class="widget">
+    <header><span class="tag caso">Caso</span><h4>El plan de compras de una tienda de bicicletas, como ruta más corta</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Una tienda de bicicletas de Concepción compra a un importador de Santiago. Cada pedido tiene un costo fijo de despacho y gestión, sin importar cuántas bicicletas traiga; las que llegan antes de venderse ocupan bodega e inmovilizan dinero, y eso cuesta por cada bicicleta y cada mes que pasan guardadas. Entre agosto y enero la venta esperada cambia mucho, con el peak de diciembre por Navidad. ¿En qué meses pedir, y cuánto en cada pedido?</p>
+
+      <div class="tabla-scroll"><table style="max-width:620px">
+        <thead><tr><th>Mes</th><th class="num">Ago</th><th class="num">Sep</th><th class="num">Oct</th><th class="num">Nov</th><th class="num">Dic</th><th class="num">Ene</th></tr></thead>
+        <tbody>
+          <tr><td><b>Venta esperada</b><br><small style="color:var(--ink-3)">bicicletas</small></td><td class="num">30</td><td class="num">30</td><td class="num">40</td><td class="num">60</td><td class="num" id="pe-dic-t">150</td><td class="num">40</td></tr>
+        </tbody>
+      </table></div>
+      <h3 style="margin-top:22px">Paso 1 · Traducir el problema a una red</h3>
+      <p style="font-size:.94rem">Esta es la parte difícil. El nodo \(i\) es el inicio de un mes y el último nodo es el fin del horizonte. El arco \((i,j)\) significa <em>pedir al inicio del mes \(i\) todo lo que se venderá desde \(i\) hasta el mes anterior a \(j\)</em>. Su costo es el costo fijo del pedido más lo que cuesta guardar cada bicicleta hasta el mes en que se vende:</p>
+      <p style="font-size:.94rem;text-align:center">\(c_{ij}=K+h\displaystyle\sum_{t=i}^{j-1} d_t\,(t-i)\)</p>
+      <p style="font-size:.94rem">donde \(K\) es el costo fijo por pedido, \(h\) el costo de guardar una bicicleta un mes y \(d_t\) la venta del mes \(t\). Todo plan de compras es un camino del primer nodo al último, y el plan más barato es la ruta más corta. Es la misma idea del reemplazo de equipos, con otra decisión.</p>
+      <p style="font-size:.94rem">¿Por qué 7 nodos si son 6 meses? Porque los nodos no son los meses, sino los momentos en que empieza cada uno, más el fin del horizonte: seis meses tienen siete bordes, como una regla de 6 cm tiene siete marcas.</p>
+      <svg viewBox="0 0 900 92" style="width:100%;max-width:760px;height:auto;display:block;margin:4px auto 10px"><line x1="60" y1="46" x2="840" y2="46" stroke="#14181F" stroke-width="2"/><line x1="60" y1="36" x2="60" y2="56" stroke="#14181F" stroke-width="2"/><circle cx="60" cy="18" r="16" fill="#14181F"/><text x="60" y="26" text-anchor="middle" style="font:700 16px Archivo,sans-serif;fill:#fff">1</text><text x="125.0" y="80" text-anchor="middle" style="font:600 16px Archivo,sans-serif;fill:var(--ink-3)">ago</text><line x1="190" y1="36" x2="190" y2="56" stroke="#14181F" stroke-width="2"/><circle cx="190" cy="18" r="16" fill="#14181F"/><text x="190" y="26" text-anchor="middle" style="font:700 16px Archivo,sans-serif;fill:#fff">2</text><text x="255.0" y="80" text-anchor="middle" style="font:600 16px Archivo,sans-serif;fill:var(--ink-3)">sep</text><line x1="320" y1="36" x2="320" y2="56" stroke="#14181F" stroke-width="2"/><circle cx="320" cy="18" r="16" fill="#14181F"/><text x="320" y="26" text-anchor="middle" style="font:700 16px Archivo,sans-serif;fill:#fff">3</text><text x="385.0" y="80" text-anchor="middle" style="font:600 16px Archivo,sans-serif;fill:var(--ink-3)">oct</text><line x1="450" y1="36" x2="450" y2="56" stroke="#14181F" stroke-width="2"/><circle cx="450" cy="18" r="16" fill="#14181F"/><text x="450" y="26" text-anchor="middle" style="font:700 16px Archivo,sans-serif;fill:#fff">4</text><text x="515.0" y="80" text-anchor="middle" style="font:600 16px Archivo,sans-serif;fill:var(--ink-3)">nov</text><line x1="580" y1="36" x2="580" y2="56" stroke="#14181F" stroke-width="2"/><circle cx="580" cy="18" r="16" fill="#14181F"/><text x="580" y="26" text-anchor="middle" style="font:700 16px Archivo,sans-serif;fill:#fff">5</text><text x="645.0" y="80" text-anchor="middle" style="font:600 16px Archivo,sans-serif;fill:var(--ink-3)">dic</text><line x1="710" y1="36" x2="710" y2="56" stroke="#14181F" stroke-width="2"/><circle cx="710" cy="18" r="16" fill="#14181F"/><text x="710" y="26" text-anchor="middle" style="font:700 16px Archivo,sans-serif;fill:#fff">6</text><text x="775.0" y="80" text-anchor="middle" style="font:600 16px Archivo,sans-serif;fill:var(--ink-3)">ene</text><line x1="840" y1="36" x2="840" y2="56" stroke="#14181F" stroke-width="2"/><circle cx="840" cy="18" r="16" fill="#14181F"/><text x="840" y="26" text-anchor="middle" style="font:700 16px Archivo,sans-serif;fill:#fff">7</text></svg>
+      <p style="font-size:.94rem">Si la red terminara en el nodo 6, el inicio de enero, ningún camino cubriría la venta de enero. Un camino del nodo 1 al 7 es exactamente un plan que cubre los seis meses sin huecos ni traslapes. Pasa lo mismo en el reemplazo de equipos: \(H\) años, \(H+1\) nodos.</p>
+      <p style="font-size:.94rem">Un arco, calculado a mano con los valores iniciales (\(K=\$150.000\), \(h=\$1.000\)): pedir a inicios de octubre lo que se vende en octubre, noviembre y diciembre, que es el arco del nodo 3 al nodo 6.</p>
+      <div class="tabla-scroll"><table style="max-width:620px">
+        <thead><tr><th>Mes</th><th class="num">Venta</th><th class="num">Meses en bodega</th><th class="num">Costo de guardar</th></tr></thead>
+        <tbody>
+          <tr><td>Octubre</td><td class="num">40</td><td class="num">0</td><td class="num">$0</td></tr>
+          <tr><td>Noviembre</td><td class="num">60</td><td class="num">1</td><td class="num">$60.000</td></tr>
+          <tr><td>Diciembre</td><td class="num">150</td><td class="num">2</td><td class="num">$300.000</td></tr>
+          <tr><td><b>Pedido de 250 bicicletas</b></td><td class="num"></td><td class="num"></td><td class="num"><b>$360.000</b></td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:.94rem">Sumando el costo fijo, \(c_{36}=150.000+360.000=\$510.000\). La tabla siguiente tiene los 21 arcos calculados así. Cada fila es el mes en que se hace el pedido y cada columna el último mes que cubre; se actualiza con los controles.</p>
+      <div class="controles">
+        <div class="ctrl"><label>Costo fijo por pedido <b id="pe-k-v">$150.000</b></label><input type="range" id="pe-k" min="30" max="400" step="10" value="150"></div>
+        <div class="ctrl"><label>Costo de guardar una bicicleta un mes <b id="pe-h-v">$1.000</b></label><input type="range" id="pe-h" min="0.2" max="3" step="0.1" value="1"></div>
+        <div class="ctrl"><label>Venta esperada en diciembre, bicicletas <b id="pe-dic-v">150</b></label><input type="range" id="pe-dic" min="60" max="250" step="10" value="150"></div>
+        <div class="ctrl"><label>Máximo de bicicletas por pedido <b id="pe-cap-v">sin límite</b></label><input type="range" id="pe-cap" min="100" max="360" step="10" value="360"></div>
+      </div>
+      <div class="tabla-scroll"><table id="pe-tabla">
+        <thead><tr><th>Pedido a inicios de</th><th class="num">hasta ago<br><small>→ nodo 2</small></th><th class="num">hasta sep<br><small>→ nodo 3</small></th><th class="num">hasta oct<br><small>→ nodo 4</small></th><th class="num">hasta nov<br><small>→ nodo 5</small></th><th class="num">hasta dic<br><small>→ nodo 6</small></th><th class="num">hasta ene<br><small>→ nodo 7</small></th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <p style="font-size:.86rem;color:var(--ink-3)">Cada celda muestra el costo del arco y, debajo, las bicicletas del pedido. Con un máximo por pedido, las celdas que lo superan dicen "no cabe": esos arcos desaparecen de la red.</p>
+
+      <h3 style="margin-top:22px">Paso 2 · Resolver</h3>
+      <p style="font-size:.94rem">Con la red y sus costos, lo que queda es aplicar el mismo Dijkstra de la primera parte de la clase, desde el nodo 1. Las etiquetas \([d(i),\mathrm{pred}(i)]\) están en miles de pesos. En cada iteración se marcan en naranjo los arcos que salen del último nodo hecho permanente, con su costo; en verde, los arcos del árbol de rutas más cortas.</p>
+      <div class="botonera">
+        <button class="btn" id="pe-paso">Siguiente iteración</button>
+        <button class="btn ghost" id="pe-todo">Hasta el final</button>
+        <button class="btn ghost" id="pe-reini">Reiniciar</button>
+        <button class="btn ghost" id="pe-reset">Valores iniciales</button>
+      </div>
+      <svg id="g-pe" viewBox="0 0 900 350" style="width:100%;max-width:900px;height:auto;display:block;margin:6px auto 0"></svg>
+      <div class="marcador">
+        <div><span>Iteración</span><b id="pe-iter">0</b></div>
+        <div><span>Costo del plan óptimo</span><b class="ok" id="pe-z">—</b></div>
+        <div><span>Pedidos</span><b id="pe-n">—</b></div>
+        <div><span>Pedir todos los meses</span><b id="pe-todos">—</b></div>
+        <div><span>Un solo pedido en agosto</span><b id="pe-uno">—</b></div>
+      </div>
+      <div class="leyenda">
+        <span><i style="background:var(--amber)"></i>Arcos revisados en esta iteración</span>
+        <span><i style="background:var(--teal)"></i>Árbol de rutas más cortas</span>
+        <span><i style="background:var(--gold)"></i>Plan óptimo</span>
+        <span><i style="background:#D6CFC1"></i>Otros pedidos posibles</span>
+      </div>
+      <div class="tabla-scroll" id="pe-it" style="margin-top:12px"></div>
+      <p id="pe-msg" style="margin-top:12px;font-size:.92rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+
+      <div class="nota ojo">
+        <span class="et">Lo que dicen los números</span>
+        <p>Con los valores iniciales el plan óptimo cuesta <strong>$580.000</strong> en tres pedidos: a inicios de agosto, para agosto y septiembre; de octubre, para octubre y noviembre; y de diciembre, para diciembre y enero. Pedir todos los meses cuesta $900.000, solo en costos fijos, y traer todo en un solo pedido en agosto cuesta $1.240.000, porque las bicicletas de diciembre pasarían cuatro meses en bodega. El óptimo está en el medio, y lo decide la comparación entre el costo fijo de un pedido y lo que cuesta guardar.</p>
+        <p style="margin-bottom:0">Prueba el máximo de bicicletas por pedido. Con 160, el pedido de diciembre y enero, de 190 bicicletas, ya no cabe, y el plan pasa a cuatro pedidos y $690.000. Fíjate en que esa restricción no rompe la estructura: no agrega una fila nueva al modelo, solo <strong>borra arcos</strong> de la red. El problema sigue siendo una ruta más corta, a diferencia de la restricción de tiempo del E5, que sí la rompe.</p>
+      </div>
+
+      <details class="explica">
+        <summary>Supuestos y nombre del modelo</summary>
+        <div class="contenido">
+          <p>Los datos son ilustrativos: una venta mensual plausible para una tienda de bicicletas mediana y costos del orden correcto, no cifras de una tienda en particular. El costo de guardar resume el costo del dinero inmovilizado y del espacio en bodega. Se supone que el pedido llega al inicio del mes en que se hace, que no se aceptan quiebres de stock y que el precio de compra no depende del tamaño del pedido; por eso no aparece en el modelo.</p>
+          <p style="margin-bottom:0">Este problema se conoce como <em>dimensionamiento de lotes</em> y su versión clásica, la de este caso, como el modelo de Wagner y Whitin. Las variantes con descuentos por volumen, varios productos o capacidad compartida ya no son rutas más cortas. No es materia del curso más allá de este caso; si te interesa, busca "lot sizing" o "Wagner-Whitin".</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l9" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>La <strong>ruta más corta</strong> es un flujo de costo mínimo con una unidad que sale del origen y llega al destino; su relajación es entera y la variable puede declararse continua.</li>
+    <li><strong>Dijkstra</strong> hace definitiva en cada iteración la etiqueta del nodo temporal más cercano y actualiza las cotas de sus vecinos; al final entrega el árbol de rutas más cortas desde el origen.</li>
+    <li>Su corrección depende de que los <strong>costos no sean negativos</strong>; con arcos negativos puede fijar una etiqueta que todavía se podía mejorar.</li>
+    <li>Muchos problemas son rutas más cortas <strong>disfrazadas</strong>: en el reemplazo de equipos y en el plan de pedidos los nodos son instantes de tiempo y cada arco es una decisión que cubre un tramo del horizonte.</li>
+    <li>La ruta más corta depende de <strong>qué se mide</strong> en los arcos: kilómetros, minutos, costo o riesgo dan respuestas distintas y todas correctas.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away</span>
+    <blockquote>Los motores de rutas que han publicado cómo funcionan, como el de Bing Maps o el motor abierto de la Clase 14, usan variantes aceleradas de esta misma idea: preparan la red de antemano y luego corren un Dijkstra sobre una red mucho más chica. Pero la parte difícil casi nunca es ejecutarlo. Lo difícil es ver que un plan de inversiones o de pedidos es un camino en una red, y decidir qué significa "corto".</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l10" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · De Ridgewood a Whippany</h4></div>
+    <div class="enunciado">
+      <p>Una persona vive en Ridgewood y trabaja en Whippany. Quiere la ruta de menor tiempo de viaje, y cuenta con los minutos entre localidades intermedias. Los tramos se pueden recorrer en ambos sentidos.</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th></th><th class="num">Ridgewood</th><th class="num">Clifton</th><th class="num">Orange</th><th class="num">Troy Hills</th><th class="num">Parsippany</th><th class="num">Whippany</th></tr></thead>
+        <tbody>
+          <tr><td><b>Ridgewood</b></td><td class="num">—</td><td class="num">18</td><td class="num"></td><td class="num">32</td><td class="num"></td><td class="num"></td></tr>
+          <tr><td><b>Clifton</b></td><td class="num">18</td><td class="num">—</td><td class="num">12</td><td class="num">28</td><td class="num"></td><td class="num"></td></tr>
+          <tr><td><b>Orange</b></td><td class="num"></td><td class="num">12</td><td class="num">—</td><td class="num">17</td><td class="num"></td><td class="num">32</td></tr>
+          <tr><td><b>Troy Hills</b></td><td class="num">32</td><td class="num">28</td><td class="num">17</td><td class="num">—</td><td class="num">4</td><td class="num">17</td></tr>
+          <tr><td><b>Parsippany</b></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num">4</td><td class="num">—</td><td class="num">11</td></tr>
+          <tr><td><b>Whippany</b></td><td class="num"></td><td class="num"></td><td class="num">32</td><td class="num">17</td><td class="num">11</td><td class="num">—</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> Dibuje la red y aplique el algoritmo de Dijkstra desde Ridgewood, mostrando en cada iteración las etiquetas \([d(i),\mathrm{pred}(i)]\), el nodo que se hace permanente y los conjuntos \(P\) y \(T\).<br>
+      <strong>b)</strong> Reporte la ruta más rápida a Whippany y su duración, reconstruyéndola con los predecesores.<br>
+      <strong>c)</strong> Dibuje el árbol de rutas más rápidas desde Ridgewood.<br>
+      <strong>d)</strong> Por obras, el tramo Troy Hills–Parsippany queda cerrado. Sin repetir el algoritmo completo, argumente cuál es la nueva ruta y su duración.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · La misma red, escrita como modelo</h4></div>
+    <div class="enunciado">
+      <p>Considere la red del E1.</p>
+      <p><strong>a)</strong> Escriba el problema de la ruta más rápida de Ridgewood a Whippany como modelo de programación lineal. Indique \(N\), \(A\) —recuerde que los tramos son de doble sentido—, los \(b_i\) y las restricciones de nodo usando \(\delta^+(i)\) y \(\delta^-(i)\).<br>
+      <strong>b)</strong> Justifique por qué puede declarar \(x_{ij}\ge0\) en vez de \(x_{ij}\in\{0,1\}\).<br>
+      <strong>c)</strong> Se quiere, con un solo modelo, la ruta más rápida desde Ridgewood hacia <em>cada una</em> de las otras cinco localidades. Proponga los nuevos \(b_i\) y explique qué representa el flujo en cada arco de la solución.<br>
+      <strong>d)</strong> ¿Por qué la solución de (c) no puede contener un ciclo?</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la formulación. Si quiere, resuelva el modelo de (c) con un solver y compare con el árbol del E1.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · La cortadora láser de una pyme</h4></div>
+    <div class="enunciado">
+      <p>Una pyme metalmecánica de Talcahuano necesita una cortadora láser durante los próximos cuatro años. Debe decidir en qué años comprar una nueva. Los datos, en millones de pesos:</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Año de compra</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th></tr></thead>
+        <tbody><tr><td>Precio de la máquina nueva</td><td class="num">20</td><td class="num">21</td><td class="num">22</td><td class="num">23</td></tr></tbody>
+      </table></div>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Años de uso</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th></tr></thead>
+        <tbody>
+          <tr><td>Mantención en ese año de uso</td><td class="num">3</td><td class="num">5</td><td class="num">8</td><td class="num">12</td></tr>
+          <tr><td>Valor de reventa al cumplir esos años</td><td class="num">14</td><td class="num">10</td><td class="num">7</td><td class="num">4</td></tr>
+        </tbody>
+      </table></div>
+      <p>La máquina se puede usar hasta cuatro años, y al final del horizonte se vende la que haya.</p>
+      <p><strong>a)</strong> Antes de dibujar nada, describa en palabras qué es un nodo, qué es un arco y qué suma el costo de cada arco. Luego describa el modelo: un término por componente del objetivo y una frase por familia de restricciones.<br>
+      <strong>b)</strong> Construya la red: nodos, arcos y el costo de cada arco con la fórmula de la clase.<br>
+      <strong>c)</strong> Escriba el modelo de ruta más corta con conjuntos, parámetros, variables y dominio.<br>
+      <strong>d)</strong> Coteje su descripción de (a) con el modelo de (c).<br>
+      <strong>e)</strong> ¿Cuántos planes de reemplazo distintos existen? Relacione ese número con los caminos de la red.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la construcción de la red y el modelo. Si quiere, encuentre el plan óptimo con Dijkstra.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Un arco negativo</h4></div>
+    <div class="enunciado">
+      <p>Una red dirigida tiene los arcos \(s\to a\) (4), \(s\to b\) (6), \(a\to t\) (5), \(b\to a\) (\(-3\)), \(b\to t\) (7), \(a\to c\) (2) y \(c\to t\) (1). El costo negativo de \(b\to a\) representa un tramo en que el camión recoge una carga pagada.</p>
+      <p><strong>a)</strong> Aplique el algoritmo de Dijkstra desde \(s\) tal como se enseñó, y reporte la distancia y la ruta que entrega hasta \(t\).<br>
+      <strong>b)</strong> Enumere todos los caminos de \(s\) a \(t\) con su costo. ¿Es correcta la respuesta de (a)? Identifique en qué iteración el algoritmo tomó una decisión que no podía deshacer.<br>
+      <strong>c)</strong> Un colega propone sumar 3 a todos los arcos para eliminar el negativo y luego aplicar Dijkstra. Muestre que esta idea no funciona en esta red y explique por qué no puede funcionar en general.<br>
+      <strong>d)</strong> Agregue el arco \(a\to b\) con costo 1. ¿Qué le pasa al modelo lineal de ruta más corta?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E5 · La ruta más barata que llega a tiempo</h4></div>
+    <div class="enunciado">
+      <p>Un despacho debe ir de \(s\) a \(t\). Cada arco tiene un costo \(c_{ij}\) y un tiempo \(\tau_{ij}\): \(s\to a\) (2; 10), \(a\to t\) (8; 20), \(s\to b\) (10; 5), \(b\to t\) (20; 5), \(s\to c\) (6; 8) y \(c\to t\) (12; 14), con el costo primero y el tiempo después. El despacho debe llegar en a lo más 20 unidades de tiempo.</p>
+      <p><strong>a)</strong> Formule el modelo: ruta más corta en costo con la restricción adicional de tiempo. Declare conjuntos, parámetros, variables y dominio.<br>
+      <strong>b)</strong> Verifique que el punto con \(x_{sa}=x_{at}=x_{sb}=x_{bt}=\tfrac12\) y el resto en cero es factible para la relajación lineal, y calcule su costo.<br>
+      <strong>c)</strong> Enumere las rutas de \(s\) a \(t\) con su costo y su tiempo. ¿Cuál es la mejor ruta que cumple el plazo? Compare su costo con el de (b).<br>
+      <strong>d)</strong> Explique, con lo visto en la Clase 14, por qué la relajación puede entregar un punto como el de (b) y la ruta más corta sin la restricción de tiempo no.<br>
+      <strong>e)</strong> ¿Con qué herramienta de la Unidad 2 cerraría la brecha entre (b) y (c)?</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E6 · Las jarras</h4></div>
+    <div class="enunciado">
+      <p>Se tienen dos jarras sin marcas, una de 3 litros y otra de 5, una llave de agua y un desagüe. Las operaciones posibles son: llenar una jarra desde la llave, vaciar una jarra en el desagüe, o trasvasijar de una jarra a la otra hasta que la primera quede vacía o la segunda llena. Se quiere dejar exactamente 4 litros en la jarra de 5.</p>
+      <p><strong>a)</strong> Antes de dibujar, describa en palabras cómo convertir el problema en una ruta más corta: qué es un nodo, qué es un arco, cuál es el origen, cuál el destino y qué cuesta cada arco si se quiere usar el menor número de operaciones.<br>
+      <strong>b)</strong> ¿Cuántos estados distintos puede haber en principio? Construya los arcos que salen del estado inicial y de los estados \((3,0)\) y \((0,5)\), donde el primer número son los litros en la jarra de 3 y el segundo en la de 5.<br>
+      <strong>c)</strong> ¿La red es dirigida o no dirigida? Justifique con un ejemplo.<br>
+      <strong>d)</strong> Si ahora se quiere gastar la menor cantidad de agua, ¿qué cambia en la red? Indique el nuevo costo de cada tipo de arco.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la construcción de la red. Si quiere, encuentre con Dijkstra la secuencia con menos operaciones y la que gasta menos agua, y compárelas.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E7 · La ruta más confiable</h4></div>
+    <div class="enunciado">
+      <p>Un centro de datos en Concepción (\(O\)) envía cada noche sus respaldos a un servidor en Santiago (\(T\)), pasando por nodos intermedios \(A\), \(B\) y \(C\). Cada enlace funciona durante la transmisión con la probabilidad que indica la tabla. Interesa la ruta con mayor probabilidad de que el respaldo llegue completo, no la más rápida.</p>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Enlace</th><th class="num">O → A</th><th class="num">O → B</th><th class="num">O → T</th><th class="num">A → C</th><th class="num">A → T</th><th class="num">B → C</th><th class="num">B → T</th><th class="num">C → T</th></tr></thead>
+        <tbody>
+          <tr><td><b>Probabilidad</b></td><td class="num">0,95</td><td class="num">0,98</td><td class="num">0,84</td><td class="num">0,99</td><td class="num">0,90</td><td class="num">0,97</td><td class="num">0,88</td><td class="num">0,96</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>a)</strong> ¿Por qué la probabilidad de que una ruta funcione es el producto de las probabilidades de sus enlaces? ¿Qué supuesto se necesita? Dé un ejemplo realista en que no se cumpla.<br>
+      <strong>b)</strong> Demuestre que maximizar \(\prod p_{ij}\) sobre los arcos de la ruta equivale a minimizar \(\sum(-\ln p_{ij})\). ¿Por qué con estos costos se puede usar Dijkstra? ¿Qué costo recibe un enlace perfecto, con \(p=1\), y qué se hace con uno con \(p=0\)?<br>
+      <strong>c)</strong> Calcule los costos con tres decimales, aplique Dijkstra desde \(O\) y reporte la ruta más confiable y su probabilidad. Compárela con el enlace directo y con la mejor ruta de dos enlaces.<br>
+      <strong>d)</strong> Un colega propone otra forma: usar como costo la probabilidad de falla, \(1-p_{ij}\), y sumar. ¿Da la misma ruta en esta red? Compare ahora dos rutas: la ruta \(X\), con dos enlaces de probabilidad 0,5 cada uno, y la ruta \(Y\), con un solo enlace de probabilidad 0,2. ¿Qué ruta elige cada criterio y cuál es la correcta? ¿Cuándo funciona bien la idea del colega?</p>
+    </div>
+  </div>
+
+  <div class="nota libro" style="margin-top:30px">
+    <span class="et">Dónde está esto en el libro</span>
+    <p style="margin-bottom:0">La ruta más corta es la sección <strong>9.3</strong> de Hillier &amp; Lieberman, desde la página 336. El algoritmo se presenta como la búsqueda del \(n\)-ésimo nodo más cercano al origen, que es exactamente Dijkstra, y la tabla 9.2 de la página 337 lo aplica al Seervada Park. Las tres categorías de aplicaciones están en la página 340, y la formulación como flujo de costo mínimo en la página 358. Dos hilos para tirar por cuenta propia, ninguno materia del curso ni de evaluaciones: el algoritmo de Bellman-Ford, para costos negativos, y el algoritmo A*, que agrega a Dijkstra una estimación de lo que falta hasta el destino y es la base de muchos videojuegos.</p>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+  <div class="pie-nota">
+    <p>Clases, simuladores y ejercicios desarrollados con apoyo de ChatGPT (GPT-5.5 Sol) y Claude (Opus 5.5). Contenidos revisados y validados por el profesor.</p>
+    <p>Versión del 28-10-2026 · ¿Encontraste un error? Escríbeme a <a href="mailto:pablogonzalez@udd.cl">pablogonzalez@udd.cl</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" rel="noopener">Licencia CC BY-NC-SA 4.0</a></p>
+  </div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ==================================================================
+   Clase 16 · motores.
+   DIJ16.correr: Dijkstra paso a paso, con registro de empates en el
+   predecesor. Grafo dado como lista de arcos dirigidos {a, b, c}.
+   DAG16.reemplazo: ruta más corta en la red acíclica del reemplazo de
+   equipos, con conteo de planes óptimos empatados.
+   ================================================================== */
+var DIJ16 = (function(){
+  /* nodos: arreglo ordenado; arcos: [{a,b,c}]; devuelve los estados tras cada iteración */
+  function correr(nodos, arcos, s){
+    var d = {}, pred = {}, emp = {}, perm = {}, ult = s, estados = [];
+    nodos.forEach(function(v){ d[v] = Infinity; pred[v] = null; emp[v] = []; });
+    d[s] = 0; pred[s] = s; perm[s] = true;
+    function foto(nuevo, actualizados){
+      estados.push({d:JSON.parse(JSON.stringify(d, function(k,v){ return v === Infinity ? 'inf' : v; })), pred:Object.assign({}, pred),
+        emp:JSON.parse(JSON.stringify(emp)), perm:Object.assign({}, perm), nuevo:nuevo, actualizados:actualizados});
+    }
+    foto(s, []);
+    while(true){
+      var act = [];
+      arcos.forEach(function(e){
+        if(e.a !== ult || perm[e.b]) return;
+        var v = d[ult] + e.c;
+        if(v < d[e.b] - 1e-9){ d[e.b] = v; pred[e.b] = ult; emp[e.b] = []; act.push(e.b); }
+        else if(Math.abs(v - d[e.b]) < 1e-9 && pred[e.b] !== ult && emp[e.b].indexOf(ult) < 0){ emp[e.b].push(ult); }
+      });
+      var k = null;
+      nodos.forEach(function(v){ if(!perm[v] && d[v] < Infinity && (k === null || d[v] < d[k] - 1e-9)) k = v; });
+      if(k === null){ if(act.length) foto(null, act); break; }
+      perm[k] = true; ult = k;
+      foto(k, act);
+    }
+    return estados;
+  }
+  function ruta(pred, s, t){
+    var r = [t], v = t, guard = 0;
+    while(v !== s && pred[v] !== null && guard++ < 100){ v = pred[v]; r.unshift(v); }
+    return v === s ? r : null;
+  }
+  return {correr:correr, ruta:ruta};
+})();
+
+var DAG16 = (function(){
+  /* H años, precios p[i], mantención m[a], reventa r[a] (a = 1..amax, índices desde 0) */
+  function reemplazo(H, p, m, r, amax){
+    var arcos = [], i, j;
+    for(i=1;i<=H;i++) for(j=i+1;j<=Math.min(i+amax, H+1);j++){
+      var a = j-i, c = p[i-1] - r[a-1];
+      for(var q=0;q<a;q++) c += m[q];
+      arcos.push({a:i, b:j, c:c});
+    }
+    /* programación dinámica hacia adelante: la red es acíclica y está ordenada */
+    var d = {}, pred = {}, cuenta = {}, planes = {};
+    d[1] = 0; cuenta[1] = 1; planes[1] = 1;
+    for(j=2;j<=H+1;j++){
+      d[j] = Infinity; cuenta[j] = 0; planes[j] = 0;
+      arcos.forEach(function(e){
+        if(e.b !== j) return;
+        planes[j] += planes[e.a];
+        var v = d[e.a] + e.c;
+        if(v < d[j] - 1e-9){ d[j] = v; pred[j] = e.a; cuenta[j] = cuenta[e.a]; }
+        else if(Math.abs(v - d[j]) < 1e-9) cuenta[j] += cuenta[e.a];
+      });
+    }
+    var camino = [H+1], v = H+1;
+    while(v !== 1){ v = pred[v]; camino.unshift(v); }
+    return {arcos:arcos, costo:d[H+1], camino:camino, empates:cuenta[H+1], planes:planes[H+1]};
+  }
+  return {reemplazo:reemplazo};
+})();
+
+
+var DIB16 = (function(){
+  function marcadores(svg, pref){
+    var defs = svgEl('defs', {});
+    [['ink','#14181F'],['amber','#C8551E'],['teal','#0F6E63'],['gold','#B8892B'],['gris','#B7AE9C']].forEach(function(c){
+      var mk = svgEl('marker', {id:pref+'-'+c[0], viewBox:'0 0 10 10', refX:'9', refY:'5', markerWidth:'11', markerHeight:'11', markerUnits:'userSpaceOnUse', orient:'auto-start-reverse'});
+      mk.appendChild(svgEl('path', {d:'M0,0 L10,5 L0,10 z', fill:c[1]}));
+      defs.appendChild(mk);
+    });
+    svg.appendChild(defs);
+  }
+  function recorte(p, q, r1, r2){
+    var dx = q[0]-p[0], dy = q[1]-p[1], L = Math.sqrt(dx*dx+dy*dy) || 1, ux = dx/L, uy = dy/L;
+    return [[p[0]+ux*r1, p[1]+uy*r1], [q[0]-ux*r2, q[1]-uy*r2]];
+  }
+  function texto(svg, x, y, t, estilo, ancla){
+    var e = svgEl('text', {x:x, y:y, 'text-anchor':ancla||'start', style:estilo});
+    e.textContent = t; svg.appendChild(e); return e;
+  }
+  function vaciar(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+  return {marcadores:marcadores, recorte:recorte, texto:texto, vaciar:vaciar};
+})();
+var EST16_NODO = 'font:700 15px Archivo,sans-serif;fill:#fff';
+
+/* ==================================================================
+   Primer bloque · Dijkstra en el Seervada Park
+   ================================================================== */
+(function(){
+  var svg = document.getElementById('g-dj');
+  if(!svg) return;
+  var NODOS = ['O','A','B','C','D','E','T'];
+  var POS = {O:[80,190], A:[250,70], B:[400,190], C:[250,305], D:[610,190], E:[520,305], T:[800,110]};
+  var ORIG = [['O','A',2],['O','B',5],['O','C',4],['A','B',2],['A','D',7],['B','C',1],['B','D',4],['B','E',3],['C','E',4],['D','E',1],['D','T',5],['E','T',7]];
+  var lig, sel = 6, k = 0;
+
+  function cargar(){ lig = ORIG.map(function(t){ return {a:t[0], b:t[1], c:t[2]}; }); }
+  function arcos(){
+    var A = [];
+    lig.forEach(function(e){ A.push({a:e.a, b:e.b, c:e.c}); A.push({a:e.b, b:e.a, c:e.c}); });
+    return A;
+  }
+  function render(){
+    var s = document.getElementById('dj-s').value, t = document.getElementById('dj-t').value;
+    var E = DIJ16.correr(NODOS, arcos(), s);
+    if(k > E.length-1) k = E.length-1;
+    var st = E[k], fin = k === E.length-1;
+    var r = st.perm[t] ? DIJ16.ruta(st.pred, s, t) : null;
+    var enRuta = {};
+    if(r) for(var q=0;q<r.length-1;q++){ enRuta[r[q]+'|'+r[q+1]] = true; enRuta[r[q+1]+'|'+r[q]] = true; }
+
+    DIB16.vaciar(svg);
+    lig.forEach(function(e, i){
+      var p = POS[e.a], q = POS[e.b], sg = DIB16.recorte(p, q, 22, 22);
+      var arbol = (st.perm[e.b] && st.pred[e.b] === e.a && e.b !== s) || (st.perm[e.a] && st.pred[e.a] === e.b && e.a !== s);
+      var col = enRuta[e.a+'|'+e.b] ? '#B8892B' : (arbol ? '#0F6E63' : '#B7AE9C');
+      svg.appendChild(svgEl('line', {x1:sg[0][0], y1:sg[0][1], x2:sg[1][0], y2:sg[1][1], stroke:col, 'stroke-width': (arbol || enRuta[e.a+'|'+e.b]) ? 5 : 2, 'stroke-linecap':'round'}));
+      var mx = (p[0]+q[0])/2, my = (p[1]+q[1])/2;
+      var c = svgEl('circle', {cx:mx, cy:my, r:14, fill: i === sel ? '#C8551E' : '#fff', stroke: i === sel ? '#C8551E' : 'rgba(20,24,31,.25)', style:'cursor:pointer'});
+      c.onclick = function(){ sel = i; controlPeso(); render(); };
+      svg.appendChild(c);
+      var tx = DIB16.texto(svg, mx, my+5, String(e.c), 'font:700 13px Archivo,sans-serif;fill:' + (i === sel ? '#fff' : 'var(--ink)'), 'middle');
+      tx.style.pointerEvents = 'none';
+    });
+    NODOS.forEach(function(v){
+      var p = POS[v], col = v === st.nuevo ? '#C8551E' : (st.perm[v] ? '#0F6E63' : '#14181F');
+      svg.appendChild(svgEl('circle', {cx:p[0], cy:p[1], r:20, fill:col}));
+      DIB16.texto(svg, p[0], p[1]+5, v, EST16_NODO, 'middle');
+      var dv = st.d[v], et = '[' + (dv === 'inf' ? '∞' : dv) + ', ' + (st.pred[v] === null ? '–' : st.pred[v]) + ']';
+      DIB16.texto(svg, p[0], p[1] + (p[1] < 150 ? -30 : 42), et, 'font:600 13px "JetBrains Mono",monospace;fill:' + (st.perm[v] ? '#0F6E63' : 'var(--ink-3)'), 'middle');
+    });
+
+    var np = NODOS.filter(function(v){ return st.perm[v]; }).length;
+    document.getElementById('dj-k').textContent = k + ' / ' + (E.length-1);
+    document.getElementById('dj-np').textContent = np + ' / 7';
+    document.getElementById('dj-dt').textContent = st.perm[t] ? st.d[t] : '—';
+    document.getElementById('dj-ruta').textContent = r ? r.join('–') : '—';
+
+    /* tabla por iteración: etiquetas [d, pred] de cada nodo; ✓ si ya era permanente */
+    var OK = '<span style="color:var(--teal);font-weight:700">✓</span>';
+    var h = '<table><thead><tr><th>Iteración</th><th>Actualiza desde</th><th>Se hace permanente</th>' +
+      NODOS.map(function(v){ return '<th style="text-align:right">' + v + '</th>'; }).join('') + '</tr></thead><tbody>';
+    for(var it=0; it<=k; it++){
+      var S2 = E[it], antes = it ? E[it-1] : null, fila = '';
+      fila += '<td>' + (it === 0 ? 'Inicio' : it) + '</td><td>' + (it === 0 ? '—' : antes.nuevo) + '</td><td>' + (S2.nuevo ? S2.nuevo + ', con ' + S2.d[S2.nuevo] : '—') + '</td>';
+      NODOS.forEach(function(v){
+        var celda;
+        if(antes && antes.perm[v]) celda = OK;
+        else {
+          var dv = S2.d[v];
+          celda = dv === 'inf' ? '∞' : '[' + dv + ', ' + (S2.pred[v] === null ? '–' : S2.pred[v]) + (S2.emp[v].length ? '/' + S2.emp[v].join('/') : '') + ']';
+          if(v === S2.nuevo) celda = '<b style="color:var(--amber);border:1.5px solid var(--amber);border-radius:6px;padding:1px 5px;white-space:nowrap">' + celda + '</b>';
+        }
+        fila += '<td style="text-align:right;font-family:var(--fm);font-size:.86rem;white-space:nowrap">' + celda + '</td>';
+      });
+      h += '<tr' + (it === k ? ' class="sel"' : '') + '>' + fila + '</tr>';
+    }
+    document.getElementById('dj-tabla').innerHTML = h + '</tbody></table>';
+
+    var m = document.getElementById('dj-msg'), msg;
+    if(k === 0) msg = 'Inicialización: P = {' + s + '}, d(' + s + ') = 0 y el resto de las etiquetas en ∞. Cada iteración actualiza las cotas desde el último permanente y hace permanente al temporal de menor etiqueta.';
+    else {
+      var desde = E[k-1].nuevo;
+      msg = 'Iteración ' + k + ': desde ' + desde + ', el último nodo que se hizo permanente, ' + (st.actualizados.length ? 'se actualizaron las cotas de ' + st.actualizados.join(', ') + '. ' : 'ninguna cota mejoró. ') +
+        (st.nuevo ? 'El temporal más cercano es <b>' + st.nuevo + '</b>, con d = ' + st.d[st.nuevo] + ', y pasa a ser permanente.' : '');
+      var emps = NODOS.filter(function(v){ return st.emp[v].length; });
+      if(emps.length) msg += ' Hay empate en el predecesor de ' + emps.join(', ') + ': más de una ruta más corta llega ahí, y la tabla muestra los dos predecesores separados por una barra.';
+      if(fin) msg += ' <b>Todos los nodos son permanentes.</b>' + (r ? ' La ruta más corta a ' + t + ' es ' + r.join('–') + ', con ' + st.d[t] + ' millas.' : '');
+    }
+    m.innerHTML = msg;
+  }
+  function controlPeso(){
+    var e = lig[sel];
+    document.getElementById('dj-sel-n').textContent = e.a + '–' + e.b;
+    document.getElementById('dj-sel-v').textContent = e.c;
+    document.getElementById('dj-peso').value = e.c;
+  }
+  document.getElementById('dj-peso').oninput = function(){ lig[sel].c = +this.value; document.getElementById('dj-sel-v').textContent = this.value; k = 0; render(); };
+  document.getElementById('dj-s').onchange = function(){ k = 0; render(); };
+  document.getElementById('dj-t').onchange = render;
+  document.getElementById('dj-paso').onclick = function(){ k++; render(); };
+  document.getElementById('dj-todo').onclick = function(){ k = 99; render(); };
+  document.getElementById('dj-reset').onclick = function(){ k = 0; render(); };
+  document.getElementById('dj-orig').onclick = function(){ cargar(); controlPeso(); k = 0; render(); };
+  cargar(); controlPeso(); render();
+})();
+
+/* ==================================================================
+   Segundo bloque · reemplazo de equipos
+   ================================================================== */
+(function(){
+  var svg = document.getElementById('g-re');
+  if(!svg) return;
+  var PERF_M = [[1,2,4],[2,3,5],[2,4,7],[3,5,8],[4,6,10]];
+  var PERF_R = [[5,3,1],[6,4,2],[7,5,3],[8,5,2],[9,6,3]];
+  function val(id){ return +document.getElementById(id).value; }
+  function render(){
+    var H = val('re-h'), p1 = val('re-p'), al = val('re-a'), m = PERF_M[val('re-m')], r = PERF_R[val('re-r')];
+    document.getElementById('re-h-v').textContent = H;
+    document.getElementById('re-p-v').textContent = p1;
+    document.getElementById('re-a-v').textContent = al;
+    document.getElementById('re-m-v').textContent = m.join(' · ');
+    document.getElementById('re-r-v').textContent = r.join(' · ');
+    var p = [];
+    for(var i=0;i<H;i++) p.push(p1 + al*i);
+    var R = DAG16.reemplazo(H, p, m, r, 3);
+    var enRuta = {};
+    for(var q=0;q<R.camino.length-1;q++) enRuta[R.camino[q]+'-'+R.camino[q+1]] = true;
+
+    DIB16.vaciar(svg);
+    DIB16.marcadores(svg, 're');
+    var x0 = 70, dx = (900-140)/H, y = 230;
+    function X(v){ return x0 + (v-1)*dx; }
+    R.arcos.forEach(function(e){
+      var a = X(e.a), b = X(e.b), alto = 55*(e.b-e.a), usado = enRuta[e.a+'-'+e.b];
+      var d = 'M' + (a+10) + ',' + (y-18) + ' Q' + ((a+b)/2) + ',' + (y-18-alto*1.3) + ' ' + (b-10) + ',' + (y-20);
+      svg.appendChild(svgEl('path', {d:d, fill:'none', stroke: usado ? '#B8892B' : '#B7AE9C', 'stroke-width': usado ? 4 : 1.6, 'marker-end':'url(#re-' + (usado ? 'gold' : 'gris') + ')'}));
+      var lx = (a+b)/2, ly = y-18-alto*0.65-4;
+      DIB16.texto(svg, lx, ly, String(e.c), 'font:700 12px Archivo,sans-serif;fill:' + (usado ? '#B8892B' : 'var(--ink-3)') + ';paint-order:stroke;stroke:#fff;stroke-width:3px', 'middle');
+    });
+    for(var v=1; v<=H+1; v++){
+      var usadoN = R.camino.indexOf(v) >= 0;
+      svg.appendChild(svgEl('circle', {cx:X(v), cy:y, r:20, fill: usadoN ? '#B8892B' : '#14181F'}));
+      DIB16.texto(svg, X(v), y+5, String(v), EST16_NODO, 'middle');
+      DIB16.texto(svg, X(v), y+44, v <= H ? 'inicio año ' + v : 'fin', 'font:600 12px Archivo,sans-serif;fill:var(--ink-3)', 'middle');
+      if(v <= H) DIB16.texto(svg, X(v), y+62, 'p = ' + p[v-1], 'font:500 11.5px "JetBrains Mono",monospace;fill:var(--ink-3)', 'middle');
+    }
+
+    document.getElementById('re-z').textContent = R.costo;
+    document.getElementById('re-n').textContent = R.camino.length - 1;
+    document.getElementById('re-na').textContent = R.arcos.length;
+    document.getElementById('re-np').textContent = R.planes;
+    var tramos = [];
+    for(var k=0;k<R.camino.length-1;k++){
+      var a2 = R.camino[k], b2 = R.camino[k+1];
+      tramos.push('comprar al inicio del año ' + a2 + ' y usar ' + (b2-a2) + (b2-a2 === 1 ? ' año' : ' años'));
+    }
+    var msg = '<b>Plan óptimo: ' + R.costo + ' MM$.</b> ' + tramos.join('; ') + '. La ruta es ' + R.camino.join(' → ') + '.';
+    if(R.empates > 1) msg += ' <span style="color:var(--amber)">Hay ' + R.empates + ' planes óptimos empatados; el simulador muestra uno.</span>';
+    document.getElementById('re-msg').innerHTML = msg;
+  }
+  ['re-h','re-p','re-a','re-m','re-r'].forEach(function(id){ document.getElementById(id).oninput = render; });
+  var INICIALES = {'re-h':5, 're-p':12, 're-a':1, 're-m':1, 're-r':2};
+  document.getElementById('re-reset').onclick = function(){ Object.keys(INICIALES).forEach(function(id){ document.getElementById(id).value = INICIALES[id]; }); render(); };
+  render();
+})();
+
+/* ==================================================================
+   Caso · cuándo hacer los pedidos de una tienda de bicicletas
+   ================================================================== */
+var PED16 = (function(){
+  /* d: demanda por mes; K: costo fijo por pedido; h: costo de guardar una unidad un mes;
+     cap: unidades máximas por pedido (Infinity = sin límite).
+     Nodo i = inicio del mes i (0..n); arco (i,j) = pedir al inicio de i lo que se vende de i a j-1. */
+  function arcos(d, K, h, cap){
+    var n = d.length, A = [];
+    for(var i=0;i<n;i++) for(var j=i+1;j<=n;j++){
+      var q = 0, g = 0;
+      for(var t=i;t<j;t++){ q += d[t]; g += d[t]*(t-i); }
+      if(q > cap) continue;
+      A.push({a:i, b:j, q:q, c:K + h*g, guardar:h*g});
+    }
+    return A;
+  }
+  function resolver(d, K, h, cap){
+    var n = d.length, A = arcos(d, K, h, cap), D = [0], P = [null], j;
+    for(j=1;j<=n;j++){
+      D[j] = Infinity; P[j] = null;
+      A.forEach(function(e){ if(e.b === j && D[e.a] + e.c < D[j] - 1e-9){ D[j] = D[e.a] + e.c; P[j] = e; } });
+    }
+    if(D[n] === Infinity) return {factible:false, arcos:A};
+    var ruta = [], v = n;
+    while(v !== 0){ ruta.unshift(P[v]); v = P[v].a; }
+    return {factible:true, arcos:A, costo:D[n], ruta:ruta};
+  }
+  return {resolver:resolver};
+})();
+
+(function(){
+  var svg = document.getElementById('g-pe');
+  if(!svg) return;
+  var MESES = ['ago','sep','oct','nov','dic','ene'], NOMBRES = ['agosto','septiembre','octubre','noviembre','diciembre','enero'];
+  var BASE = [30,30,40,60,150,40], INI = {'pe-k':150, 'pe-h':1, 'pe-dic':150, 'pe-cap':360};
+  var NODOS = ['1','2','3','4','5','6','7'];
+  var k = 0;
+  function val(id){ return +document.getElementById(id).value; }
+  function miles(x){ return '$' + fmt(Math.round(x*1000), 0); }
+  function num(x){ return fmt(x, 1); }
+  function render(){
+    var K = val('pe-k'), h = val('pe-h'), dic = val('pe-dic'), capv = val('pe-cap');
+    var cap = capv >= 360 ? Infinity : capv, d = BASE.slice(); d[4] = dic;
+    document.getElementById('pe-k-v').textContent = miles(K);
+    document.getElementById('pe-h-v').textContent = miles(h);
+    document.getElementById('pe-dic-v').textContent = dic;
+    document.getElementById('pe-dic-t').textContent = dic;
+    document.getElementById('pe-cap-v').textContent = cap === Infinity ? 'sin límite' : capv + ' bicicletas';
+    var R = PED16.resolver(d, K, h, cap), n = d.length;
+
+    /* Dijkstra paso a paso sobre la red de pedidos */
+    var A = R.arcos.map(function(e){ return {a:String(e.a+1), b:String(e.b+1), c:e.c}; });
+    var E = DIJ16.correr(NODOS, A, '1');
+    if(k > E.length-1) k = E.length-1;
+    var st = E[k], fin = k === E.length-1, desde = k ? E[k-1].nuevo : null;
+    var ver = fin && R.factible;
+    var usado = {}, enRuta = {0:true};
+    if(ver) R.ruta.forEach(function(e){ usado[e.a + '-' + e.b] = true; enRuta[e.b] = true; });
+
+    /* Paso 1: tabla de costos de los arcos */
+    var porArco = {};
+    R.arcos.forEach(function(e){ porArco[e.a + '-' + e.b] = e; });
+    var filas = '';
+    for(var i=0;i<n;i++){
+      filas += '<tr><td><b>' + NOMBRES[i].charAt(0).toUpperCase() + NOMBRES[i].slice(1) + '</b> <small style="color:var(--ink-3)">nodo ' + (i+1) + '</small></td>';
+      for(var j=1;j<=n;j++){
+        if(j <= i){ filas += '<td class="num"></td>'; continue; }
+        var e = porArco[i + '-' + j];
+        if(!e){ filas += '<td class="num" style="color:var(--ink-3)">no cabe</td>'; continue; }
+        var u = usado[i + '-' + j];
+        filas += '<td class="num"' + (u ? ' style="background:rgba(184,137,43,.2);box-shadow:inset 0 0 0 2px #B8892B;font-weight:700"' : '') + '>' +
+          miles(e.c) + '<br><small style="color:var(--ink-3);font-weight:400">' + e.q + ' u.</small></td>';
+      }
+      filas += '</tr>';
+    }
+    document.querySelector('#pe-tabla tbody').innerHTML = filas;
+
+    /* Paso 2: la red con las etiquetas de la iteración k */
+    DIB16.vaciar(svg);
+    DIB16.marcadores(svg, 'pe');
+    var x0 = 70, dx = (900-140)/n, y = 236;
+    function X(v){ return x0 + v*dx; }
+    var etiquetas = [];
+    R.arcos.forEach(function(e){
+      var a = X(e.a), b = X(e.b), alto = 46*(e.b-e.a), sa = String(e.a+1), sb = String(e.b+1);
+      var oro = usado[e.a+'-'+e.b];
+      var arbol = !oro && st.perm[sb] && st.pred[sb] === sa;
+      var revisa = !oro && !arbol && desde === sa && !E[k-1].perm[sb];
+      var col = oro ? '#B8892B' : (arbol ? '#0F6E63' : (revisa ? '#C8551E' : '#D6CFC1'));
+      var mk = oro ? 'gold' : (arbol ? 'teal' : (revisa ? 'amber' : 'gris'));
+      var path = 'M' + (a+10) + ',' + (y-18) + ' Q' + ((a+b)/2) + ',' + (y-18-alto*1.3) + ' ' + (b-10) + ',' + (y-20);
+      svg.appendChild(svgEl('path', {d:path, fill:'none', stroke:col, 'stroke-width': oro ? 4 : (arbol ? 3 : (revisa ? 2.4 : 1.4)), 'marker-end':'url(#pe-' + mk + ')'}));
+      if(oro || revisa) etiquetas.push([(a+b)/2, y-18-alto*0.65-4, oro ? miles(e.c) : num(e.c), col]);
+    });
+    etiquetas.forEach(function(t){ DIB16.texto(svg, t[0], t[1], t[2], 'font:700 12px Archivo,sans-serif;fill:' + t[3] + ';paint-order:stroke;stroke:#fff;stroke-width:3px', 'middle'); });
+    for(var v=0; v<=n; v++){
+      var sv = String(v+1), col = sv === st.nuevo ? '#C8551E' : (ver && enRuta[v] ? '#B8892B' : (st.perm[sv] ? '#0F6E63' : '#14181F'));
+      svg.appendChild(svgEl('circle', {cx:X(v), cy:y, r:19, fill:col}));
+      DIB16.texto(svg, X(v), y+5, sv, EST16_NODO, 'middle');
+      DIB16.texto(svg, X(v), y+40, v < n ? 'inicio ' + MESES[v] : 'fin', 'font:600 12px Archivo,sans-serif;fill:var(--ink-3)', 'middle');
+      if(v < n) DIB16.texto(svg, X(v), y+57, 'venta ' + d[v], 'font:500 11.5px "JetBrains Mono",monospace;fill:var(--ink-3)', 'middle');
+      var dv = st.d[sv], et = dv === 'inf' ? '[∞, –]' : '[' + num(dv) + ', ' + (st.pred[sv] === null ? '–' : st.pred[sv]) + ']';
+      DIB16.texto(svg, X(v), y+84, et, 'font:700 12.5px "JetBrains Mono",monospace;fill:' + (st.perm[sv] ? '#0F6E63' : 'var(--ink-3)'), 'middle');
+    }
+
+    /* tabla por iteración, mismo formato que la del primer bloque */
+    var OK = '<span style="color:var(--teal);font-weight:700">✓</span>';
+    var tb = '<table><thead><tr><th>Iteración</th><th>Actualiza desde</th><th>Se hace permanente</th>' +
+      NODOS.map(function(x){ return '<th style="text-align:right">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
+    for(var it=0; it<=k; it++){
+      var S2 = E[it], antes = it ? E[it-1] : null, fila = '';
+      fila += '<td>' + (it === 0 ? 'Inicio' : it) + '</td><td>' + (it === 0 ? '—' : antes.nuevo) + '</td><td style="white-space:nowrap">' + (S2.nuevo ? S2.nuevo + ', con ' + num(S2.d[S2.nuevo]) : '—') + '</td>';
+      NODOS.forEach(function(x){
+        var celda;
+        if(antes && antes.perm[x]) celda = OK;
+        else {
+          var dd = S2.d[x];
+          celda = dd === 'inf' ? '∞' : '[' + num(dd) + ', ' + (S2.pred[x] === null ? '–' : S2.pred[x]) + (S2.emp[x].length ? '/' + S2.emp[x].join('/') : '') + ']';
+          if(x === S2.nuevo) celda = '<b style="color:var(--amber);border:1.5px solid var(--amber);border-radius:6px;padding:1px 5px;white-space:nowrap">' + celda + '</b>';
+        }
+        fila += '<td style="text-align:right;font-family:var(--fm);font-size:.86rem;white-space:nowrap">' + celda + '</td>';
+      });
+      tb += '<tr' + (it === k ? ' class="sel"' : '') + '>' + fila + '</tr>';
+    }
+    document.getElementById('pe-it').innerHTML = tb + '</tbody></table>';
+
+    var todos = n*K, unico = K;
+    for(var t=0;t<n;t++) unico += h*d[t]*t;
+    document.getElementById('pe-iter').textContent = k + ' / ' + (E.length-1);
+    document.getElementById('pe-z').textContent = ver ? miles(R.costo) : '—';
+    document.getElementById('pe-n').textContent = ver ? R.ruta.length : '—';
+    document.getElementById('pe-todos').textContent = miles(todos);
+    document.getElementById('pe-uno').textContent = d.reduce(function(s,x){ return s+x; }, 0) > cap ? 'no cabe' : miles(unico);
+
+    var m = document.getElementById('pe-msg');
+    m.style.borderLeftColor = 'var(--teal)';
+    if(k === 0){
+      m.innerHTML = 'Inicialización: el nodo 1 es permanente con d(1) = 0 y el resto parte en ∞. La red tiene ' + R.arcos.length + ' arcos, uno por cada celda con costo de la tabla. Antes de avanzar, intenta adivinar el plan: ¿conviene pedir todos los meses, una sola vez, o algo intermedio?';
+      return;
+    }
+    var msg = 'Iteración ' + k + ': desde el nodo ' + desde + ', el último que se hizo permanente, ' +
+      (st.actualizados.length === 1 ? 'mejoró la etiqueta del nodo ' + st.actualizados[0] + '. ' : (st.actualizados.length ? 'mejoraron las etiquetas de los nodos ' + st.actualizados.slice(0,-1).join(', ') + ' y ' + st.actualizados[st.actualizados.length-1] + '. ' : 'ninguna etiqueta mejoró. ')) +
+      (st.nuevo ? 'El temporal de menor etiqueta es el <b>nodo ' + st.nuevo + '</b>, con ' + miles(st.d[st.nuevo]) + ', y pasa a ser permanente: ese es el costo mínimo para cubrir la venta hasta ' + (st.nuevo === '7' ? 'el fin del horizonte.' : 'el inicio de ' + NOMBRES[+st.nuevo-1] + '.') : '');
+    if(fin && !R.factible){
+      m.innerHTML = msg + ' <b>Sin solución.</b> El máximo por pedido no alcanza ni para la venta de diciembre: todos los arcos que cubren ese mes desaparecieron y el nodo 7 nunca recibe etiqueta.';
+      m.style.borderLeftColor = 'var(--amber)'; return;
+    }
+    if(fin){
+      msg += ' <b>Plan óptimo: ' + miles(R.costo) + '</b> en ' + R.ruta.length + ' pedido' + (R.ruta.length === 1 ? '' : 's') + ', reconstruido con los predecesores desde el nodo 7: ' +
+        R.ruta.map(function(e, i){
+          return (i ? 'a' : 'A') + ' inicios de ' + NOMBRES[e.a] + ' pedir ' + e.q + ' bicicletas para ' + (e.b - e.a === 1 ? NOMBRES[e.a] : 'cubrir de ' + NOMBRES[e.a] + ' a ' + NOMBRES[e.b-1]) +
+            ' (' + miles(K) + ' del pedido + ' + miles(e.guardar) + ' de guardar)';
+        }).join('; ') + '. La ruta es ' + [1].concat(R.ruta.map(function(e){ return e.b + 1; })).join(' → ') + ', y sus arcos quedan marcados en la tabla de costos.';
+    }
+    m.innerHTML = msg;
+  }
+  ['pe-k','pe-h','pe-dic','pe-cap'].forEach(function(id){ document.getElementById(id).oninput = function(){ k = 0; render(); }; });
+  document.getElementById('pe-paso').onclick = function(){ k++; render(); };
+  document.getElementById('pe-todo').onclick = function(){ k = 99; render(); };
+  document.getElementById('pe-reini').onclick = function(){ k = 0; render(); };
+  document.getElementById('pe-reset').onclick = function(){ Object.keys(INI).forEach(function(id){ document.getElementById(id).value = INI[id]; }); k = 0; render(); };
+  render();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>
