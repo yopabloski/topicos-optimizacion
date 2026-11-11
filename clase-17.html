@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flujo máximo y mínimo corte · Tópicos de Optimización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[','\\]']]},
+  options: {skipHtmlTags: ['script','noscript','style','textarea','pre']}
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root{
+  --paper:#F4F1EA;      --paper-2:#EAE5DA;    --grid:rgba(20,24,31,.055);
+  --ink:#14181F;        --ink-2:#3C4551;      --ink-3:#6B7683;
+  --amber:#C8551E;      --amber-soft:#F3E2D6;
+  --teal:#0F6E63;       --teal-soft:#DCEAE6;
+  --plum:#5B3A6B;       --plum-soft:#E8DEEE;
+  --gold:#B8892B;
+  --line:rgba(20,24,31,.14);
+  --shadow:0 1px 2px rgba(20,24,31,.05), 0 12px 32px -18px rgba(20,24,31,.45);
+  --r:14px;
+  --fd:'Fraunces',Georgia,serif;
+  --fb:'Archivo','Helvetica Neue',sans-serif;
+  --fm:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fb);
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+::selection{background:var(--amber);color:#fff}
+
+/* ---------- barra superior ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:14px;
+  padding:10px 20px;background:rgba(244,241,234,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .marca{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.topbar .marca em{font-style:normal;color:var(--amber)}
+.topbar .clase-id{font-family:var(--fm);font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3);white-space:nowrap}
+.progreso{flex:1;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:30px}
+.progreso i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold));transition:width .35s cubic-bezier(.4,0,.2,1)}
+.topbar button{
+  font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:.18s;white-space:nowrap;
+}
+.topbar button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.topbar button.destacado{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.topbar button.destacado:hover{background:var(--amber);border-color:var(--amber)}
+
+/* ---------- índice lateral ---------- */
+.indice{
+  position:fixed;top:0;right:0;height:100vh;width:330px;max-width:88vw;z-index:80;
+  background:var(--ink);color:var(--paper);padding:26px 22px;overflow-y:auto;
+  transform:translateX(102%);transition:transform .38s cubic-bezier(.4,0,.2,1);
+  box-shadow:-20px 0 60px -30px rgba(0,0,0,.7);
+}
+.indice.abierto{transform:none}
+.indice h3{font-family:var(--fd);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+.indice a{display:block;padding:8px 10px;border-radius:8px;color:rgba(244,241,234,.72);text-decoration:none;font-size:14px;border-left:2px solid transparent;transition:.16s}
+.indice a:hover{background:rgba(255,255,255,.06);color:#fff}
+.indice a.activo{color:#fff;border-left-color:var(--amber);background:rgba(200,85,30,.16)}
+.indice a .n{font-family:var(--fm);font-size:11px;color:var(--ink-3);margin-right:9px}
+.indice a.activo .n{color:var(--gold)}
+.velo{position:fixed;inset:0;background:rgba(20,24,31,.4);z-index:75;opacity:0;pointer-events:none;transition:.3s}
+.velo.on{opacity:1;pointer-events:auto}
+
+/* ---------- lámina ---------- */
+.lamina{
+  max-width:1060px;margin:0 auto;padding:64px 30px 52px;border-bottom:1px solid var(--line);
+  scroll-margin-top:56px;
+}
+.lamina:last-of-type{border-bottom:0}
+.eyebrow{
+  font-family:var(--fm);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--amber);display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 14px}
+h2{font-family:var(--fd);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 18px}
+h3{font-family:var(--fb);font-weight:700;font-size:1.06rem;letter-spacing:-.005em;margin:26px 0 10px}
+/* el texto corrido usa todo el ancho de la lámina, igual que las cajas:
+   párrafos, lead y cajas comparten el mismo borde derecho */
+p{margin:0 0 15px;width:100%;max-width:none}
+a{color:var(--amber)}
+.lead{font-size:1.14rem;color:var(--ink-2);width:100%;max-width:none}
+/* dentro de cajas el texto usa todo el ancho de la caja */
+.nota p,.tarjeta p,.takeaway p,.widget p,.ejercicio p,.modelo .glosa,.quiz p{max-width:none}
+
+/* ---------- portada ---------- */
+.portada{
+  min-height:calc(100vh - 47px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+}
+.portada::before{
+  content:"";position:absolute;right:-14%;top:50%;transform:translateY(-50%);
+  width:min(52vw,620px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,var(--amber-soft),transparent 66%);
+  filter:blur(6px);z-index:-1;
+}
+.portada .num{
+  font-family:var(--fd);font-weight:800;font-size:clamp(5rem,16vw,11rem);line-height:.8;
+  color:transparent;-webkit-text-stroke:2px var(--line);letter-spacing:-.05em;margin-bottom:8px;
+}
+.portada .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.chip{
+  font-family:var(--fm);font-size:11.5px;padding:6px 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.5);color:var(--ink-2);
+}
+.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.scroll-hint{position:absolute;bottom:26px;left:30px;font-family:var(--fm);font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.scroll-hint span{display:inline-block;animation:bob 1.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ---------- tarjetas ---------- */
+.rejilla{display:grid;gap:16px;margin:22px 0}
+.r2{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tarjeta{
+  background:rgba(255,255,255,.66);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 21px;box-shadow:var(--shadow);
+}
+.tarjeta h4{margin:0 0 8px;font-size:.98rem;font-weight:700;letter-spacing:-.005em}
+.tarjeta p{font-size:.94rem;color:var(--ink-2);margin:0}
+.tarjeta .icono{font-family:var(--fm);font-size:11px;color:var(--amber);letter-spacing:.14em;display:block;margin-bottom:9px}
+
+.nota{border-left:3px solid var(--teal);background:var(--teal-soft);padding:16px 20px;border-radius:0 var(--r) var(--r) 0;margin:20px 0}
+.nota.ojo{border-left-color:var(--amber);background:var(--amber-soft)}
+.nota.libro{border-left-color:var(--plum);background:var(--plum-soft)}
+.nota p:last-child{margin-bottom:0}
+.nota .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+
+.objetivos{counter-reset:o;list-style:none;padding:0;margin:20px 0}
+.objetivos li{counter-increment:o;position:relative;padding:11px 0 11px 46px;border-bottom:1px dashed var(--line);font-size:.98rem}
+.objetivos li:last-child{border-bottom:0}
+.objetivos li::before{
+  content:counter(o,decimal-leading-zero);position:absolute;left:0;top:11px;
+  font-family:var(--fm);font-size:11px;color:var(--amber);border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;background:rgba(255,255,255,.7);
+}
+
+.modelo{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:24px 26px;margin:22px 0;
+  box-shadow:var(--shadow);overflow-x:auto;
+}
+.modelo .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:12px}
+.modelo mjx-container{color:var(--paper)}
+.modelo .glosa{font-size:.86rem;color:rgba(244,241,234,.62);margin:12px 0 0;font-family:var(--fb)}
+
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.92rem;background:rgba(255,255,255,.6);border-radius:10px;overflow:hidden}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--fm);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2)}
+td.num,th.num{text-align:right;font-family:var(--fm);font-size:.86rem}
+/* los encabezados numéricos conservan el tamaño de los demás encabezados */
+th.num{font-size:10.5px}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sel{background:var(--amber-soft)}
+.tabla-scroll{overflow-x:auto}
+
+/* ---------- widget ---------- */
+.widget{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);
+  box-shadow:var(--shadow);margin:26px 0;overflow:hidden;
+}
+.widget > header{
+  display:flex;align-items:center;gap:11px;padding:13px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.35));flex-wrap:wrap;
+}
+.widget > header .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:var(--teal);padding:3px 9px;border-radius:5px}
+.widget > header .tag.sim{background:var(--amber)}
+.widget > header .tag.viz{background:var(--plum)}
+.widget > header .tag.caso{background:var(--gold)}
+.widget > header h4{margin:0;font-size:.97rem;font-weight:700}
+.widget .cuerpo{padding:20px}
+.controles{display:grid;gap:15px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.83rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.ctrl label b{font-family:var(--fm);font-size:.86rem;color:var(--amber);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--amber);cursor:pointer}
+input[type=number],select{
+  width:100%;font-family:var(--fm);font-size:.88rem;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--ink);
+}
+.btn{
+  font-family:var(--fb);font-weight:600;font-size:.87rem;padding:8px 15px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;
+}
+.btn:hover{background:var(--amber);border-color:var(--amber)}
+.btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.botonera{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.marcador{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.marcador div{
+  flex:1;min-width:110px;background:var(--paper-2);border-radius:10px;padding:11px 14px;border:1px solid var(--line);
+}
+.marcador span{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.marcador b{font-family:var(--fd);font-size:1.5rem;font-weight:600;letter-spacing:-.02em;display:block;line-height:1.15}
+.marcador b.ok{color:var(--teal)} .marcador b.mal{color:var(--amber)}
+svg text{font-family:var(--fm);font-size:10px;fill:var(--ink-3)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink-2);margin-top:10px}
+.leyenda i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+/* ---------- quiz ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.75);padding:20px 22px;margin:24px 0;box-shadow:var(--shadow)}
+.quiz .et{font-family:var(--fm);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#fff;background:var(--plum);padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.quiz .preg{font-weight:600;margin-bottom:13px}
+.opciones{display:grid;gap:9px}
+.opciones button{
+  text-align:left;font-family:var(--fb);font-size:.93rem;padding:11px 15px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.16s;display:flex;gap:11px;align-items:flex-start;
+}
+.opciones button:hover{border-color:var(--ink-3);transform:translateX(3px)}
+.opciones button .k{font-family:var(--fm);font-size:.78rem;color:var(--ink-3);padding-top:2px}
+.opciones button.bien{background:var(--teal-soft);border-color:var(--teal)}
+.opciones button.mal{background:var(--amber-soft);border-color:var(--amber);opacity:.75}
+.opciones button[disabled]{cursor:default;transform:none}
+.retro{margin-top:13px;font-size:.9rem;padding:12px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal);display:none}
+.retro.ver{display:block;animation:aparece .3s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* ---------- take away ---------- */
+.takeaway{
+  background:var(--ink);color:var(--paper);border-radius:var(--r);padding:34px 36px;margin:28px 0;position:relative;overflow:hidden;
+}
+.takeaway::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,85,30,.35),transparent 68%);
+}
+.takeaway .et{font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:14px}
+.takeaway blockquote{
+  font-family:var(--fd);font-weight:600;font-size:clamp(1.3rem,2.9vw,1.85rem);line-height:1.26;letter-spacing:-.02em;margin:0;position:relative;z-index:1;
+}
+.resumen{list-style:none;padding:0;margin:20px 0}
+.resumen li{position:relative;padding:10px 0 10px 30px;border-bottom:1px dashed var(--line);font-size:.97rem}
+.resumen li:last-child{border-bottom:0}
+.resumen li::before{content:"\2192";position:absolute;left:0;color:var(--amber);font-family:var(--fm)}
+
+/* ---------- ejercicios ---------- */
+.ejercicio{
+  border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.7);
+  margin:20px 0;overflow:hidden;box-shadow:var(--shadow);
+}
+.ejercicio > .cab{display:flex;align-items:center;gap:11px;padding:15px 21px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ejercicio .nivel{font-family:var(--fm);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:5px;color:#fff}
+.nivel.medio{background:var(--teal)} .nivel.complejo{background:var(--amber)}
+.ejercicio .cab h4{margin:0;font-size:1rem;font-weight:700;flex:1;min-width:180px}
+.ejercicio .enunciado{padding:19px 21px}
+.ejercicio .enunciado p:last-child{margin-bottom:0}
+/* .pauta = solución de un ejercicio (se elimina en la versión de alumnos)
+   .explica = detalle opcional de contenido (se conserva en ambas versiones) */
+details.pauta,details.explica{border-top:1px solid var(--line);background:var(--paper-2)}
+details.explica{border:1px solid var(--line);border-radius:10px}
+details.pauta summary,details.explica summary{
+  cursor:pointer;padding:13px 21px;font-family:var(--fm);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);list-style:none;display:flex;align-items:center;gap:9px;user-select:none;
+}
+details.pauta summary::-webkit-details-marker,details.explica summary::-webkit-details-marker{display:none}
+details.pauta summary::before,details.explica summary::before{content:"\25B8";color:var(--amber);transition:.2s;display:inline-block}
+details.pauta[open] summary::before,details.explica[open] summary::before{transform:rotate(90deg)}
+details.pauta summary:hover,details.explica summary:hover{color:var(--ink)}
+details.pauta .contenido,details.explica .contenido{padding:4px 21px 21px;font-size:.94rem;border-top:1px solid var(--line)}
+
+.pie{max-width:1060px;margin:0 auto;padding:36px 30px 70px;font-size:.83rem;color:var(--ink-3);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.pie-nota{flex-basis:100%;border-top:1px solid var(--line);padding-top:12px}
+.pie-nota p{margin:0 0 4px;font-size:.8rem}
+.pie a{color:var(--ink-3)}
+
+.rev{opacity:0;transform:translateY(16px)}
+.rev.visto{opacity:1;transform:none;transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+
+/* =========================================================
+   MODO PROYECCIÓN — lienzo fijo 1600×900 escalado al viewport
+   ========================================================= */
+body.proy{overflow:hidden;background-image:none;background:#0B0D11}
+body.proy .pie{display:none}
+body.proy main{position:fixed;inset:0}
+body.proy .lamina{display:none}
+body.proy .lamina.activa{
+  display:flex;flex-direction:column;justify-content:center;
+  position:absolute;left:50%;top:50%;
+  width:1600px;min-height:900px;height:auto;max-width:none;margin:0;padding:48px 58px;
+  border:0;border-radius:6px;overflow:hidden;
+  background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  transform-origin:center center;
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+/* al proyectar la columna se ensancha: el texto crece con la tipografía */
+body.proy .lamina.activa{--medida:96ch}
+body.proy .lamina.activa li{max-width:none}
+/* los gráficos no pueden crecer sin límite o se comen la lámina completa */
+body.proy .lamina.activa .widget svg{max-width:620px;margin:0 auto;display:block}
+body.proy .lamina.activa .rev{opacity:1;transform:none}
+body.proy .scroll-hint{display:none}
+body.proy .portada{min-height:0}
+/* tipografía relativa al lienzo para que el auto-ajuste funcione */
+body.proy .lamina.activa h1{font-size:2.85em;line-height:1.02}
+body.proy .lamina.activa h2{font-size:2.05em;line-height:1.1;margin-bottom:.55em}
+body.proy .lamina.activa h3{font-size:1.16em;margin:1.2em 0 .45em}
+body.proy .lamina.activa p,
+body.proy .lamina.activa li,
+body.proy .lamina.activa td,
+body.proy .lamina.activa .ejercicio .enunciado,
+body.proy .lamina.activa details.pauta .contenido{font-size:1em}
+body.proy .lamina.activa .lead{font-size:1.12em}
+body.proy .lamina.activa .eyebrow{font-size:.62em}
+body.proy .lamina.activa .tarjeta p{font-size:.9em}
+body.proy .lamina.activa .tarjeta h4{font-size:1em}
+body.proy .lamina.activa .tarjeta .icono{font-size:.6em}
+body.proy .lamina.activa .nota .et{font-size:.58em}
+body.proy .lamina.activa .modelo .et{font-size:.58em}
+body.proy .lamina.activa .modelo .glosa{font-size:.85em}
+body.proy .lamina.activa .marcador b{font-size:1.5em}
+body.proy .lamina.activa .marcador span{font-size:.56em}
+body.proy .lamina.activa .takeaway blockquote{font-size:1.72em}
+body.proy .lamina.activa .portada .num{font-size:7em}
+body.proy .lamina.activa th{font-size:.58em}
+body.proy .lamina.activa .chip{font-size:.63em}
+body.proy .lamina.activa .resumen li,
+body.proy .lamina.activa .objetivos li{font-size:.98em}
+body.proy .lamina.activa .quiz .opciones button{font-size:.94em}
+/* controles de proyección */
+.proy-ui{display:none}
+body.proy .proy-ui{
+  display:flex;align-items:center;gap:12px;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:90;background:rgba(20,24,31,.82);backdrop-filter:blur(10px);border-radius:999px;padding:7px 9px;
+  opacity:.25;transition:opacity .25s;
+}
+body.proy .proy-ui:hover{opacity:1}
+.proy-ui button{
+  background:transparent;border:0;color:#F4F1EA;font-family:var(--fb);font-size:14px;font-weight:600;
+  cursor:pointer;padding:5px 13px;border-radius:999px;transition:.15s;
+}
+.proy-ui button:hover{background:rgba(255,255,255,.14)}
+.proy-ui .pos{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.65);padding:0 4px;min-width:52px;text-align:center}
+body.proy .topbar,body.proy .velo{display:none}
+
+/* =========================================================
+   MODO EDICIÓN
+   ========================================================= */
+body.editando [data-ed]{
+  outline:1px dashed rgba(200,85,30,.45);outline-offset:3px;border-radius:3px;transition:.15s;
+}
+body.editando [data-ed]:hover{outline-color:var(--amber);background:rgba(200,85,30,.05)}
+body.editando [data-ed]:focus{
+  outline:2px solid var(--amber);background:rgba(255,255,255,.9);
+}
+.aviso-edicion{
+  display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7);align-items:center;gap:14px;
+}
+body.editando .aviso-edicion{display:flex}
+.aviso-edicion b{color:var(--gold);font-weight:600}
+.aviso-edicion .cambios{font-family:var(--fm);font-size:12px;color:rgba(244,241,234,.6)}
+.toast{
+  position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-14px);z-index:95;
+  background:var(--teal);color:#fff;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.2,.7,.3,1);box-shadow:var(--shadow);
+}
+.toast.ver{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* =========================================================
+   IMPRESIÓN / PDF
+   ========================================================= */
+@media print{
+  @page{size:A4 portrait;margin:14mm 13mm}
+  html,body{background:#fff !important;font-size:10.5pt;line-height:1.45}
+  body{background-image:none !important}
+  .topbar,.indice,.velo,.scroll-hint,.proy-ui,.aviso-edicion,.toast{display:none !important}
+  main{max-width:none}
+  .lamina{
+    max-width:none;margin:0;padding:0 0 10mm;border-bottom:0;
+    break-after:page;page-break-after:always;
+  }
+  .lamina:last-of-type{break-after:auto;page-break-after:auto}
+  .portada{min-height:auto;height:auto;padding-top:8mm}
+  .portada::before{display:none}
+  .rev{opacity:1 !important;transform:none !important}
+  h1{font-size:26pt}
+  h2{font-size:17pt;margin-bottom:8pt}
+  h3{font-size:11.5pt;margin:12pt 0 5pt}
+  .lead{font-size:11pt}
+  .portada .num{font-size:44pt;-webkit-text-stroke:1px #bbb}
+  /* nada se corta a la mitad */
+  .tarjeta,.nota,.modelo,.quiz,.ejercicio,.takeaway,.widget,table,.marcador{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .modelo,.takeaway{background:#14181F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .nota,.tarjeta,.quiz,.ejercicio,.widget,th,tbody tr.sel{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .widget{box-shadow:none}
+  /* los controles no sirven en papel; los gráficos y tablas sí se imprimen */
+  .controles,.botonera,.widget .cuerpo .btn,.proy-ui{display:none !important}
+  .opciones button{border:1px solid #ccc;background:#fff !important;transform:none !important}
+  .opciones button:hover{transform:none}
+  details.pauta,details.explica{background:#f2efe8 !important}
+  details.pauta .contenido,details.explica .contenido{display:block !important}
+  a{color:inherit;text-decoration:none}
+}
+
+@media (max-width:640px){
+  .lamina{padding:44px 20px 38px}
+  .topbar{padding:9px 14px;gap:10px}
+  .topbar .marca{font-size:13px}
+}
+</style>
+</head>
+<body data-modo="alumnos">
+
+<div class="topbar">
+  <div class="marca">Tópicos de <em>Optimización</em></div>
+  <div class="clase-id">Clase 17</div>
+  <div class="progreso"><i id="barra"></i></div>
+  <button id="pdf" title="Abre el dialogo de impresion para guardar como PDF">PDF</button>
+  <button id="indice-toggle">Índice</button>
+</div>
+
+<div class="velo" id="velo"></div>
+<nav class="indice" id="indice">
+  <h3>Contenido</h3>
+  <div id="indice-links"></div>
+</nav>
+
+<main id="doc">
+<section class="lamina portada" id="l0" data-titulo="Portada">
+  <div class="num">17</div>
+  <div class="eyebrow">Tópicos de Optimización · IIM329A</div>
+  <h1>Cuánto cabe<br>por la <em style="font-style:italic;color:var(--amber)">red</em></h1>
+  <p class="lead">Cierre de la unidad. El flujo máximo pregunta cuánto puede pasar de un origen a un destino, y su respuesta viene con un certificado: un corte que ninguna estrategia de envío puede superar. Es la dualidad, dibujada sobre una red.</p>
+  <div class="meta">
+    <span class="chip on">Flujo máximo</span>
+    <span class="chip">Ford-Fulkerson</span>
+    <span class="chip">Corte mínimo</span>
+    <span class="chip">70 min</span>
+  </div>
+  <div class="scroll-hint">DESPLÁZATE O USA <span>→</span></div>
+</section>
+
+<section class="lamina" id="l1" data-titulo="Introducción y aprendizajes">
+  <div class="eyebrow">Introducción</div>
+  <h2>La capacidad de una red y su cuello de botella</h2>
+  <p class="lead">En la temporada alta del Seervada Park hay más visitantes que tranvías. El parque limitó los viajes diarios por cada camino. ¿Cuántos viajes al día pueden llegar al mirador?</p>
+  <p>El <strong>problema del flujo máximo</strong> es el último caso particular del flujo de costo mínimo que nos quedaba. No hay costos: hay capacidades, un origen y un destino, y se quiere enviar tanto como la red permita. Aparece en redes de transporte, en ductos, en redes de datos y en la electricidad, y también en problemas que no tienen flujo físico, como asignar estudiantes a proyectos.</p>
+  <p>El algoritmo de <strong>Ford-Fulkerson</strong> lo resuelve con una idea que no habíamos visto: la <em>red residual</em>, que registra no solo cuánto se puede enviar todavía por cada arco, sino también cuánto de lo ya enviado se puede <em>deshacer</em>. Esa posibilidad de corregirse es la que lo diferencia de un algoritmo codicioso que se equivoca.</p>
+  <p>Y al terminar entrega algo más que un número. Entrega un <strong>corte mínimo</strong>: un conjunto de arcos cuya capacidad total es igual al flujo encontrado. Como ningún flujo puede superar la capacidad de ningún corte, el corte certifica que el flujo es máximo. Es la misma lógica de la Clase 09 —una incumbente y una cota que se tocan—, y es exactamente la dualidad de programación lineal. Con eso cerramos la unidad.</p>
+
+  <h3>Al terminar esta clase deberías poder</h3>
+  <ol class="objetivos">
+    <li><strong>Formular</strong> el problema de flujo máximo como programa lineal, con los conjuntos \(\delta^+(i)\) y \(\delta^-(i)\) y una variable para el flujo total.</li>
+    <li><strong>Construir</strong> la red residual de un flujo e identificar en ella caminos de aumento, incluidos los que usan arcos inversos.</li>
+    <li><strong>Ejecutar</strong> a mano el algoritmo de Ford-Fulkerson hasta que no quede ningún camino de aumento.</li>
+    <li><strong>Identificar</strong> un corte mínimo a partir de la red residual final y enunciar el teorema del flujo máximo y el corte mínimo.</li>
+    <li><strong>Interpretar</strong> el corte mínimo como el problema dual del flujo máximo y como el cuello de botella de un sistema real.</li>
+  </ol>
+</section>
+
+<section class="lamina" id="l2" data-titulo="Modelo y Ford-Fulkerson">
+  <div class="eyebrow">Primer bloque · el algoritmo</div>
+  <h2>Enviar, y poder arrepentirse</h2>
+  <p class="lead">Se definen \(N\), \(A\), el origen \(s\in N\), el destino \(t\in N\), y \(u_{ij}\ge0\), la capacidad del arco \((i,j)\), para todo \((i,j)\in A\).</p>
+
+  <div class="modelo">
+    <span class="et">Flujo máximo · modelo</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0">\(x_{ij}\): flujo enviado por el arco \((i,j)\), para todo \((i,j)\in A\). &nbsp; \(F\): flujo total que sale de \(s\) y llega a \(t\).</p>
+    \[
+    \begin{aligned}
+    \max\;\; & z=F\\
+    \text{s.a.}\;\; & \sum_{(i,j)\in\delta^+(i)} x_{ij}-\sum_{(j,i)\in\delta^-(i)} x_{ji}=\begin{cases}F & \text{si } i=s\\ -F & \text{si } i=t\\ 0 & \text{en otro caso}\end{cases} && \forall i\in N\\
+    & x_{ij}\le u_{ij} && \forall (i,j)\in A\\
+    & x_{ij}\ge0 && \forall (i,j)\in A\\
+    & F\ge0
+    \end{aligned}
+    \]
+    <p class="glosa">Pasando \(F\) al lado izquierdo, su columna tiene un \(-1\) en la fila de \(s\) y un \(+1\) en la de \(t\): es la columna de un arco de retorno de \(t\) a \(s\). La matriz sigue siendo de incidencia, y con capacidades enteras el flujo máximo es entero. Es el caso particular de la Clase 15.</p>
+  </div>
+
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <span class="icono">CAPACIDAD RESIDUAL</span>
+      <h4>Lo que queda, y lo que se puede deshacer</h4>
+      <p>Si por el arco \((i,j)\) circulan \(x_{ij}\) unidades, todavía caben \(u_{ij}-x_{ij}\) en el mismo sentido. Y se pueden "devolver" \(x_{ij}\) unidades en sentido contrario, cancelando parte de lo enviado: ese es el arco inverso \((j,i)\).</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">RED RESIDUAL</span>
+      <h4>Solo los arcos que aún admiten flujo</h4>
+      <p>Es la red formada por todos los arcos, directos e inversos, con capacidad residual positiva. Cambia cada vez que cambia el flujo.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">CAMINO DE AUMENTO</span>
+      <h4>De \(s\) a \(t\) en la red residual</h4>
+      <p>Un camino de \(s\) a \(t\) en la red residual permite enviar tanto como su arco más estrecho. Si pasa por un arco inverso, en la red original eso significa redirigir flujo ya enviado.</p>
+    </div>
+  </div>
+
+  <div class="modelo">
+    <span class="et">Algoritmo de Ford-Fulkerson</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0">
+      <b>Paso 1.</b> Fijar \(x_{ij}=0\) para todo \((i,j)\in A\).<br><br>
+      <b>Paso 2.</b> Construir la red residual del flujo actual. Si no existe un camino de \(s\) a \(t\) en ella, detenerse: el flujo es máximo.<br><br>
+      <b>Paso 3.</b> Elegir un camino de aumento \(p\) y calcular \(r(p)=\min\{r_{ij}:(i,j)\in p\}\), la capacidad residual de su arco más estrecho.<br><br>
+      <b>Paso 4.</b> Para cada arco del camino: si es directo, aumentar su flujo en \(r(p)\); si es inverso, disminuir en \(r(p)\) el flujo del arco original. Volver al paso 2.
+    </p>
+    <p class="glosa">Con capacidades enteras cada aumento suma al menos una unidad, así que el algoritmo termina. Qué camino elegir en el paso 3 no afecta el resultado final, pero sí cuántas iteraciones toma; elegir siempre el de menos arcos garantiza un número de iteraciones razonable en cualquier red. Esa regla tiene nombre propio, Edmonds-Karp, y no es materia del curso.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l3" data-titulo="Simulador: Ford-Fulkerson">
+  <div class="eyebrow">Primer bloque · simulador</div>
+  <h2>Ford-Fulkerson en el Seervada Park</h2>
+  <p class="lead">Las capacidades son viajes diarios de tranvía por cada camino. Elige tú el camino de aumento de la lista, o deja que el simulador tome el de menos arcos. Alterna entre la red con sus flujos y la red residual.</p>
+
+  <div class="widget">
+    <header><span class="tag sim">Simulador</span><h4>Caminos de aumento sobre la red residual</h4></header>
+    <div class="cuerpo">
+      <div class="controles">
+        <div class="ctrl"><label>Vista</label>
+          <select id="ff-vista"><option value="f">Red original: flujo / capacidad</option><option value="r">Red residual</option></select></div>
+        <div class="ctrl"><label>Capacidad de <span id="ff-sel-n">O→A</span> <b id="ff-sel-v">5</b></label><input type="range" id="ff-cap" min="0" max="12" value="5"></div>
+      </div>
+      <p style="font-size:.86rem;color:var(--ink-3);margin:-6px 0 10px">Haz clic en la capacidad de un arco, en la vista original, para modificarla. Cambiarla reinicia el flujo.</p>
+      <div class="botonera">
+        <button class="btn" id="ff-auto">Aumentar por el camino más corto</button>
+        <button class="btn ghost" id="ff-slide">Partir con O–B–E–T = 5</button>
+        <button class="btn ghost" id="ff-reset">Flujo cero</button>
+        <button class="btn ghost" id="ff-orig">Capacidades originales</button>
+      </div>
+      <svg id="g-ff" viewBox="0 0 900 360" style="width:100%;max-width:900px;height:auto;display:block;margin:12px auto 0"></svg>
+      <div class="leyenda" id="ff-ley"></div>
+      <p style="font-size:.9rem;margin:10px 0 6px">Caminos de aumento disponibles en la red residual (clic para usar uno):</p>
+      <div class="botonera" id="ff-caminos"></div>
+      <div class="marcador">
+        <div><span>Flujo total \(F\)</span><b class="ok" id="ff-F">0</b></div>
+        <div><span>Aumentos realizados</span><b id="ff-n">0</b></div>
+        <div><span>Caminos disponibles</span><b id="ff-nc">—</b></div>
+        <div><span>Sale de O · capacidad</span><b id="ff-cotaO">—</b></div>
+      </div>
+      <div class="tabla-scroll" id="ff-hist"></div>
+      <p id="ff-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">El paso que hay que ver</span>
+    <p style="margin-bottom:0">Pulsa "Partir con O–B–E–T = 5". Es la elección codiciosa: de todos los caminos de la red vacía, O–B–E–T es el que más envía de una sola vez, 5 unidades. Parece una buena partida, pero ocupa entero el arco B→E, y más adelante ese flujo estorba. Luego aumenta siempre por el camino más corto. Tras O–A–D–T, O–B–D–T, O–C–E–T, O–A–B–D–T y O–C–E–D–T, el último camino es <strong>O–C–E–B–D–T</strong>: recorre el arco E→B, que no existe en la red original. Es un arco inverso: significa quitarle una unidad al flujo B→E, y así liberar capacidad en E→T para lo que llega desde C. Sin esa corrección el algoritmo se quedaría en 13. Con ella llega a <strong>14</strong>, el flujo máximo.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l4" data-titulo="Pausa 1">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre la red residual y el algoritmo.</p>
+
+  <div class="quiz" data-correcta="2" data-retro='["El arco sí puede recibir 2 unidades más, pero además admite deshacer las 5 que ya lleva: falta la parte inversa.","Así sería si el arco estuviera vacío; con 5 unidades circulando la capacidad directa restante es 2, no 7.","Correcto. En el sentido de i a j quedan 7 − 5 = 2 unidades de capacidad. En el sentido inverso, de j a i, se pueden cancelar hasta las 5 unidades ya enviadas.","La capacidad inversa no es la capacidad original del arco: solo se puede deshacer lo que efectivamente se envió."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">Un arco \((i,j)\) tiene capacidad 7 y lleva un flujo de 5. ¿Qué arcos genera en la red residual?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Solo \((i,j)\) con capacidad residual 2.</span></button>
+      <button><span class="k">B</span><span>\((i,j)\) con 7.</span></button>
+      <button><span class="k">C</span><span>\((i,j)\) con 2 y \((j,i)\) con 5.</span></button>
+      <button><span class="k">D</span><span>\((i,j)\) con 2 y \((j,i)\) con 7.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="1" data-retro='["Que los arcos que salen del origen estén llenos basta para detenerse, pero no es necesario: el algoritmo suele terminar con algún arco del origen con holgura, como O→C en el Seervada Park.","Correcto. Si en la red residual no hay camino de s a t, ningún aumento es posible, ni siquiera redirigiendo flujo por arcos inversos. Ese es el criterio de parada, y el conjunto de nodos alcanzables desde s entrega además el corte mínimo.","Que el destino no reciba más en un arco no dice nada: el flujo podría llegar por otro camino, o por una redirección.","El número de iteraciones depende de las capacidades y de los caminos elegidos; no hay un número fijo."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">¿Cuándo termina el algoritmo de Ford-Fulkerson?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Cuando todos los arcos que salen del origen están a capacidad.</span></button>
+      <button><span class="k">B</span><span>Cuando no existe camino de \(s\) a \(t\) en la red residual.</span></button>
+      <button><span class="k">C</span><span>Cuando algún arco que llega al destino queda lleno.</span></button>
+      <button><span class="k">D</span><span>Después de tantas iteraciones como arcos tenga la red.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l5" data-titulo="Cortes y dualidad">
+  <div class="eyebrow">Segundo bloque · el certificado</div>
+  <h2>Ningún flujo cabe por un corte más angosto</h2>
+  <p class="lead">Ford-Fulkerson se detiene cuando no encuentra camino. Pero ¿cómo sabemos que no existe una forma más inteligente de enviar? La respuesta es un objeto nuevo: el corte.</p>
+
+  <div class="nota libro">
+    <span class="et">Definiciones</span>
+    <p>Un <strong>corte</strong> es una partición de los nodos en dos grupos, \(S\) y \(N\setminus S\), con el origen en \(S\) y el destino fuera: \(s\in S\), \(t\notin S\). Su <strong>capacidad</strong> es la suma de las capacidades de los arcos que van de \(S\) hacia afuera:</p>
+    \[ u(S)=\sum_{(i,j)\in A:\; i\in S,\; j\notin S} u_{ij} \]
+    <p style="margin-bottom:0">Los arcos que vuelven de \(N\setminus S\) hacia \(S\) <em>no</em> se suman. Hillier &amp; Lieberman definen el corte como un conjunto de arcos que, al eliminarse, desconecta el origen del destino; es la misma idea.</p>
+  </div>
+
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <span class="icono">LA COTA</span>
+      <h4>Todo flujo es menor o igual que todo corte</h4>
+      <p>Todo lo que sale de \(s\) tiene que cruzar alguna vez de \(S\) a \(N\setminus S\) para llegar a \(t\). Lo que cruza en neto es lo que sale por los arcos hacia afuera menos lo que vuelve, y lo que sale no puede superar la capacidad de esos arcos. Luego \(F\le u(S)\) para cualquier flujo factible y cualquier corte.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="icono">EL TEOREMA</span>
+      <h4>Flujo máximo = corte mínimo</h4>
+      <p>El valor del flujo máximo es igual a la capacidad del corte mínimo. Y Ford-Fulkerson entrega ambos: al terminar, sea \(S\) el conjunto de nodos alcanzables desde \(s\) en la red residual. Todo arco de \(S\) hacia afuera está lleno y todo arco de afuera hacia \(S\) está vacío; si no, alguno sería alcanzable. Entonces \(F=u(S)\).</p>
+    </div>
+  </div>
+
+  <div class="nota ojo">
+    <span class="et">La lógica de la Clase 09, otra vez</span>
+    <p style="margin-bottom:0">Un flujo factible es como una incumbente: prueba que se puede enviar al menos \(F\). Un corte es como una cota: prueba que no se puede enviar más de \(u(S)\). Cuando se encuentran uno y otro del mismo valor, el gap es cero y el problema está resuelto con un certificado que cualquiera puede revisar sumando capacidades. En el Seervada Park: el flujo de 14 y el corte que separa \(\{O,A,B,C,E\}\) de \(\{D,T\}\), con capacidad \(3+4+1+6=14\).</p>
+  </div>
+
+  <div class="modelo">
+    <span class="et">El dual del flujo máximo es el corte mínimo</span>
+    <p style="font-family:var(--fb);color:rgba(244,241,234,.85);font-size:.94rem;margin:0">Asociando una variable \(w_i\) a la restricción de cada nodo y una variable \(y_{ij}\ge0\) a la capacidad de cada arco, el dual del modelo del primer bloque es:</p>
+    \[
+    \begin{aligned}
+    \min\;\; & \sum_{(i,j)\in A} u_{ij}\,y_{ij}\\
+    \text{s.a.}\;\; & y_{ij}\ \ge\ w_j-w_i && \forall (i,j)\in A\\
+    & w_t-w_s\ \ge\ 1\\
+    & y_{ij}\ge0 \quad \forall (i,j)\in A, \qquad w_i\in\mathbb{R} \quad \forall i\in N
+    \end{aligned}
+    \]
+    <p class="glosa">Un corte es una solución de este dual: se toma \(w_i=0\) para los nodos de \(S\), \(w_i=1\) para los de afuera, e \(y_{ij}=1\) exactamente en los arcos que cruzan de \(S\) hacia afuera. Su valor es \(u(S)\). La unimodularidad total garantiza que el dual también tiene un óptimo entero, de ceros y unos: un corte. El teorema del flujo máximo y el corte mínimo es la dualidad fuerte de programación lineal aplicada a este modelo, y la holgura complementaria dice lo mismo que la tarjeta de arriba: los arcos del corte (\(y_{ij}&gt;0\)) están llenos.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l6" data-titulo="Simulador: corte contra flujo">
+  <div class="eyebrow">Segundo bloque · simulador</div>
+  <h2>Busca el corte más angosto</h2>
+  <p class="lead">Haz clic en los nodos intermedios para ponerlos en el lado del origen o sacarlos de él. El simulador suma la capacidad de tu corte y la compara con el flujo máximo, calculado en vivo.</p>
+
+  <div class="widget">
+    <header><span class="tag viz">Visualización</span><h4>Cortes del Seervada Park</h4></header>
+    <div class="cuerpo">
+      <div class="botonera">
+        <button class="btn" id="ct-min">Mostrar el corte de la red residual final</button>
+        <button class="btn ghost" id="ct-o">Solo el origen: S = {O}</button>
+        <button class="btn ghost" id="ct-t">Todo menos el destino</button>
+      </div>
+      <svg id="g-ct" viewBox="0 0 900 360" style="width:100%;max-width:900px;height:auto;display:block;margin:12px auto 0"></svg>
+      <div class="marcador">
+        <div><span>Capacidad del corte</span><b id="ct-cap">—</b></div>
+        <div><span>Flujo máximo</span><b class="ok" id="ct-F">—</b></div>
+        <div><span>Brecha</span><b id="ct-gap">—</b></div>
+        <div><span>Cortes posibles</span><b id="ct-n">—</b></div>
+        <div><span>Cortes mínimos</span><b id="ct-nmin">—</b></div>
+      </div>
+      <div class="leyenda">
+        <span><i style="background:var(--teal)"></i>Nodo en \(S\), lado del origen</span>
+        <span><i style="background:var(--amber)"></i>Arco que cruza de \(S\) hacia afuera: se suma</span>
+        <span><i style="background:#B7AE9C"></i>Punteado: arco que vuelve hacia \(S\), no se suma</span>
+        <span><i style="background:#6B7683"></i>Sólido gris: arco dentro de un mismo lado, no cruza el corte</span>
+      </div>
+      <p id="ct-msg" style="margin-top:12px;font-size:.93rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="et">Qué probar</span>
+    <p style="margin-bottom:0">El corte "solo el origen" vale 16: todo lo que sale de O. El corte "todo menos el destino" vale 15: todo lo que llega a T. Ninguno de los dos es el mínimo. De los 32 cortes posibles hay uno solo que vale 14, el que deja a D y T del otro lado. Es el <strong>cuello de botella</strong> del parque: si la administración quisiera más viajes al mirador, ampliar cualquier camino fuera de ese corte no serviría de nada.</p>
+  </div>
+</section>
+
+<section class="lamina" id="l7" data-titulo="Pausa 2">
+  <div class="eyebrow">Verificación de comprensión</div>
+  <h2>Pausa de 60 segundos</h2>
+  <p class="lead">Dos preguntas sobre cortes y certificados.</p>
+
+  <div class="quiz" data-correcta="3" data-retro='["Que el corte valga 17 no significa que se pueda enviar 17: es solo una cota superior, y otro corte podría ser más angosto.","Un flujo factible prueba que se puede enviar al menos 14, no que 14 sea el máximo. Falta un corte de 14 para certificarlo.","Nada en los datos obliga a que el máximo esté justo al medio de las dos cifras.","Correcto. El flujo de 14 es una cota inferior del máximo y el corte de 17 una cota superior. El máximo está entre 14 y 17, y para cerrarlo hay que seguir aumentando o encontrar un corte más angosto."]'>
+    <span class="et">Chequeo 1 de 2</span>
+    <p class="preg">Encontraste un flujo factible de 14 y un corte de capacidad 17. ¿Qué puedes concluir sobre el flujo máximo?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Que vale 17.</span></button>
+      <button><span class="k">B</span><span>Que vale 14.</span></button>
+      <button><span class="k">C</span><span>Que vale 15,5.</span></button>
+      <button><span class="k">D</span><span>Que está entre 14 y 17.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+
+  <div class="quiz" data-correcta="0" data-retro='["Correcto. Al terminar Ford-Fulkerson, los nodos alcanzables desde el origen en la red residual forman S. Los arcos de S hacia afuera están todos llenos, y su capacidad total es igual al flujo encontrado.","Los arcos llenos no forman necesariamente un corte: puede haber arcos llenos dentro de S, o en lugares que no separan el origen del destino.","El conjunto de nodos con más flujo no tiene relación con el corte mínimo.","Probar todos los cortes funciona en redes pequeñas, pero su número crece como 2 elevado al número de nodos intermedios. La red residual lo entrega sin buscar."]'>
+    <span class="et">Chequeo 2 de 2</span>
+    <p class="preg">¿Cómo se obtiene un corte mínimo a partir del resultado de Ford-Fulkerson?</p>
+    <div class="opciones">
+      <button><span class="k">A</span><span>Con los nodos alcanzables desde el origen en la red residual final.</span></button>
+      <button><span class="k">B</span><span>Con todos los arcos que quedaron llenos.</span></button>
+      <button><span class="k">C</span><span>Con los nodos por los que pasa más flujo.</span></button>
+      <button><span class="k">D</span><span>Solo probando todos los cortes posibles.</span></button>
+    </div>
+    <div class="retro"></div>
+  </div>
+</section>
+
+<section class="lamina" id="l8" data-titulo="Caso de aplicación">
+  <div class="eyebrow">Aplicación · asignación con compatibilidades</div>
+  <h2>Las mentorías también tienen un corte</h2>
+
+  <div class="widget">
+    <header><span class="tag caso">Caso</span><h4>Jornada de mentorías para equipos de desafío industrial</h4></header>
+    <div class="cuerpo">
+      <p style="font-size:.94rem">Cuatro equipos necesitan una mentoría. Cada mentor tiene un bloque y solo atiende ciertos temas. Una unidad de flujo no es un vehículo: es <strong>un equipo que obtiene una sesión compatible</strong>. La pregunta es cuántos equipos pueden ser atendidos —y cómo reparar una asignación inicial mal elegida.</p>
+      <div class="controles">
+        <div class="ctrl"><label>Mentor invitado · sostenibilidad</label>
+          <select id="mt-invitado"><option value="0">No disponible</option><option value="1">Disponible · 1 bloque</option></select></div>
+      </div>
+      <div class="botonera" style="margin-top:8px">
+        <button class="btn ghost" id="mt-codiciosa">Cargar asignación codiciosa</button>
+        <button class="btn" id="mt-aumentar">Aplicar camino de aumento</button>
+        <button class="btn ghost" id="mt-completar">Completar con Ford–Fulkerson</button>
+        <button class="btn ghost" id="mt-reiniciar">Reiniciar</button>
+      </div>
+      <svg id="g-mt" viewBox="0 0 900 370" style="width:100%;max-width:900px;height:auto;display:block;margin:12px auto 0"></svg>
+      <div class="marcador">
+        <div><span>Equipos con mentoría</span><b class="ok" id="mt-F">—</b></div>
+        <div><span>Arcos inversos en el camino</span><b id="mt-inv">—</b></div>
+        <div><span>Cota por corte mínimo</span><b id="mt-corte">—</b></div>
+      </div>
+      <p id="mt-msg" style="margin-top:12px;font-size:.92rem;padding:12px 16px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--teal)"></p>
+
+      <div class="nota ojo">
+        <span class="et">Lo que enseña el caso</span>
+        <p>La asignación codiciosa manda primero al equipo de analítica generalista con Luna y al equipo logístico con Tomás. Quedan bloqueados Pronóstico —que solo puede ir con Luna— y Sostenibilidad —que solo puede ir con Sofía. Pero Pronóstico puede recorrer un camino residual que <strong>deshace</strong> la asignación Analítica→Luna, la mueve a Tomás, mueve Logística a Sofía y libera el cupo de Luna.</p>
+        <p style="margin-bottom:0">Ese camino usa arcos inversos: no manda una cantidad negativa ni elimina equipos; revoca decisiones parciales para abrir una mejor combinación. Sin mentor invitado, el corte formado por los tres bloques de Luna, Tomás y Sofía certifica que solo caben tres equipos. Habilítalo y el cuarto equipo llega a la solución. El caso es ficticio y sus datos son deliberadamente pequeños; no requiere investigación externa ni entra como contexto evaluable.</p>
+      </div>
+
+      <details class="explica">
+        <summary>Cómo se traduce la jornada a una red</summary>
+        <div class="contenido">
+          <p>Del origen sale un arco de capacidad 1 hacia cada equipo: Analítica generalista (A), Pronóstico (P), Logística (L) y Sostenibilidad (S). A acepta a Luna o Tomás; P, solo a Luna; L, a Tomás o Sofía; S, a Sofía o al invitado. Cada arco de mentor al destino tiene capacidad 1. Por conservación, cada unidad que llega al destino corresponde a un equipo asignado a un mentor compatible.</p>
+          <p style="margin-bottom:0">La asignación codiciosa tiene valor 2. El primer camino de aumento es (O\to P\to\text{Luna}\to A\to\text{Tomás}\to L\to\text{Sofía}\to T): los tramos Luna→A y Tomás→L son inversos. Aumenta el flujo a 3, que es óptimo sin invitado. Si el invitado está disponible, queda un camino adicional (O\to S\to\text{Invitado}\to T), y el máximo sube a 4.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="lamina" id="l9" data-titulo="Resumen y take away">
+  <div class="eyebrow">Cierre de la Unidad 3</div>
+  <h2>Lo esencial en cinco líneas</h2>
+  <ul class="resumen">
+    <li>El <strong>flujo máximo</strong> envía todo lo posible de un origen a un destino respetando capacidades; es un flujo de costo mínimo con un arco de retorno, y su relajación es entera.</li>
+    <li>La <strong>red residual</strong> registra cuánto cabe todavía en cada arco y cuánto de lo enviado se puede deshacer; un <strong>camino de aumento</strong> en ella permite enviar más.</li>
+    <li><strong>Ford-Fulkerson</strong> aumenta por caminos de la red residual hasta que no queda ninguno; los arcos inversos le permiten corregir decisiones anteriores.</li>
+    <li>Todo flujo es menor o igual que todo <strong>corte</strong>, y el flujo máximo es igual al corte mínimo: los nodos alcanzables en la red residual final lo entregan.</li>
+    <li>El corte mínimo es el <strong>dual</strong> del flujo máximo y el <strong>cuello de botella</strong> del sistema: solo ampliar sus arcos aumenta la capacidad.</li>
+  </ul>
+
+  <div class="takeaway">
+    <span class="et">Take away · cierre de unidad</span>
+    <blockquote>En esta unidad la estructura hizo casi todo el trabajo: la matriz de incidencia entregó soluciones enteras, la propiedad del corte hizo exactos a los algoritmos codiciosos y la dualidad convirtió cada respuesta en un certificado. Saber reconocer esa estructura, y saber cuándo una restricción la destruye, vale más que cualquier algoritmo.</blockquote>
+  </div>
+</section>
+
+<section class="lamina" id="l10" data-titulo="Ejercicios propuestos">
+  <div class="eyebrow">Ejercicios</div>
+  <h2>Para trabajar</h2>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E1 · Continuar Ford-Fulkerson</h4></div>
+    <div class="enunciado">
+      <p>En la red del Seervada Park, con las capacidades O→A 5, O→B 7, O→C 4, A→B 1, A→D 3, B→C 2, B→D 4, B→E 5, C→E 4, D→T 9, E→D 1 y E→T 6, suponga un flujo inicial de 5 unidades por el camino O–B–E–T.</p>
+      <p><strong>a)</strong> Dibuje la red residual inducida por ese flujo, con los arcos directos y los inversos.<br>
+      <strong>b)</strong> Continúe el algoritmo de Ford-Fulkerson eligiendo en cada iteración el camino de aumento con menos arcos; si hay empate, el primero en orden alfabético. Muestre en cada iteración el camino, su capacidad residual y el flujo acumulado.<br>
+      <strong>c)</strong> Indique el flujo máximo y el flujo final en cada arco, en un dibujo de la red.<br>
+      <strong>d)</strong> Identifique el corte mínimo a partir de la red residual final y verifique que su capacidad es igual al flujo máximo.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel medio">Medio</span><h4>E2 · Tres cortes mínimos</h4></div>
+    <div class="enunciado">
+      <p>Una red tiene los arcos \(s\to a\) (3), \(s\to b\) (2), \(a\to b\) (1), \(a\to t\) (2) y \(b\to t\) (3).</p>
+      <p><strong>a)</strong> Escriba el modelo de flujo máximo con los conjuntos \(\delta^+(i)\) y \(\delta^-(i)\), declarando todos los conjuntos, parámetros y dominios.<br>
+      <strong>b)</strong> Enumere todos los cortes \((S, N\setminus S)\) con \(s\in S\) y \(t\notin S\), y calcule la capacidad de cada uno.<br>
+      <strong>c)</strong> Proponga un flujo factible cuyo valor sea igual a la menor capacidad de (b). ¿Qué puede concluir sin resolver ningún otro problema?<br>
+      <strong>d)</strong> Si pudiera aumentar en una unidad la capacidad de un solo arco, ¿cuál elegiría para aumentar el flujo máximo? Justifique con los cortes mínimos.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E3 · Estudiantes y proyectos</h4></div>
+    <div class="enunciado">
+      <p>Cinco estudiantes deben asignarse a proyectos de título. Cada uno puede ir a lo más a un proyecto, y solo a uno de los que aceptó. Ana acepta P1 y P2; Benjamín, solo P1; Carla, P1 y P2; Diego, solo P3; Elisa, solo P3. El proyecto P1 recibe hasta dos estudiantes, y P2 y P3, hasta uno cada uno. Se quiere asignar a la mayor cantidad posible.</p>
+      <p><strong>a)</strong> Antes de dibujar, describa en palabras cómo convertir el problema en un flujo máximo: qué representan los nodos, qué representan los arcos, qué significa una unidad de flujo y qué impone cada capacidad.<br>
+      <strong>b)</strong> Construya la red, con un origen y un destino artificiales, y escriba el modelo de flujo máximo.<br>
+      <strong>c)</strong> Coteje la descripción de (a) con el modelo: a cada regla del enunciado debe corresponderle una capacidad o una restricción.<br>
+      <strong>d)</strong> ¿Por qué una solución del modelo no puede asignar "media" estudiante a un proyecto?<br>
+      <strong>e)</strong> Encuentre dos cortes distintos de capacidad 4. Úselos para argumentar que no se puede asignar a los cinco, y para decidir qué capacidad convendría ampliar: la de P1 o la de P3.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Lo evaluado es el modelo y el argumento del corte. Si quiere, resuelva con Ford-Fulkerson y compruebe su respuesta de (e).</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E4 · Evacuación con una intersección crítica</h4></div>
+    <div class="enunciado">
+      <p>Un plan de evacuación ante tsunami mueve personas desde dos zonas inundables, Z1 y Z2, hacia dos zonas seguras en altura, C1 y C2, pasando por tres intersecciones I1, I2 e I3. Las capacidades de las calles, en personas por minuto, son: Z1→I1 40, Z1→I2 30, Z2→I2 35, Z2→I3 25, I1→C1 30, I2→C1 25, I2→C2 30, I3→C2 30 e I1→I2 10. Las zonas inundables tienen tanta gente como sea necesario, y las zonas seguras reciben a todos los que lleguen.</p>
+      <p><strong>a)</strong> Transforme el problema, que tiene dos orígenes y dos destinos, en uno de flujo máximo con un solo origen y un solo destino. Indique los nodos y arcos que agrega y sus capacidades.<br>
+      <strong>b)</strong> Por la intersección I2 no pueden pasar más de 40 personas por minuto en total, por el ancho de la vereda. Explique cómo representar una capacidad <em>en un nodo</em> dentro de un modelo que solo admite capacidades en arcos.<br>
+      <strong>c)</strong> Escriba el modelo final de flujo máximo, declarando conjuntos, parámetros, variables y dominio.<br>
+      <strong>d)</strong> Sin resolver el modelo, encuentre un corte de la red de (b) de capacidad 95 y explique qué dice sobre el plan.</p>
+      <p style="margin-top:14px;padding:11px 15px;border-radius:10px;background:var(--paper-2);border-left:3px solid var(--ink-3);font-size:.92rem">
+      <strong>Ejercicio extra, opcional.</strong> Lo evaluado es la transformación y el modelo. Si quiere, resuelva con y sin la capacidad de I2 y compare.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <div class="cab"><span class="nivel complejo">Complejo</span><h4>E5 · El dual, escrito a mano</h4></div>
+    <div class="enunciado">
+      <p>Retome la red del E2.</p>
+      <p><strong>a)</strong> Escriba explícitamente el dual del flujo máximo según el modelo del segundo bloque: una variable \(w_i\) por nodo, una variable \(y_{ij}\) por arco, todas las restricciones y los dominios.<br>
+      <strong>b)</strong> Construya la solución dual que corresponde al corte \(S=\{s\}\) y verifique que es factible y que su valor es 5.<br>
+      <strong>c)</strong> Haga lo mismo con el corte \(S=\{s,a,b\}\).<br>
+      <strong>d)</strong> Usando la holgura complementaria, explique qué dice cada solución dual de (b) y (c) sobre el flujo óptimo en cada arco. ¿Son compatibles las dos con el flujo del E2(c)?<br>
+      <strong>e)</strong> Relacione este ejercicio con las etiquetas de Dijkstra de la Clase 16, que también eran una solución dual.</p>
+    </div>
+  </div>
+
+  <div class="nota libro" style="margin-top:30px">
+    <span class="et">Para cerrar la unidad</span>
+    <p><strong>Dónde está esto en el libro.</strong> El flujo máximo es la sección <strong>9.5</strong> de Hillier &amp; Lieberman, desde la página 344: la red residual y el algoritmo de la trayectoria de aumento, aplicados al Seervada Park, y el teorema del flujo máximo y el corte mínimo en la página 349, con el corte de valor 14 en la figura 9.10.</p>
+    <p style="margin-bottom:0">Y un recuento. La Unidad 2 enseñó técnicas generales para resolver problemas enteros. La Unidad 3 mostró una familia en la que casi no hacen falta: problemas de flujo en redes en los que la relajación ya es la envoltura convexa, algoritmos codiciosos que no se equivocan y certificados de optimalidad que se leen en un dibujo. También mostró que no todo problema de redes tiene esa estructura: el vendedor viajero, la restricción de tiempo, el tope de conexiones. La Unidad 4 empieza justo ahí, con el vendedor viajero de la Clase 14. Allí no hay estructura que salve, ni cotas que cierren a tiempo, y la pregunta cambia: ya no es cómo encontrar el óptimo, sino cómo encontrar rápido una solución buena.</p>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div>Pablo González Brevis · Ingeniería Civil Industrial UDD · IIM329A</div>
+  <div>Basado en Hillier &amp; Lieberman, <em>Introducción a la Investigación de Operaciones</em></div>
+  <div class="pie-nota">
+    <p>Clases, simuladores y ejercicios desarrollados con apoyo de ChatGPT (GPT-5.5 Sol) y Claude (Opus 5.5). Contenidos revisados y validados por el profesor.</p>
+    <p>Versión del 11-11-2026 · ¿Encontraste un error? Escríbeme a <a href="mailto:pablogonzalez@udd.cl">pablogonzalez@udd.cl</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" rel="noopener">Licencia CC BY-NC-SA 4.0</a></p>
+  </div>
+</footer>
+
+<div class="proy-ui">
+  <button id="p-ant">‹</button>
+  <span class="pos" id="p-pos">1 / 1</span>
+  <button id="p-sig">›</button>
+  <span style="width:1px;height:20px;background:rgba(255,255,255,.18)"></span>
+  <button id="p-menos" title="Achicar el texto de esta lámina (tecla −)">A−</button>
+  <button id="p-auto" title="Volver al ajuste automático (tecla 0)">auto</button>
+  <button id="p-mas-fs" title="Agrandar el texto de esta lámina (tecla +)">A+</button>
+  <span class="pos" id="p-mas" style="display:none;color:var(--gold)"></span>
+  <button id="p-salir" title="Salir del modo proyección (Esc)">Salir</button>
+</div>
+
+<div class="aviso-edicion">
+  <span>Modo edición: haz clic en cualquier texto y escribe. <b>No se pierde nada hasta que guardes.</b></span>
+  <span class="cambios" id="n-cambios">0 cambios</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. SNAPSHOT PRISTINO  (antes de que MathJax o los widgets toquen el DOM)
+   ============================================================ */
+var EDITABLES='h1,h2,h3,h4,p,li,blockquote,td,th,summary,.preg,.et,.icono,.chip,.glosa,.pos-titulo';
+var PRISTINO=null, EDITADOS={}, MODO=document.body.dataset.modo||'docente';
+
+(function snapshot(){
+  var k=0;
+  var sel=EDITABLES.split(',').map(function(s){return '#doc '+s.trim();}).join(',');
+  document.querySelectorAll(sel).forEach(function(el){
+    /* no se marcan elementos con fórmulas: su fuente LaTeX se pierde al renderizar */
+    var txt=el.textContent||'';
+    if(txt.indexOf('\\(')>=0||txt.indexOf('\\[')>=0)return;
+    if(el.closest('.opciones'))return;            /* botones de quiz */
+    if(el.querySelector('h1,h2,h3,p,li'))return;  /* contenedores, no hojas */
+    el.setAttribute('data-ed',k++);
+  });
+  PRISTINO=document.documentElement.cloneNode(true);
+})();
+
+/* ============================================================
+   2. ÍNDICE, PROGRESO Y NAVEGACIÓN
+   ============================================================ */
+var LAMINAS=[].slice.call(document.querySelectorAll('.lamina'));
+var enlaces=[];
+(function(){
+  var cont=document.getElementById('indice-links');
+  LAMINAS.forEach(function(l,i){
+    var a=document.createElement('a');
+    a.href='#'+l.id;
+    a.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span>'+(l.dataset.titulo||'Lámina '+i);
+    a.onclick=function(){ if(document.body.classList.contains('proy')){irA(primerSlide(i));abrirIndice(false);return false;} abrirIndice(false); };
+    cont.appendChild(a); enlaces.push(a);
+  });
+})();
+var barra=document.getElementById('barra');
+function marcarActiva(i){
+  enlaces.forEach(function(l){l.classList.remove('activo');});
+  if(enlaces[i])enlaces[i].classList.add('activo');
+  barra.style.width=((i+1)/LAMINAS.length*100)+'%';
+}
+var ind=document.getElementById('indice'), velo=document.getElementById('velo');
+function abrirIndice(v){ind.classList.toggle('abierto',v);velo.classList.toggle('on',v);}
+document.getElementById('indice-toggle').onclick=function(){abrirIndice(!ind.classList.contains('abierto'));};
+velo.onclick=function(){abrirIndice(false);};
+
+var io=new IntersectionObserver(function(es){
+  if(document.body.classList.contains('proy'))return;
+  es.forEach(function(e){ if(e.isIntersecting) marcarActiva(LAMINAS.indexOf(e.target)); });
+},{rootMargin:'-45% 0px -50% 0px'});
+LAMINAS.forEach(function(l){io.observe(l);});
+
+var io2=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visto');io2.unobserve(e.target);}});
+},{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.lamina > *').forEach(function(el,i){
+  el.classList.add('rev'); el.style.transitionDelay=(Math.min(i,6)*45)+'ms'; io2.observe(el);
+});
+
+/* ============================================================
+   3. MODO PROYECCIÓN  — lienzo 1600×900 con auto-ajuste tipográfico
+   ------------------------------------------------------------
+   Dos mecanismos para que NUNCA se corte el texto:
+   a) las láminas muy largas (varios ejercicios) se dividen en
+      sub-láminas: se proyecta un ejercicio a la vez;
+   b) el tamaño de letra baja hasta que el contenido cabe en el
+      lienzo, y recién entonces el lienzo se escala a la pantalla.
+   ============================================================ */
+var LIENZO_W=1600, LIENZO_H=900, FS_MIN=12, FS_MAX=31;
+var SLIDES=[], actual=0, slideActual=0, ARMADO=false;
+var AJUSTES={};   /* tamaño de letra fijado a mano por lámina, se guarda con el archivo */
+
+/* recupera ajustes manuales guardados en el archivo */
+LAMINAS.forEach(function(l){ if(l.dataset.fs) AJUSTES[l.id]=parseFloat(l.dataset.fs); });
+
+function alturaCon(el){
+  var cs=getComputedStyle(el);
+  return el.offsetHeight+parseFloat(cs.marginTop||0)+parseFloat(cs.marginBottom||0);
+}
+
+/* ------------------------------------------------------------
+   3.1 Reparto automático: una lámina larga se divide en varias
+   diapositivas, repitiendo su encabezado (eyebrow + título).
+   ------------------------------------------------------------ */
+function armarSlides(){
+  SLIDES=[];
+  LAMINAS.forEach(function(l,li){
+    l.classList.add('activa');
+    l.style.fontSize='17px'; l.style.transform='none'; l.style.minHeight='0';
+    var hijos=[].slice.call(l.children);
+    hijos.forEach(function(c){ c.style.display=''; c.removeAttribute('data-grupo'); });
+
+    var cabecera=[], cuerpo=[];
+    hijos.forEach(function(c){
+      if(cuerpo.length===0 && (c.classList.contains('eyebrow')||c.tagName==='H1'||c.tagName==='H2')) cabecera.push(c);
+      else cuerpo.push(c);
+    });
+
+    var hCab=0; cabecera.forEach(function(c){hCab+=alturaCon(c);});
+    var cupo=LIENZO_H-104-hCab-18;                     /* 104 = padding vertical */
+    if(l.classList.contains('portada')) cupo=1e9;      /* la portada nunca se divide */
+
+    var grupos=[], actualG=[], alto=0;
+    cuerpo.forEach(function(c){
+      var h=alturaCon(c);
+      if(actualG.length && alto+h>cupo){
+        /* no dejar un subtítulo huérfano al final de un grupo */
+        var ult=actualG[actualG.length-1];
+        if(ult && ult.tagName==='H3' && actualG.length>1){ actualG.pop(); grupos.push(actualG); actualG=[ult]; alto=alturaCon(ult); }
+        else { grupos.push(actualG); actualG=[]; alto=0; }
+      }
+      actualG.push(c); alto+=h;
+    });
+    if(actualG.length)grupos.push(actualG);
+    if(!grupos.length)grupos=[[]];
+
+    if(grupos.length>1){
+      grupos.forEach(function(g,gi){ g.forEach(function(c){ c.setAttribute('data-grupo',gi); }); });
+      grupos.forEach(function(g,gi){ SLIDES.push({li:li,grupo:gi,total:grupos.length}); });
+    }else{
+      SLIDES.push({li:li,grupo:-1,total:1});
+    }
+    l.classList.remove('activa');
+    l.style.fontSize=''; l.style.transform=''; l.style.minHeight='';
+  });
+  ARMADO=true;
+}
+
+function mostrarGrupo(l,g){
+  [].slice.call(l.children).forEach(function(c){
+    var gi=c.getAttribute('data-grupo');
+    c.style.display=(gi===null||g<0||+gi===g)?'':'none';
+  });
+}
+
+/* ------------------------------------------------------------
+   3.2 Ajuste: se busca el MAYOR tamaño de letra que quepa en el
+   lienzo (así una lámina corta usa letra grande), y luego se
+   escala el lienzo completo. Si ni al mínimo cabe, se escala a la
+   altura: nunca se corta nada.
+   ------------------------------------------------------------ */
+function ajustar(){
+  var s=SLIDES[slideActual]; if(!s)return;
+  var l=LAMINAS[s.li];
+  mostrarGrupo(l,s.grupo);
+
+  var fijo=AJUSTES[l.id];
+  l.style.minHeight='0'; l.style.height='auto';
+
+  var fs;
+  if(fijo){
+    fs=fijo; l.style.fontSize=fs+'px';
+  }else{
+    var lo=FS_MIN, hi=FS_MAX, mejor=FS_MIN;
+    for(var i=0;i<8;i++){
+      var mid=(lo+hi)/2;
+      l.style.fontSize=mid+'px';
+      /* solo se controla la altura: el ancho ya está acotado por el diseño y
+         los adornos que sangran fuera del lienzo falsearían la medición */
+      if(l.scrollHeight<=LIENZO_H+1){ mejor=mid; lo=mid; }
+      else hi=mid;
+    }
+    fs=mejor; l.style.fontSize=fs+'px';
+  }
+
+  var H=Math.max(LIENZO_H, l.scrollHeight);
+  l.style.minHeight=LIENZO_H+'px';
+  var esc=Math.min(window.innerWidth*0.975/LIENZO_W, window.innerHeight*0.945/H);
+  l.style.transform='translate(-50%,-50%) scale('+esc+')';
+
+  var pm=document.getElementById('p-mas');
+  pm.textContent=Math.round(fs*10)/10+' px';
+  pm.style.display=fijo?'':'none';
+  T_AJUSTE=(window.performance?performance.now():Date.now());
+}
+
+/* Reajuste automático: el primer cálculo puede hacerse antes de que carguen
+   las tipografías web o de que los simuladores dibujen, y entonces la medida
+   queda mal. Estos tres mecanismos vuelven a ajustar solos. */
+var T_AJUSTE=0;
+
+function reajustar(){ if(document.body.classList.contains('proy'))ajustar(); }
+function reajustarPronto(){
+  requestAnimationFrame(reajustar);
+  setTimeout(reajustar,140);
+  setTimeout(reajustar,450);
+}
+
+/* a) cuando terminan de cargar las tipografías, se rehace todo el reparto */
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var i=slideActual;
+    armarSlides();
+    irA(Math.min(i,SLIDES.length-1));
+  });
+}
+
+/* b) si cambia el alto del contenido (respuesta de un quiz, un simulador que
+      redibuja, una pauta que se abre), se vuelve a ajustar */
+if(window.ResizeObserver){
+  var ro=new ResizeObserver(function(){
+    if(!document.body.classList.contains('proy'))return;
+    var ahora=(window.performance?performance.now():Date.now());
+    if(ahora-T_AJUSTE<350)return;      /* no reaccionar al propio ajuste */
+    ajustar();
+  });
+  LAMINAS.forEach(function(l){ ro.observe(l); });
+}
+
+/* c) abrir o cerrar una pauta cambia la altura de golpe */
+document.querySelectorAll('details.pauta').forEach(function(d){
+  d.addEventListener('toggle',reajustar);
+});
+
+function irA(i){
+  if(i<0||i>=SLIDES.length)return;
+  var ant=LAMINAS[SLIDES[slideActual].li];
+  ant.classList.remove('activa');
+  ant.style.fontSize=''; ant.style.transform=''; ant.style.minHeight=''; ant.style.height='';
+  slideActual=i; actual=SLIDES[i].li;
+  var l=LAMINAS[actual];
+  l.classList.add('activa');
+  var s=SLIDES[i];
+  document.getElementById('p-pos').textContent=(i+1)+' / '+SLIDES.length+(s.total>1?' · '+(s.grupo+1)+'/'+s.total:'');
+  marcarActiva(actual);
+  ajustar();
+  reajustarPronto();
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([l]).then(reajustar);
+}
+
+/* +/− para ajustar a mano el tamaño de la lámina actual */
+function nudge(d){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  var base=AJUSTES[l.id]||parseFloat(l.style.fontSize)||17;
+  var nuevo=Math.max(9,Math.min(46,Math.round((base+d)*2)/2));
+  AJUSTES[l.id]=nuevo;
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar();
+  aviso('Tamaño de esta lámina: '+nuevo+' px'+(document.getElementById('guardar')?' · guarda para conservarlo':''),'var(--amber)');
+}
+function autoAjuste(){
+  var l=LAMINAS[SLIDES[slideActual].li];
+  delete AJUSTES[l.id];
+  if(typeof marcarAjuste==='function')marcarAjuste(l.id);
+  ajustar(); aviso('Ajuste automático restablecido');
+}
+
+var BTN_PROY=document.getElementById('proyectar');
+function proyectar(v){
+  var b=document.body;
+  if(!BTN_PROY)return;              /* la versión de alumnos no tiene proyección */
+  if(v){
+    var y=window.scrollY+window.innerHeight*0.4, idx=0;
+    LAMINAS.forEach(function(l,i){ if(l.offsetTop<=y) idx=i; });
+    b.classList.add('proy');
+    LAMINAS.forEach(function(l){l.classList.remove('activa');});
+    armarSlides();   /* se recalcula cada vez: refleja los textos editados */
+    var s=0;
+    for(var k=0;k<SLIDES.length;k++){ if(SLIDES[k].li===idx){s=k;break;} }
+    slideActual=s; actual=SLIDES[s].li;
+    LAMINAS[actual].classList.add('activa');
+    document.getElementById('p-pos').textContent=(s+1)+' / '+SLIDES.length;
+    ajustar(); marcarActiva(actual); reajustarPronto();
+    BTN_PROY.classList.add('on');
+    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});
+  }else{
+    b.classList.remove('proy');
+    LAMINAS.forEach(function(l){
+      l.classList.remove('activa');
+      l.style.fontSize=''; l.style.transform=''; l.style.minHeight=''; l.style.height='';
+      [].slice.call(l.children).forEach(function(c){c.style.display='';});
+    });
+    BTN_PROY.classList.remove('on');
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});
+    if(LAMINAS[actual]&&LAMINAS[actual].scrollIntoView)LAMINAS[actual].scrollIntoView();
+  }
+}
+if(BTN_PROY)BTN_PROY.onclick=function(){proyectar(!document.body.classList.contains('proy'));};
+document.getElementById('p-salir').onclick=function(){proyectar(false);};
+document.getElementById('p-sig').onclick=function(){irA(slideActual+1);};
+document.getElementById('p-ant').onclick=function(){irA(slideActual-1);};
+document.getElementById('p-mas-fs').onclick=function(){nudge(1);};
+document.getElementById('p-menos').onclick=function(){nudge(-1);};
+document.getElementById('p-auto').onclick=function(){autoAjuste();};
+function primerSlide(li){for(var k=0;k<SLIDES.length;k++)if(SLIDES[k].li===li)return k;return 0;}
+window.addEventListener('resize',function(){if(document.body.classList.contains('proy'))ajustar();});
+
+/* ============================================================
+   4. TECLADO
+   ============================================================ */
+document.addEventListener('keydown',function(e){
+  var t=e.target.tagName;
+  if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  var proy=document.body.classList.contains('proy');
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){
+    e.preventDefault();
+    if(proy)irA(slideActual+1);
+    else{var y=window.scrollY+60,i=LAMINAS.findIndex(function(l){return l.offsetTop>y;});if(i<0)i=LAMINAS.length-1;LAMINAS[Math.min(i,LAMINAS.length-1)].scrollIntoView();}
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'){
+    e.preventDefault();
+    if(proy)irA(slideActual-1);
+    else{var y2=window.scrollY+60,j=LAMINAS.findIndex(function(l){return l.offsetTop>y2;});if(j<0)j=LAMINAS.length;LAMINAS[Math.max(j-2,0)].scrollIntoView();}
+  }
+  if((e.key==='p'||e.key==='P')&&!e.metaKey&&!e.ctrlKey){e.preventDefault();proyectar(!proy);}
+  if(proy&&(e.key==='+'||e.key==='=')){e.preventDefault();nudge(1);}
+  if(proy&&(e.key==='-'||e.key==='_')){e.preventDefault();nudge(-1);}
+  if(proy&&e.key==='0'){e.preventDefault();autoAjuste();}
+  if(e.key==='Escape'){ if(proy)proyectar(false); abrirIndice(false); }
+});
+
+/* ============================================================
+   5. QUIZ
+   ============================================================ */
+function quiz(el,correcta,retros){
+  var bs=el.querySelectorAll('.opciones button');
+  bs.forEach(function(b,i){
+    b.onclick=function(){
+      bs.forEach(function(x,j){
+        x.disabled=true;
+        if(j===correcta)x.classList.add('bien');
+        else if(j===i)x.classList.add('mal');
+      });
+      var r=el.querySelector('.retro');
+      r.innerHTML=(i===correcta?'<b>Correcto. </b>':'<b>No exactamente. </b>')+retros[i];
+      r.classList.add('ver');
+      r.style.borderLeftColor=i===correcta?'var(--teal)':'var(--amber)';
+      if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([r]).then(function(){if(document.body.classList.contains('proy'))ajustar();});
+    };
+  });
+}
+document.querySelectorAll('.quiz').forEach(function(q){
+  quiz(q, +q.dataset.correcta, JSON.parse(q.dataset.retro));
+});
+
+/* ============================================================
+   6. UTILIDADES GRÁFICAS COMPARTIDAS
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+function svgEl(t,a){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function fmt(n,d){if(d===undefined)d=2;return (Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('es-CL');}
+function combinaciones(n,k){var res=[];var c=[];(function rec(i){if(c.length===k){res.push(c.slice());return;}if(i>=n)return;c.push(i);rec(i+1);c.pop();rec(i+1);})(0);return res;}
+function permutaciones(arr){if(arr.length<=1)return [arr];var r=[];arr.forEach(function(v,i){var rest=arr.slice(0,i).concat(arr.slice(i+1));permutaciones(rest).forEach(function(p){r.push([v].concat(p));});});return r;}
+
+function aviso(txt,color){
+  var t=document.getElementById('toast');
+  t.textContent=txt; t.style.background=color||'var(--teal)';
+  t.classList.add('ver');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('ver');},2600);
+}
+
+/* ============================================================
+   7. PAUTAS / EDICIÓN / GUARDADO   (solo versión docente)
+   ============================================================ */
+(function(){
+  var bp=document.getElementById('modo-pauta');
+  if(bp){
+    var ver=false;
+    bp.onclick=function(){
+      ver=!ver;
+      document.querySelectorAll('details.pauta').forEach(function(d){d.open=ver;});
+      this.textContent=ver?'Ocultar pautas':'Pautas';
+      this.classList.toggle('on',ver);
+      if(document.body.classList.contains('proy'))ajustar();
+    };
+  }
+
+  var be=document.getElementById('editar'), bg=document.getElementById('guardar');
+  if(!be){ window.marcarAjuste=function(){}; return; }
+
+  var AJUSTADAS={};
+  window.marcarAjuste=function(id){ AJUSTADAS[id]=true; contarCambios(); };
+
+  function contarCambios(){
+    var n=Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length;
+    document.getElementById('n-cambios').textContent=n+(n===1?' cambio':' cambios');
+    bg.classList.toggle('destacado',n>0);
+    bg.textContent=n>0?'Guardar ('+n+')':'Guardar';
+  }
+  function editar(v){
+    document.body.classList.toggle('editando',v);
+    be.classList.toggle('on',v);
+    be.textContent=v?'Salir de edición':'Editar';
+    document.querySelectorAll('[data-ed]').forEach(function(el){
+      if(v){
+        el.setAttribute('contenteditable','true');
+        el.setAttribute('spellcheck','true');
+        if(!el._lig){
+          el._lig=true;
+          el.addEventListener('input',function(){ EDITADOS[el.getAttribute('data-ed')]=true; contarCambios(); });
+        }
+      }else{
+        el.removeAttribute('contenteditable');
+      }
+    });
+    if(v)aviso('Edición activada · recuerda guardar al terminar','var(--amber)');
+  }
+  be.onclick=function(){ editar(!document.body.classList.contains('editando')); };
+
+  bg.onclick=function(){
+    if(document.body.classList.contains('editando'))editar(false);
+    /* se parte del snapshot pristino y se aplican SOLO los textos editados:
+       así el archivo guardado no arrastra fórmulas ya renderizadas ni contenido
+       generado por los simuladores */
+    var salida=PRISTINO.cloneNode(true);
+    var n=0;
+    Object.keys(EDITADOS).forEach(function(k){
+      var vivo=document.querySelector('[data-ed="'+k+'"]');
+      var destino=salida.querySelector('[data-ed="'+k+'"]');
+      if(vivo&&destino){ destino.innerHTML=vivo.innerHTML; n++; }
+    });
+    salida.querySelectorAll('[data-ed]').forEach(function(el){
+      el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck');
+    });
+    /* tamaños de letra fijados a mano en modo proyección */
+    Object.keys(AJUSTADAS).forEach(function(id){
+      var el=salida.querySelector('#'+id); if(!el)return;
+      if(AJUSTES[id]) el.setAttribute('data-fs',AJUSTES[id]); else el.removeAttribute('data-fs');
+      n++;
+    });
+    var html='<!DOCTYPE html>\n'+salida.outerHTML;
+    var nombre=(location.pathname.split('/').pop()||'clase.html').replace(/\.html?$/i,'')+'.html';
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    a.download=nombre;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+    aviso(n+' cambio(s) guardados en '+nombre+' · reemplaza el archivo en tu carpeta');
+    EDITADOS={}; AJUSTADAS={}; contarCambios();
+  };
+
+  window.addEventListener('beforeunload',function(e){
+    if(Object.keys(EDITADOS).length+Object.keys(AJUSTADAS).length){e.preventDefault();e.returnValue='';}
+  });
+})();
+
+/* botón PDF (versión alumnos) */
+(function(){
+  var b=document.getElementById('pdf');
+  if(b)b.onclick=function(){ if(document.body.classList.contains('proy'))proyectar(false); setTimeout(function(){window.print();},250); };
+})();
+
+/* ==================================================================
+   Clase 17 · motores.
+   FF17: red residual, caminos de aumento (BFS con desempate alfabético
+   y enumeración de caminos simples), aumento y corte alcanzable.
+   Red: {nodos:[...], arcos:[{a,b,u}]}, flujo: arreglo x alineado con arcos.
+   ================================================================== */
+var FF17 = (function(){
+  /* aristas residuales que salen de v: [{w, r, k, dir}] con dir = +1 directo, -1 inverso */
+  function vecinos(red, x, v){
+    var out = [];
+    red.arcos.forEach(function(e, k){
+      if(e.a === v && e.u - x[k] > 1e-9) out.push({w:e.b, r:e.u - x[k], k:k, dir:1});
+      if(e.b === v && x[k] > 1e-9) out.push({w:e.a, r:x[k], k:k, dir:-1});
+    });
+    out.sort(function(p, q){ return p.w < q.w ? -1 : (p.w > q.w ? 1 : p.dir - q.dir); });
+    return out;
+  }
+  function bfs(red, x, s, t){
+    var prev = {}, cola = [s];
+    prev[s] = null;
+    while(cola.length){
+      var v = cola.shift();
+      vecinos(red, x, v).forEach(function(n){
+        if(!(n.w in prev)){ prev[n.w] = {v:v, n:n}; cola.push(n.w); }
+      });
+    }
+    if(!(t in prev)) return {camino:null, alcanzables:Object.keys(prev)};
+    var pasos = [], w = t;
+    while(prev[w]){ pasos.unshift(prev[w].n); w = prev[w].v; }
+    return {camino:armar(s, pasos), alcanzables:Object.keys(prev)};
+  }
+  function armar(s, pasos){
+    var nodos = [s], r = Infinity;
+    pasos.forEach(function(p){ nodos.push(p.w); r = Math.min(r, p.r); });
+    return {nodos:nodos, pasos:pasos, r:r};
+  }
+  /* todos los caminos simples de s a t en la red residual (hasta 'tope') */
+  function caminos(red, x, s, t, tope){
+    var res = [], visit = {}, pila = [];
+    visit[s] = true;
+    (function dfs(v){
+      if(res.length >= tope) return;
+      if(v === t){ res.push(armar(s, pila.slice())); return; }
+      vecinos(red, x, v).forEach(function(n){
+        if(visit[n.w]) return;
+        visit[n.w] = true; pila.push(n); dfs(n.w); pila.pop(); visit[n.w] = false;
+      });
+    })(s);
+    res.sort(function(p, q){ return p.nodos.length - q.nodos.length || (p.nodos.join('') < q.nodos.join('') ? -1 : 1); });
+    return res;
+  }
+  function aumentar(x, camino){
+    var y = x.slice();
+    camino.pasos.forEach(function(p){ y[p.k] += p.dir * camino.r; });
+    return y;
+  }
+  function valor(red, x, s){
+    var F = 0;
+    red.arcos.forEach(function(e, k){ if(e.a === s) F += x[k]; if(e.b === s) F -= x[k]; });
+    return F;
+  }
+  /* flujo máximo completo por caminos más cortos */
+  function maximo(red, s, t){
+    var x = red.arcos.map(function(){ return 0; }), guard = 0, b;
+    while(guard++ < 500){
+      b = bfs(red, x, s, t);
+      if(!b.camino) break;
+      x = aumentar(x, b.camino);
+    }
+    return {x:x, F:valor(red, x, s), S:b.alcanzables};
+  }
+  function capacidadCorte(red, S){
+    var c = 0;
+    red.arcos.forEach(function(e){ if(S.indexOf(e.a) >= 0 && S.indexOf(e.b) < 0) c += e.u; });
+    return c;
+  }
+  return {vecinos:vecinos, bfs:bfs, caminos:caminos, aumentar:aumentar, valor:valor, maximo:maximo, capacidadCorte:capacidadCorte};
+})();
+
+var DIB17 = (function(){
+  function marcadores(svg, pref){
+    var defs = svgEl('defs', {});
+    [['ink','#14181F'],['amber','#C8551E'],['teal','#0F6E63'],['gold','#B8892B'],['gris','#B7AE9C'],['plum','#5B3A6B']].forEach(function(c){
+      var mk = svgEl('marker', {id:pref+'-'+c[0], viewBox:'0 0 10 10', refX:'9', refY:'5', markerWidth:'11', markerHeight:'11', markerUnits:'userSpaceOnUse', orient:'auto-start-reverse'});
+      mk.appendChild(svgEl('path', {d:'M0,0 L10,5 L0,10 z', fill:c[1]}));
+      defs.appendChild(mk);
+    });
+    svg.appendChild(defs);
+  }
+  function curva(p, q, radio, curv){
+    var dx = q[0]-p[0], dy = q[1]-p[1], L = Math.sqrt(dx*dx+dy*dy) || 1;
+    var ux = dx/L, uy = dy/L, nx = -uy, ny = ux;
+    var a = [p[0]+ux*radio, p[1]+uy*radio], b = [q[0]-ux*(radio+2), q[1]-uy*(radio+2)];
+    var c = [(p[0]+q[0])/2 + nx*curv, (p[1]+q[1])/2 + ny*curv];
+    return {d:'M'+a[0].toFixed(1)+','+a[1].toFixed(1)+' Q'+c[0].toFixed(1)+','+c[1].toFixed(1)+' '+b[0].toFixed(1)+','+b[1].toFixed(1),
+            medio:[(a[0]+2*c[0]+b[0])/4, (a[1]+2*c[1]+b[1])/4]};
+  }
+  function texto(svg, x, y, t, estilo, ancla){
+    var e = svgEl('text', {x:x, y:y, 'text-anchor':ancla||'start', style:estilo});
+    e.textContent = t; svg.appendChild(e); return e;
+  }
+  function vaciar(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+  return {marcadores:marcadores, curva:curva, texto:texto, vaciar:vaciar};
+})();
+var EST17_NODO = 'font:700 15px Archivo,sans-serif;fill:#fff';
+var EST17_ETQ = 'font:700 12.5px Archivo,sans-serif;paint-order:stroke;stroke:#fff;stroke-width:3px';
+
+var SEERVADA17 = [['O','A',5],['O','B',7],['O','C',4],['A','B',1],['A','D',3],['B','C',2],['B','D',4],['B','E',5],['C','E',4],['D','T',9],['E','D',1],['E','T',6]];
+var POS17 = {O:[80,190], A:[250,70], B:[400,190], C:[250,305], D:[610,190], E:[520,305], T:[800,110]};
+function redSeervada17(){
+  return {nodos:['O','A','B','C','D','E','T'], arcos:SEERVADA17.map(function(t){ return {a:t[0], b:t[1], u:t[2]}; })};
+}
+
+/* ==================================================================
+   Primer bloque · Ford-Fulkerson
+   ================================================================== */
+(function(){
+  var svg = document.getElementById('g-ff');
+  if(!svg) return;
+  var red, x, hist, sel = 0;
+
+  function cargar(){ red = redSeervada17(); cero(); }
+  function cero(){ x = red.arcos.map(function(){ return 0; }); hist = []; }
+  function render(msgExtra){
+    var vista = document.getElementById('ff-vista').value;
+    var F = FF17.valor(red, x, 'O');
+    var lista = FF17.caminos(red, x, 'O', 'T', 12);
+    DIB17.vaciar(svg);
+    DIB17.marcadores(svg, 'ff');
+
+    red.arcos.forEach(function(e, k){
+      var p = POS17[e.a], q = POS17[e.b];
+      if(vista === 'f'){
+        var lleno = x[k] >= e.u - 1e-9 && e.u > 0, usado = x[k] > 1e-9;
+        var col = lleno ? '#C8551E' : (usado ? '#0F6E63' : '#B7AE9C');
+        var cv = DIB17.curva(p, q, 22, 0);
+        svg.appendChild(svgEl('path', {d:cv.d, fill:'none', stroke:col, 'stroke-width': usado ? 2.5 + 4*x[k]/9 : 1.8, 'marker-end':'url(#ff-' + (lleno ? 'amber' : (usado ? 'teal' : 'gris')) + ')'}));
+        var et = DIB17.texto(svg, cv.medio[0], cv.medio[1]-6, fmt(x[k],0) + ' / ' + e.u, EST17_ETQ + ';fill:' + (k === sel ? '#C8551E' : col) + ';cursor:pointer', 'middle');
+        et.onclick = function(){ sel = k; controlCap(); render(); };
+      } else {
+        var r1 = e.u - x[k], r2 = x[k];
+        if(r1 > 1e-9){
+          var c1 = DIB17.curva(p, q, 22, 20);
+          svg.appendChild(svgEl('path', {d:c1.d, fill:'none', stroke:'#14181F', 'stroke-width':'2', 'marker-end':'url(#ff-ink)'}));
+          DIB17.texto(svg, c1.medio[0], c1.medio[1]+4, fmt(r1,0), EST17_ETQ + ';fill:#14181F', 'middle');
+        }
+        if(r2 > 1e-9){
+          var c2 = DIB17.curva(q, p, 22, 20);
+          svg.appendChild(svgEl('path', {d:c2.d, fill:'none', stroke:'#5B3A6B', 'stroke-width':'2', 'stroke-dasharray':'6 4', 'marker-end':'url(#ff-plum)'}));
+          DIB17.texto(svg, c2.medio[0], c2.medio[1]+4, fmt(r2,0), EST17_ETQ + ';fill:#5B3A6B', 'middle');
+        }
+      }
+    });
+    red.nodos.forEach(function(v){
+      var p = POS17[v];
+      svg.appendChild(svgEl('circle', {cx:p[0], cy:p[1], r:20, fill: v === 'O' || v === 'T' ? '#B8892B' : '#14181F'}));
+      DIB17.texto(svg, p[0], p[1]+5, v, EST17_NODO, 'middle');
+    });
+    document.getElementById('ff-ley').innerHTML = vista === 'f' ?
+      '<span><i style="background:var(--amber)"></i>Arco lleno: flujo igual a la capacidad</span><span><i style="background:var(--teal)"></i>Arco con flujo y capacidad libre; el grosor crece con el flujo</span><span><i style="background:#B7AE9C"></i>Arco sin flujo</span>' :
+      '<span><i style="background:var(--ink)"></i>Capacidad que queda en el sentido del arco</span><span><i style="background:var(--plum)"></i>Punteado: arco inverso, flujo que se puede deshacer</span>';
+
+    /* historial: una fila por aumento */
+    var hh = '';
+    if(hist.length){
+      var acum = 0;
+      hh = '<table><thead><tr><th>Iteración</th><th>Camino de aumento</th><th>¿Usa un arco inverso?</th><th style="text-align:right">Capacidad residual</th><th style="text-align:right">Flujo acumulado</th></tr></thead><tbody>';
+      hist.forEach(function(c, i){
+        acum += c.r;
+        var inv = c.pasos.filter(function(p){ return p.dir < 0; }).map(function(p){ var e = red.arcos[p.k]; return 'sí: ' + e.b + '→' + e.a + ', inverso de ' + e.a + '→' + e.b; });
+        hh += '<tr' + (inv.length ? ' class="sel"' : '') + '><td>' + (i+1) + '</td><td>' + c.nodos.join('–') + '</td><td>' + (inv.length ? '<b style="color:var(--amber)">' + inv.join('; ') + '</b>' : 'no') + '</td><td style="text-align:right;font-family:var(--fm)">' + fmt(c.r,0) + '</td><td style="text-align:right;font-family:var(--fm)">' + fmt(acum,0) + '</td></tr>';
+      });
+      hh += '</tbody></table>';
+    }
+    document.getElementById('ff-hist').innerHTML = hh;
+
+    /* caminos disponibles */
+    var cont = document.getElementById('ff-caminos'); cont.innerHTML = '';
+    lista.forEach(function(c){
+      var b = document.createElement('button'); b.className = 'btn ghost';
+      var inv = c.pasos.some(function(p){ return p.dir < 0; });
+      b.textContent = c.nodos.join('–') + ' · ' + fmt(c.r,0) + (inv ? ' · usa un inverso' : '');
+      b.onclick = function(){ usar(c); };
+      cont.appendChild(b);
+    });
+    if(!lista.length){ var s = document.createElement('span'); s.className = 'chip'; s.textContent = 'No hay camino de O a T en la red residual'; cont.appendChild(s); }
+
+    document.getElementById('ff-F').textContent = fmt(F,0);
+    document.getElementById('ff-n').textContent = hist.length;
+    document.getElementById('ff-nc').textContent = lista.length >= 12 ? '12 o más' : lista.length;
+    var capO = 0; red.arcos.forEach(function(e){ if(e.a === 'O') capO += e.u; });
+    document.getElementById('ff-cotaO').textContent = capO;
+
+    var m = document.getElementById('ff-msg'), t;
+    if(!lista.length){
+      var alc = FF17.bfs(red, x, 'O', 'T').alcanzables, S = red.nodos.filter(function(v){ return alc.indexOf(v) >= 0; });
+      t = (hist.length && msgExtra ? msgExtra + ' ' : '') + '<b>Flujo máximo: ' + fmt(F,0) + '.</b> No queda ningún camino de aumento. Los nodos alcanzables desde O en la red residual son {' + S.join(', ') +
+          '}, y los arcos que salen de ese grupo suman ' + FF17.capacidadCorte(red, S) + ': es el corte que certifica el óptimo, tema del segundo bloque.';
+    } else if(!hist.length) t = 'Flujo cero. Elige un camino de la lista o pulsa "Aumentar por el camino más corto". Cada camino muestra su capacidad residual: lo máximo que se puede enviar por él.';
+    else t = msgExtra || '';
+    m.innerHTML = t;
+  }
+  function usar(c){
+    x = FF17.aumentar(x, c);
+    hist.push(c);
+    var inv = c.pasos.filter(function(p){ return p.dir < 0; });
+    var t = 'Se enviaron <b>' + fmt(c.r,0) + '</b> por ' + c.nodos.join('–') + '. Flujo total: ' + fmt(FF17.valor(red, x, 'O'),0) + '.';
+    if(inv.length) t += ' Este camino usa ' + inv.map(function(p){ var e = red.arcos[p.k]; return 'el inverso de ' + e.a + '→' + e.b; }).join(' y ') +
+      ': en la red original, eso significa <b>quitar</b> ' + fmt(c.r,0) + ' de ese arco y redirigirlo.';
+    render(t);
+  }
+  function controlCap(){
+    var e = red.arcos[sel];
+    document.getElementById('ff-sel-n').textContent = e.a + '→' + e.b;
+    document.getElementById('ff-sel-v').textContent = e.u;
+    document.getElementById('ff-cap').value = e.u;
+  }
+  document.getElementById('ff-cap').oninput = function(){ red.arcos[sel].u = +this.value; document.getElementById('ff-sel-v').textContent = this.value; cero(); render(); };
+  document.getElementById('ff-vista').onchange = function(){ render(document.getElementById('ff-msg').innerHTML); };
+  document.getElementById('ff-auto').onclick = function(){ var b = FF17.bfs(red, x, 'O', 'T'); if(b.camino) usar(b.camino); else aviso('No quedan caminos de aumento', 'var(--amber)'); };
+  document.getElementById('ff-slide').onclick = function(){
+    cero();
+    var c = FF17.caminos(red, x, 'O', 'T', 50).filter(function(q){ return q.nodos.join('') === 'OBET'; })[0];
+    if(!c){ aviso('Con estas capacidades no existe el camino O–B–E–T', 'var(--amber)'); render(); return; }
+    c = {nodos:c.nodos, pasos:c.pasos, r:Math.min(5, c.r)};
+    usar(c);
+  };
+  document.getElementById('ff-reset').onclick = function(){ cero(); render(); };
+  document.getElementById('ff-orig').onclick = function(){ cargar(); controlCap(); render(); };
+  cargar(); controlCap(); render();
+})();
+
+/* ==================================================================
+   Segundo bloque · corte contra flujo
+   ================================================================== */
+(function(){
+  var svg = document.getElementById('g-ct');
+  if(!svg) return;
+  var red = redSeervada17(), S = ['O'];
+  var MAX = FF17.maximo(red, 'O', 'T');
+  /* los 32 cortes: O siempre dentro, T siempre fuera */
+  var medios = ['A','B','C','D','E'], todos = [];
+  for(var m=0; m<32; m++){
+    var X = ['O'];
+    medios.forEach(function(v, i){ if(m & (1<<i)) X.push(v); });
+    todos.push(FF17.capacidadCorte(red, X));
+  }
+  var cmin = Math.min.apply(null, todos), nmin = todos.filter(function(c){ return c === cmin; }).length;
+
+  function render(){
+    var cap = FF17.capacidadCorte(red, S);
+    DIB17.vaciar(svg);
+    DIB17.marcadores(svg, 'ct');
+    red.arcos.forEach(function(e){
+      var p = POS17[e.a], q = POS17[e.b], dentroA = S.indexOf(e.a) >= 0, dentroB = S.indexOf(e.b) >= 0;
+      var cruza = dentroA && !dentroB, vuelve = !dentroA && dentroB;
+      var col = cruza ? '#C8551E' : (vuelve ? '#B7AE9C' : '#6B7683');
+      var cv = DIB17.curva(p, q, 22, 0);
+      var l = svgEl('path', {d:cv.d, fill:'none', stroke:col, 'stroke-width': cruza ? 4.5 : 1.8, 'marker-end':'url(#ct-' + (cruza ? 'amber' : 'gris') + ')'});
+      if(vuelve) l.setAttribute('stroke-dasharray', '6 4');
+      svg.appendChild(l);
+      DIB17.texto(svg, cv.medio[0], cv.medio[1]-6, String(e.u), EST17_ETQ + ';fill:' + col, 'middle');
+    });
+    red.nodos.forEach(function(v){
+      var p = POS17[v], en = S.indexOf(v) >= 0, fijo = v === 'O' || v === 'T';
+      var c = svgEl('circle', {cx:p[0], cy:p[1], r:21, fill: en ? '#0F6E63' : '#fff', stroke: en ? '#0F6E63' : '#14181F', 'stroke-width':'2.5', style: fijo ? '' : 'cursor:pointer'});
+      if(!fijo) c.onclick = function(){ var i = S.indexOf(v); if(i >= 0) S.splice(i,1); else S.push(v); render(); };
+      svg.appendChild(c);
+      var t = DIB17.texto(svg, p[0], p[1]+5, v, 'font:700 15px Archivo,sans-serif;fill:' + (en ? '#fff' : '#14181F'), 'middle');
+      t.style.pointerEvents = 'none';
+    });
+    var Sord = red.nodos.filter(function(v){ return S.indexOf(v) >= 0; });
+    DIB17.texto(svg, 20, 345, 'S = {' + Sord.join(', ') + '}', 'font:600 13px "JetBrains Mono",monospace;fill:#0F6E63');
+
+    document.getElementById('ct-cap').textContent = cap;
+    document.getElementById('ct-F').textContent = fmt(MAX.F,0);
+    var g = document.getElementById('ct-gap'); g.textContent = cap - MAX.F; g.className = cap === MAX.F ? 'ok' : 'mal';
+    document.getElementById('ct-n').textContent = todos.length;
+    document.getElementById('ct-nmin').textContent = nmin + ', de capacidad ' + cmin;
+    var arcosCorte = red.arcos.filter(function(e){ return S.indexOf(e.a) >= 0 && S.indexOf(e.b) < 0; }).map(function(e){ return e.a + '→' + e.b + ' (' + e.u + ')'; });
+    var msg = 'Arcos que cruzan hacia afuera: ' + arcosCorte.join(', ') + '. Capacidad del corte: <b>' + cap + '</b>. ';
+    msg += cap === MAX.F ? '<b>Es un corte mínimo:</b> su capacidad es igual al flujo máximo, y los dos se certifican mutuamente.' :
+      'Es una cota superior: ningún flujo puede superar ' + cap + ', pero el flujo máximo es ' + fmt(MAX.F,0) + ', así que hay un corte más angosto.';
+    document.getElementById('ct-msg').innerHTML = msg;
+  }
+  document.getElementById('ct-min').onclick = function(){ S = MAX.S.slice(); render(); };
+  document.getElementById('ct-o').onclick = function(){ S = ['O']; render(); };
+  document.getElementById('ct-t').onclick = function(){ S = ['O','A','B','C','D','E']; render(); };
+  render();
+})();
+
+/* ==================================================================
+   Caso · mentorías para desafíos industriales
+   ================================================================== */
+(function(){
+  var svg = document.getElementById('g-mt');
+  if(!svg) return;
+  var POS = {O:[65,185], A:[230,55], P:[230,135], L:[230,215], S:[230,295], LU:[540,80], TO:[540,180], SF:[540,280], GU:[540,340], T:[835,185]};
+  var META = {
+    O:{t:'ORIGEN',s:'equipos'}, T:{t:'DESTINO',s:'mentorías'},
+    A:{t:'A · Analítica',s:'generalista'}, P:{t:'P · Pronóstico',s:'solo Luna'}, L:{t:'L · Logística',s:'flexible'}, S:{t:'S · Sostenibilidad',s:'Sofía o invitado'},
+    LU:{t:'Luna',s:'analítica · 1'}, TO:{t:'Tomás',s:'analítica / logística · 1'}, SF:{t:'Sofía',s:'logística / sost. · 1'}, GU:{t:'Invitado',s:'sostenibilidad · '}
+  };
+  var R, x;
+  function red(invitado){
+    return {nodos:['O','A','P','L','S','LU','TO','SF','GU','T'], arcos:[
+      {a:'O',b:'A',u:1,id:'oa'}, {a:'O',b:'P',u:1,id:'op'}, {a:'O',b:'L',u:1,id:'ol'}, {a:'O',b:'S',u:1,id:'os'},
+      {a:'A',b:'LU',u:1,id:'alu'}, {a:'A',b:'TO',u:1,id:'ato'}, {a:'P',b:'LU',u:1,id:'plu'},
+      {a:'L',b:'TO',u:1,id:'lto'}, {a:'L',b:'SF',u:1,id:'lsf'}, {a:'S',b:'SF',u:1,id:'ssf'}, {a:'S',b:'GU',u:1,id:'sgu'},
+      {a:'LU',b:'T',u:1,id:'luna'}, {a:'TO',b:'T',u:1,id:'tomas'}, {a:'SF',b:'T',u:1,id:'sofia'}, {a:'GU',b:'T',u:invitado,id:'invitado'}
+    ]};
+  }
+  function reiniciar(){ R=red(+document.getElementById('mt-invitado').value); x=R.arcos.map(function(){return 0;}); render(); }
+  function codiciosa(){
+    x=R.arcos.map(function(){return 0;});
+    /* A→Luna y L→Tomás: factible, pero deja bloqueado a P. */
+    [0,2,4,7,11,12].forEach(function(k){x[k]=1;}); render();
+  }
+  function curva(e){
+    var p=POS[e.a],q=POS[e.b],c=0;
+    if(e.a==='O')c=(p[1]-q[1])*.12;
+    else if(e.b==='T')c=(p[1]-q[1])*.1;
+    else if(e.a==='A'&&e.b==='TO')c=-18;
+    else if(e.a==='L'&&e.b==='TO')c=16;
+    else if(e.a==='L'&&e.b==='SF')c=-16;
+    else if(e.a==='S'&&e.b==='SF')c=16;
+    return {c:c,p:p,q:q,geo:DIB17.curva(p,q,e.a==='O'||e.b==='T'?27:52,c)};
+  }
+  function render(){
+    var invitado=+document.getElementById('mt-invitado').value, opt=FF17.maximo(R,'O','T');
+    var siguiente=FF17.bfs(R,x,'O','T'), camino=siguiente.camino;
+    var pasos={}; if(camino)camino.pasos.forEach(function(p){pasos[p.k]=p;});
+    DIB17.vaciar(svg); DIB17.marcadores(svg,'mt');
+    svg.appendChild(svgEl('rect',{x:0,y:0,width:900,height:370,fill:'#F4F1EA'}));
+    DIB17.texto(svg,230,23,'EQUIPOS QUE BUSCAN MENTORÍA','font:700 11px "JetBrains Mono",monospace;letter-spacing:1.4px;fill:#6B7683','middle');
+    DIB17.texto(svg,545,23,'MENTORES Y BLOQUES DISPONIBLES','font:700 11px "JetBrains Mono",monospace;letter-spacing:1.4px;fill:#6B7683','middle');
+    function arco(e,k){
+      var C=curva(e), activo=e.u>0, f=x[k];
+      var path=svgEl('path',{d:C.geo.d,fill:'none',stroke:f>0?'#C8551E':'#B7AE9C','stroke-width':f>0?3:1.6,'marker-end':'url(#mt-'+(f>0?'amber':'gris')+')'});
+      if(!activo||!f)path.setAttribute('stroke-dasharray','5 5');
+      svg.appendChild(path);
+      if(e.b==='T')DIB17.texto(svg,C.geo.medio[0],C.geo.medio[1]-5,f+'/'+e.u,'font:700 12px "JetBrains Mono",monospace;paint-order:stroke;stroke:#F4F1EA;stroke-width:4px;fill:'+(f?'#C8551E':'#6B7683'),'middle');
+      var paso=pasos[k];
+      if(paso){
+        var G=paso.dir===1?C.geo:DIB17.curva(C.q,C.p,e.a==='O'||e.b==='T'?27:52,-C.c);
+        var col=paso.dir===1?'#5B3A6B':'#0F6E63';
+        svg.appendChild(svgEl('path',{d:G.d,fill:'none',stroke:col,'stroke-width':4,'marker-end':'url(#mt-'+(paso.dir===1?'plum':'teal')+')'}));
+      }
+    }
+    R.arcos.forEach(arco);
+    function nodo(id){
+      var p=POS[id], esOT=id==='O'||id==='T', meta=META[id],w=esOT?78:146,h=esOT?50:46,x0=p[0]-w/2,y0=p[1]-h/2;
+      var fondo=esOT?'#14181F':'#5B3A6B'; if(id==='GU'&&!invitado)fondo='#B7AE9C';
+      svg.appendChild(svgEl('rect',{x:x0,y:y0,width:w,height:h,rx:10,fill:fondo}));
+      DIB17.texto(svg,p[0],p[1]-4,meta.t,'font:700 13px Archivo,sans-serif;fill:#fff','middle');
+      var sub=meta.s+(id==='GU'?invitado:'');
+      DIB17.texto(svg,p[0],p[1]+13,sub,'font:500 10.5px "JetBrains Mono",monospace;fill:rgba(255,255,255,.82)','middle');
+    }
+    ['O','A','P','L','S','LU','TO','SF','GU','T'].forEach(nodo);
+    var inv=camino?camino.pasos.filter(function(p){return p.dir===-1;}).length:0, actual=FF17.valor(R,x,'O');
+    var cortes=opt.S.length?R.arcos.filter(function(e){return opt.S.indexOf(e.a)>=0&&opt.S.indexOf(e.b)<0&&e.u>0;}).map(function(e){return e.a+'→'+e.b;}):[];
+    DIB17.texto(svg,20,365,'Morado: tramo directo del próximo camino · verde: arco inverso que corrige una asignación','font:600 11px "JetBrains Mono",monospace;fill:#3C4551');
+    document.getElementById('mt-F').textContent=actual;
+    document.getElementById('mt-inv').textContent=inv;
+    document.getElementById('mt-corte').textContent=opt.F;
+    if(camino){
+      var ruta=camino.nodos.join(' → ');
+      document.getElementById('mt-msg').innerHTML='<b>Próximo camino de aumento:</b> <code>'+ruta+'</code>. '+(inv?'<strong>Incluye '+inv+' arco'+(inv>1?'s':'')+' inverso'+(inv>1?'s':'')+'</strong>: deshace asignaciones parciales para liberar un bloque y aumentar el flujo de '+actual+' a '+(actual+camino.r)+'.':'Todo el camino es directo; todavía no hay que corregir una asignación.');
+    }else{
+      document.getElementById('mt-msg').innerHTML='<b>No queda camino de aumento.</b> El flujo actual '+actual+' coincide con la capacidad del corte mínimo '+opt.F+' ('+cortes.map(function(a){return '<code>'+a+'</code>';}).join(', ')+'). La asignación es óptima.';
+    }
+  }
+  document.getElementById('mt-invitado').onchange=reiniciar;
+  document.getElementById('mt-codiciosa').onclick=codiciosa;
+  document.getElementById('mt-aumentar').onclick=function(){var b=FF17.bfs(R,x,'O','T');if(b.camino){x=FF17.aumentar(x,b.camino);render();}else aviso('No queda camino de aumento: ya es óptimo.','var(--teal)');};
+  document.getElementById('mt-completar').onclick=function(){x=FF17.maximo(R,'O','T').x;render();};
+  document.getElementById('mt-reiniciar').onclick=reiniciar;
+  reiniciar();
+})();
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+
+/* reajuste tras el primer renderizado de fórmulas */
+if(window.MathJax&&MathJax.startup&&MathJax.startup.promise){
+  MathJax.startup.promise.then(function(){ if(document.body.classList.contains('proy'))ajustar(); });
+}
+</script>
+</body>
+</html>
